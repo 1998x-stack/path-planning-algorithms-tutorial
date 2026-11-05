@@ -1,0 +1,13 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const match = html.match(/<script type="application\/json" id="offlineCourses">([\s\S]*?)<\/script>/);
+assert.ok(match, 'offline course payload exists');
+const offline = JSON.parse(match[1]);
+const canonical = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'courses.json'), 'utf8'));
+assert.deepEqual(offline, canonical, 'offline snapshot stays synchronized');
+assert.equal(offline.chapters.length, 28);
+assert.match(html, /window\.location\.protocol === 'file:'/);
+assert.match(html, /fetch\('courses\.json'\)/);
+console.log('Offline payload and protocol routing: PASS');
