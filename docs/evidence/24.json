@@ -1,0 +1,37 @@
+{
+  "article": "24",
+  "claims": [
+    {
+      "id": "ompl",
+      "claim": "OMPL Benchmark记录规划运行属性和进度属性，并可生成统计数据库",
+      "kind": "official-documentation",
+      "source_url": "https://ompl.kavrakilab.org/benchmark.html",
+      "locator": "How to Benchmark Planners",
+      "status": "verified"
+    },
+    {
+      "id": "arena",
+      "claim": "Planner Arena能够可视化基准数据库及anytime成本进度",
+      "kind": "official-tool",
+      "source_url": "https://planner-arena.kavrakilab.rice.edu/",
+      "locator": "Planner Arena Documentation",
+      "status": "verified"
+    },
+    {
+      "id": "moveit",
+      "claim": "MoveIt提供规划管线benchmark工作流",
+      "kind": "official-documentation",
+      "source_url": "https://moveit.picknik.ai/main/doc/how_to_guides/benchmarking/benchmarking_tutorial.html",
+      "locator": "How to benchmark your planning pipeline",
+      "status": "verified"
+    },
+    {
+      "id": "toy",
+      "claim": "固定十个地图种子下本章Dijkstra和A*同成本，六成功四失败",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "24.html Python example assertions",
+      "status": "illustrative"
+    }
+  ]
+}
