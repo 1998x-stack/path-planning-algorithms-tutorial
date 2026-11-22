@@ -15,7 +15,7 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 OUTPUT = ROOT / "reports" / "browser"
-PAGES = ["index.html"] + [f"chapters/{n:02}.html" for n in range(1, 16)]
+PAGES = ["index.html"] + [f"chapters/{n:02}.html" for n in range(1, 21)]
 VIEWS = [("desktop", 1440, 900), ("tablet", 768, 1024),
          ("mobile390", 390, 844), ("mobile360", 360, 800)]
 
@@ -87,6 +87,20 @@ def main():
                             after = status.inner_text()
                             if (before == after or "S→B→G" not in after):
                                 failures.append("08: weighted A* epsilon change did not update computed path")
+                        if key == "desktop" and path.endswith("/16.html"):
+                            status = page.locator("[data-dwa-demo] .demo-status")
+                            before = status.inner_text()
+                            page.locator("[data-dwa-mode='progress']").click()
+                            after = status.inner_text()
+                            if before == after or "0.6" not in after:
+                                failures.append("16: DWA scoring preference did not change selected control")
+                        if key == "desktop" and path.endswith("/20.html"):
+                            status = page.locator("[data-pareto-demo] .demo-status")
+                            before = status.inner_text()
+                            page.locator("[data-pareto-mode='risk']").click()
+                            after = status.inner_text()
+                            if before == after or "C-safe" not in after:
+                                failures.append("20: Pareto weight preference did not change selected route")
                         if key == "desktop" and path.endswith("/14.html"):
                             status = page.locator("[data-sampling-choice] .demo-status")
                             original = status.inner_text()
