@@ -1,0 +1,37 @@
+{
+  "article": "10",
+  "claims": [
+    {
+      "id": "jps-original",
+      "claim": "JPS通过路径对称性和跳点剪枝实现均匀网格最优搜索",
+      "kind": "primary-paper",
+      "source_url": "https://ojs.aaai.org/index.php/AAAI/article/view/7994",
+      "locator": "Harabor & Grastien, AAAI 2011",
+      "status": "verified"
+    },
+    {
+      "id": "canonical",
+      "claim": "JPS可分为best-first search、canonical ordering和specialized successor function",
+      "kind": "paper",
+      "source_url": "https://ijcai.org/proceedings/2016/103",
+      "locator": "Canonical Orderings on Grids (2016)",
+      "status": "verified"
+    },
+    {
+      "id": "primitive",
+      "claim": "Python代码仅实现直线跳点停止条件，不是完整八邻域JPS",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "Example code, forced-neighbor grid",
+      "status": "illustrative"
+    },
+    {
+      "id": "count",
+      "claim": "四邻域(3,2)位移的最短路线排列数C(5,2)=10",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "Combinatorial derivation",
+      "status": "derived"
+    }
+  ]
+}
