@@ -1,0 +1,37 @@
+{
+  "article": "18",
+  "claims": [
+    {
+      "id": "dubins",
+      "claim": "前进方向、曲率受限的最短路径由Dubins曲线候选族构成",
+      "kind": "primary-paper",
+      "source_url": "https://cir.nii.ac.jp/crid/1364233270517498624",
+      "locator": "Dubins, American Journal of Mathematics, 1957, DOI 10.2307/2372560",
+      "status": "verified"
+    },
+    {
+      "id": "reeds",
+      "claim": "允许前进与倒车、带曲率约束的最短车路径可能包含cusp换向",
+      "kind": "primary-paper",
+      "source_url": "https://msp.org/pjm/1990/145-2/pjm-v145-n2-p.pdf",
+      "locator": "Reeds & Shepp, Pacific Journal of Mathematics 145(2), 1990",
+      "status": "verified"
+    },
+    {
+      "id": "ompl",
+      "claim": "OMPL提供Dubins和Reeds-Shepp状态空间",
+      "kind": "official-documentation",
+      "source_url": "https://ompl.kavrakilab.org/spaces.html",
+      "locator": "OMPL Available State Spaces",
+      "status": "verified"
+    },
+    {
+      "id": "toy",
+      "claim": "代码积分一条LSR常曲率示例，不实现最短路径候选枚举",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "18.html Python example",
+      "status": "illustrative"
+    }
+  ]
+}

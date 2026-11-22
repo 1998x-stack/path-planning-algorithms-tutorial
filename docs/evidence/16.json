@@ -1,0 +1,29 @@
+{
+  "article": "16",
+  "claims": [
+    {
+      "id": "fox97",
+      "claim": "DWA在速度空间中搜索短时可达速度，并保留沿预测轨迹能够安全停止的命令",
+      "kind": "primary-paper",
+      "source_url": "https://publications.ri.cmu.edu/the-dynamic-window-approach-to-collision-avoidance",
+      "locator": "Fox, Burgard & Thrun, IEEE Robotics & Automation Magazine 4(1), 1997, pp.23–33",
+      "status": "verified"
+    },
+    {
+      "id": "nav2",
+      "claim": "Nav2 DWB是基于DWA的修改版控制器，使用轨迹生成器与critic插件评分",
+      "kind": "official-documentation",
+      "source_url": "https://docs.nav2.org/rolling/configuration_and_development/configuration_guide/controller_plugins/dwb_controller/",
+      "locator": "Nav2 Rolling DWB Controller documentation",
+      "status": "verified"
+    },
+    {
+      "id": "toy",
+      "claim": "代码以圆盘点机器人、离散弧线采样和最小净空制动代理演示筛选流程",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "16.html Python example",
+      "status": "illustrative"
+    }
+  ]
+}
