@@ -1,327 +1,61 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第25章 仿真到实车部署</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html">第20章 多目标路径规划</a></li>
-            <li><a href="21.html">第21章 多机器人协调</a></li>
-            <li><a href="22.html">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html" class="active">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="ROS 2 Nav2从仿真到实车：REP-105 TF、时间同步、足迹与costmap、碰撞监控、低速分阶段部署和离线preflight。"><title>25 · 仿真到实车：ROS 2 Nav2 部署验收</title><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="26.html">下一章</a></nav></div></header><div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#motivation">仿真跑通了，为什么实车仍可能撞墙</a><a href="#architecture">ROS 2 Nav2 的职责链</a><a href="#tf">先把 map、odom、base_link 接好</a><a href="#timing">时间戳、坐标与数据新鲜度</a><a href="#costmap">足迹、膨胀层与传感器模型</a><a href="#safety">规划器和独立安全层必须分离</a><a href="#gates">逐级上线：单元、仿真、限速、现场</a><a href="#interactive">交互：仿真与实车的准入条件</a><a href="#example">离线 preflight 检查器</a><a href="#ops">ROS 2 调试命令和落地清单</a><a href="#sources">权威规范与官方指南</a></nav></details></aside><main class="article-main" id="content"><article><header class="article-header"><p class="article-meta">DEPLOYMENT / 25 OF 28</p><h1>从仿真到实车：机器人动起来之前，哪些事情必须先对？</h1><p class="dek">真正的 Nav2 部署要同时验证坐标系、时钟、足迹、控制器、安全层与低速实验。按照明确的门禁，从离线程序、仿真逐步进入现场，而不是直接执行一条看起来安全的路径。</p></header><section id="motivation" aria-labelledby="motivation-title"><h2 id="motivation-title">仿真中永远沿轨迹中心行驶，不等于真实车体能做到</h2><p>仿真器可能为机器人提供近乎完美的定位、稳定的控制周期和理想化的传感器信息；真实机器人则存在轮胎打滑、机械装配误差、时间同步抖动、感知遮挡、制动延迟和网络丢包。这些误差会让规划器依据的“当前状态”和机器人真正的位置发生偏差。</p><p><strong>Sim-to-real</strong> 不只是把机器人模型换成硬件驱动，而是验证同一套数据与控制契约在实物系统中仍成立：坐标系、时间戳、足迹、安全距离、速度上限、规划更新、故障恢复及紧急停止。</p><figure><p class="figure-kicker">SIMULATION TO ROBOT / 25</p><img src="../assets/figures/25-sim-real-gap.svg" loading="lazy" alt="左侧仿真拥有确定状态与理想命令执行，右侧实车出现感知噪声、延迟和车体尺寸误差。"><figcaption>差异来自状态估计、模型、时延与接触物理等多环节，不能仅靠增大规划器迭代次数解决。</figcaption></figure></section><section id="architecture" aria-labelledby="architecture-title"><h2 id="architecture-title">导航系统是多个组件组成的闭环，不是单个规划算法</h2><p>ROS 2 Nav2 使用多个相互协作的服务器与插件来运行导航任务。<strong>定位/SLAM</strong>提供地图坐标与机器人状态估计，<strong>costmap</strong>将障碍与机器人几何转化为局部/全局可通行数据，<strong>规划器</strong>构建全局路线，<strong>控制器</strong>按照当前观测追踪路线，<strong>行为树和恢复行为</strong>组织任务与失败处理。</p><p>真实电机底盘仍需要自身的速度/转向执行、限幅和看门狗机制。规划器发布一条 <code>nav_msgs/Path</code> 并不意味着机器人有了可直接执行的速度指令；控制器和硬件驱动负责把连续控制命令变成真实运动。</p><figure><p class="figure-kicker">SIMULATION TO ROBOT / 25</p><img src="../assets/figures/25-nav2-architecture.svg" loading="lazy" alt="从传感器和TF经过costmap规划器控制器到机器人驱动的Nav2闭环；独立安全监测平行于命令链。"><figcaption>图表示主要职责而非完整 Nav2 节点清单；各组件消息类型、生命周期和参数依版本及部署方案变化。</figcaption></figure></section><section id="tf" aria-labelledby="tf-title"><h2 id="tf-title">先确认 TF 树的方向：map → odom → base_link → sensor</h2><p>按照 <a href="https://reps.openrobotics.org/rep-0105/">REP-105</a>，<code>map</code> 用于全局参考，可根据定位修正发生跳变；<code>odom</code> 局部连续但长时间会漂移；<code>base_link</code> 绑定机器人本体。典型树由 <code>map→odom</code>（定位/SLAM）、<code>odom→base_link</code>（轮式里程计/融合估计）和 <code>base_link→laser</code>（静态标定）组成。</p><figure><p class="figure-kicker">SIMULATION TO ROBOT / 25</p><img src="../assets/figures/25-tf-frames.svg" loading="lazy" alt="map到odom到base_link到laser的正确TF父子树，分别标注定位、里程计和静态外参来源。"><figcaption>父子关系与生产者应该明确，不能让两个节点同时发布同一条重复而冲突的动态变换。</figcaption></figure><p>不要把地图中某个激光点的坐标直接当成底盘坐标，也不要混用 <code>odom</code> 与 <code>map</code> 来定义同一条路径。若 TF 查找无法在传感器时间戳下得到需要的变换，正确的行为是拒绝过期数据并记录原因，而不是忽略时间维度。</p></section><section id="timing" aria-labelledby="timing-title"><h2 id="timing-title">消息时间戳必须代表真实测量时刻</h2><p>一个激光帧如果来自 300 ms 前，而机器人正在以 1 m/s 移动，那么仅因感知延迟产生的平移量级可能达到 0.3 m，远大于一些局部安全裕量。延迟误差的简单量级估计是：</p><div class="equation" tabindex="0" role="region" aria-label="(1) 恒速条件下由时间延迟引起的位置误差"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="(1) 恒速条件下由时间延迟引起的位置误差"><mrow><mi>Δ</mi><mi>x</mi><mo>≈</mo><mi>v</mi><mi>Δ</mi><mi>t</mi></mrow></math><span class="equation-label">(1) 恒速条件下由时间延迟引起的位置误差</span></div><p>这一关系只是恒速近似；如果有加速、旋转、滑移和角速度，还需考虑完整姿态变化和状态不确定度。ROS 2 的仿真时钟 <code>use_sim_time</code> 与墙钟不能随意混用。不同传感器和计算节点的时间戳必须采用统一的时间来源，并在日志中保留消息接收时间与采集时间的区别。</p></section><section id="costmap" aria-labelledby="costmap-title"><h2 id="costmap-title">足迹与膨胀半径不能由好看的地图截图判断</h2><p>导航碰撞检查需要机器人实际足迹（多边形或圆形近似），而不是把激光点云简单当作不可穿越的单元格。过小的足迹会让车体边缘剐蹭货架；过大的膨胀半径又可能使实际可通行走廊在地图上被全部封死。</p><p>将 <code>nav_msgs/OccupancyGrid</code> 的 <code>-1、0..100</code> 和 Nav2 costmap 内部代价 <code>0、253、254、255</code> 混成一套统一的概率值是不正确的。地图分辨率、膨胀图层、障碍观测源与未知区域策略要与规划器的 traversability / collision 语义一致。</p><figure><p class="figure-kicker">SIMULATION TO ROBOT / 25</p><img src="../assets/figures/25-footprint-inflation.svg" loading="lazy" alt="机器人真实矩形足迹与简化中心点的区别，障碍膨胀前后对应不同的可通行走廊。"><figcaption>膨胀层是规划几何上的近似与安全余量，不能替代实际车体碰撞检测、速度制动距离与独立安全监测。</figcaption></figure></section><section id="safety" aria-labelledby="safety-title"><h2 id="safety-title">规划输出永远不等于独立安全认证</h2><p>规划器、局部控制器和感知可能同时依赖某个错误的地图数据，因此安全关键车辆不能仅通过“规划器报告成功”来决定是否允许加速。Nav2 的 <a href="https://docs.nav2.org/rolling/configuration_and_development/configuration_guide/core_servers/collision_monitor/configuring_collision_monitor_node/">Collision Monitor</a> 提供基于传感器数据的附加临近碰撞减速/停止逻辑，在软件导航系统中具有独立于规划器的作用。</p><p>但软件 Collision Monitor <strong>不等同于符合特定标准的功能安全系统</strong>。真正涉及人的设备还需要根据适用安全标准进行风险评估、硬件级急停/制动、独立安全传感器与认证控制器设计，验证失效模式和恢复过程。切勿把本章脚本或仿真碰撞监测当作现实生产设备的安全证书。</p></section><section id="gates" aria-labelledby="gates-title"><h2 id="gates-title">上线应当像爬楼梯：逐级准入，而不是一次全速试跑</h2><ol><li><strong>代码与离线仿真：</strong>校验算法、地图、坐标、参数、机器人模型与碰撞几何，保存可复现实验。</li><li><strong>传感器与硬件在环：</strong>检查驱动、轮速、制动响应、时间同步和 TF；确保没有重复变换发布者。</li><li><strong>低速隔离现场：</strong>先无人员区域、低速度上限、受限目标范围；逐级扩大场景，记录位姿和控制误差。</li><li><strong>故障注入：</strong>模拟消息延迟、地图更新失败、定位丢失、传感器超时、控制器超时，验证故障时确实停机。</li><li><strong>逐步验收：</strong>设置清晰成功、失败和回退条件，由系统所有者按适用法规和安全流程批准扩大运行。</li></ol><figure><p class="figure-kicker">SIMULATION TO ROBOT / 25</p><img src="../assets/figures/25-deployment-gates.svg" loading="lazy" alt="从算法单元测试、仿真、硬件在环、低速隔离试验到现场运行的逐级门禁，每级失败返回整改。"><figcaption>阶段门禁不能用“上一个阶段没有报错”自动替代下一阶段的实测验收。</figcaption></figure></section><section id="interactive" aria-labelledby="interactive-title"><h2 id="interactive-title">交互：切换准入阶段，比较要核查的不同条件</h2><p>同一算法从仿真走向实车，检查项目会逐步增加。按钮只是帮助阅读测试阶段差异；真实放行仍需完整记录、现场验证和人工批准。</p><div class="interactive-box" data-deployment-demo><div class="demo-controls" role="group" aria-label="部署阶段"><button type="button" data-deploy-mode="sim" aria-pressed="true">仿真阶段</button><button type="button" data-deploy-mode="robot" aria-pressed="false">低速实车阶段</button></div><p class="demo-status" role="status" aria-live="polite">仿真：检查地图、足迹、TF、路径碰撞、控制收敛和确定性重放。</p><p class="micro">任一阶段出现未解释的异常，应暂停扩大测试范围并保存日志。</p></div></section><section id="example" aria-labelledby="example-title"><h2 id="example-title">离线 preflight：把错误配置变成能自动拒绝的测试</h2><p>Python 3.10+，标准库。教学脚本检查一份构造的机器人配置清单：TF 父子关系、过期变换、地图分辨率、足迹半径、速度上限与雷达时间戳。随后故意注入三种错误（过期激光、超速命令、缺少 map→odom），断言它们全部被拒绝。</p><pre><code>def preflight(config):
+    """Offline manifest check, NOT connected to ROS or safety hardware."""
+    issues = []
+    parents = {}
+    now = config["now"]
+    for parent, child, stamp in config["transforms"]:
+        if child in parents:
+            issues.append("duplicate parent for "+child)
+        parents[child] = (parent, stamp)
+        if now - stamp &gt; config["max_transform_age"]:
+            issues.append("stale transform "+parent+" -&gt; "+child)
+        if stamp &gt; now + .01:
+            issues.append("future transform "+child)
 
-        <p>大家好，经过前面二十四章的学习，你的算法已经在 notebook 中跑通了、可视化效果完美、基准测试数据也令人满意。现在你面临真正的考验：把它放到一台真实机器人上，看它能不能在现实的物理世界中工作。</p>
+    def chain(child):
+        visited, nodes = set(), [child]
+        while child in parents:
+            if child in visited:
+                issues.append("TF cycle at "+child)
+                break
+            visited.add(child)
+            child = parents[child][0]
+            nodes.append(child)
+        return nodes
 
-        <p>这一步，是所有路径规划学习者的"成年礼"。仿真中的完美表现可能在真实机器人上完全失效——你的优雅算法会碰到传感器噪声、执行器延迟、地面摩擦力不均、电池电压波动等一系列仿真环境中从未出现过的问题。我自己在第一次把路径规划系统部署到真实机器人上时，经历了整整三周的"崩溃-修复-再崩溃"循环。最终它跑起来的那一刻，实验室的师兄弟们都围过来鼓掌——那是我整个研究生生涯最有成就感的瞬间之一。</p>
+    if chain("laser") != ["laser","base_link","odom","map"]:
+        issues.append("required map/odom/base_link/laser chain missing")
+    if not (0 &lt; config["resolution"] &lt;= .5):
+        issues.append("map resolution out of configured range")
+    if config["footprint_radius"] &lt;= 0:
+        issues.append("invalid footprint")
+    linear, angular = config["command"]
+    linear_cap, angular_cap = config["limits"]
+    if abs(linear) &gt; linear_cap or abs(angular) &gt; angular_cap:
+        issues.append("speed command exceeds limit")
+    if now - config["laser_stamp"] &gt; config["max_sensor_age"]:
+        issues.append("stale laser scan")
+    return issues
 
-        <h2>仿真的价值与局限</h2>
-
-        <p>在讨论 sim-to-real 问题之前，首先要明确：仿真不是可选项，它是路径规划开发的必备工具。几乎所有的现代机器人系统都依赖于仿真进行开发迭代。但我们需要清楚仿真的边界在哪。</p>
-
-        <h3>仿真做什么做得很好</h3>
-        <ul>
-            <li><strong>快速迭代算法逻辑</strong>——在仿真中你可以 1 秒跑完真实世界中需要 1 小时的实验。这意味着你可以在短时间内尝试几十种参数组合。</li>
-            <li><strong>复现和调试bug</strong>——仿真环境是完全可复现的：相同输入一定得到相同输出。在真实机器人上，一次实验的条件几乎不可能完全复现。</li>
-            <li><strong>测试极端场景</strong>——在仿真中你可以安全地测试传感器失效、通信延迟、极端地形——这些场景在实体上测试要么太危险、要么太昂贵。</li>
-            <li><strong>大规模并行测试</strong>——你可以同时启动几百个仿真实例，在一夜之间完成真实世界中几个月才能积累的测试里程。</li>
-        </ul>
-
-        <h3>仿真永远教不会你的</h3>
-        <ul>
-            <li><strong>传感器噪声的真实分布</strong>——仿真中的噪声模型通常是高斯分布的简化假设，而真实传感器的噪声往往包含系统性偏差和长尾异常值。</li>
-            <li><strong>硬件的非理想特性</strong>——电机回差、轮胎打滑、履带震动、机械结构柔性——这些物理效应极其复杂，几乎不可能完全建模。</li>
-            <li><strong>系统集成的"最后一公里"</strong>——把所有软件模块（感知、规划、控制、通信、状态机）连成一个完整系统后出现的偶发问题，仿真几乎无法预测。</li>
-        </ul>
-
-        <div class="tip">
-            <strong>我的原则：</strong>在仿真中完成 95% 的开发工作，但永远为最后的 5% 预留至少 30% 的工期。这不单纯是经验之谈——sim-to-real gap 的本质决定了最后 5% 的工程工作往往比前 95% 更耗时。
-        </div>
-
-        <p>目前主流的机器人仿真器有以下几个选择，各有优劣：</p>
-
-        <table>
-            <tr>
-                <th>仿真器</th>
-                <th>物理引擎</th>
-                <th>渲染质量</th>
-                <th>物理精度</th>
-                <th>ROS集成</th>
-                <th>适合场景</th>
-            </tr>
-            <tr>
-                <td>Gazebo</td>
-                <td>ODE / DART / Bullet</td>
-                <td>中等</td>
-                <td>中等</td>
-                <td>原生（ros_control）</td>
-                <td>地面移动机器人、多机器人、ROS 生态</td>
-            </tr>
-            <tr>
-                <td>PyBullet</td>
-                <td>Bullet</td>
-                <td>低</td>
-                <td>高</td>
-                <td>插件支持</td>
-                <td>学术研究、快速原型、机械臂规划</td>
-            </tr>
-            <tr>
-                <td>Isaac Sim</td>
-                <td>PhysX</td>
-                <td>极高（RTX）</td>
-                <td>极高</td>
-                <td>扩展支持</td>
-                <td>工业级仿真、域随机化、合成数据生成</td>
-            </tr>
-            <tr>
-                <td>MuJoCo</td>
-                <td>MuJoCo (专有)</td>
-                <td>低</td>
-                <td>极高（接触模型）</td>
-                <td>社区集成</td>
-                <td>强化学习、接触密集型操作</td>
-            </tr>
-            <tr>
-                <td>Webots</td>
-                <td>ODE</td>
-                <td>中等</td>
-                <td>中等</td>
-                <td>原生支持</td>
-                <td>教育、快速原型</td>
-            </tr>
-        </table>
-
-        <h2>传感器噪声建模</h2>
-
-        <p>从仿真到现实的第一步，是理解你的机器人上的传感器实际上在给你什么数据。每一个传感器都引入误差。如果你在仿真中假设传感器是完美的，你的规划器必然无法应对真实世界。下面我们来看如何对最常见的几种传感器噪声进行建模：</p>
-
-        <pre><code>import numpy as np
-from dataclasses import dataclass
-
-
-@dataclass
-class LiDARNoiseModel:
-    """激光雷达噪声模型"""
-    range_std: float = 0.02       # 距离标准差 (m)
-    angular_std: float = 0.003     # 角度标准差 (rad)
-    drop_out_rate: float = 0.01    # 丢点率
-    max_range: float = 30.0        # 最大量程 (m)
-    min_range: float = 0.1         # 最小量程 (m)
-
-    def apply(self, ranges: np.ndarray, angles: np.ndarray) -> np.ndarray:
-        """对完美激光雷达数据施加噪声"""
-        noisy = ranges.copy()
-
-        # 1. 高斯测距噪声
-        noisy += np.random.normal(0, self.range_std, len(noisy))
-
-        # 2. 随机丢点（返回 inf 表示无回波）
-        drop_mask = np.random.random(len(noisy)) < self.drop_out_rate
-        noisy[drop_mask] = np.inf
-
-        # 3. 量程截断
-        noisy = np.clip(noisy, self.min_range, self.max_range)
-
-        return noisy
-
-
-@dataclass
-class OdometryNoiseModel:
-    """里程计漂移噪声模型"""
-    trans_std: float = 0.01        # 平移漂移 (m/m)
-    rot_std: float = 0.005         # 旋转漂移 (rad/rad)
-    bias_drift: float = 0.001      # 偏置随时间漂移 (m/s)
-
-    def __post_init__(self):
-        self.trans_bias = 0.0
-        self.rot_bias = 0.0
-
-    def apply(self, dx: float, dy: float, dtheta: float,
-              dt: float) -> tuple:
-        """对里程计增量施加累积性噪声"""
-        # 偏置随机游走
-        self.trans_bias += np.random.normal(0, self.bias_drift * dt)
-        self.rot_bias += np.random.normal(0, self.bias_drift * dt * 0.5)
-
-        # 比例噪声 + 偏置
-        noise_dx = dx * (1 + np.random.normal(0, self.trans_std)
-                         + self.trans_bias * dt)
-        noise_dy = dy * (1 + np.random.normal(0, self.trans_std)
-                         + self.trans_bias * dt)
-        noise_dtheta = dtheta * (1 + np.random.normal(0, self.rot_std)
-                                  + self.rot_bias * dt)
-
-        return noise_dx, noise_dy, noise_dtheta
-
-
-@dataclass
-class GPSNoiseModel:
-    """GPS 噪声模型"""
-    xy_std: float = 0.5            # 水平位置标准差 (m)
-    update_rate: float = 10.0      # 更新频率 (Hz)
-    outage_prob: float = 0.001     # 信号丢失概率
-    multipath_prob: float = 0.02   # 多径效应概率
-    multipath_offset: float = 3.0  # 多径偏移量 (m)
-
-    def apply(self, true_position: np.ndarray, dt: float) -> np.ndarray:
-        """GPS 测量模型"""
-        if np.random.random() < self.outage_prob:
-            return None  # 信号丢失
-
-        noisy = true_position.copy()
-
-        # 基础高斯噪声
-        noisy += np.random.normal(0, self.xy_std, 2)
-
-        # 多径效应（突发大偏移）
-        if np.random.random() < self.multipath_prob:
-            angle = np.random.uniform(0, 2 * np.pi)
-            noisy += np.array([
-                self.multipath_offset * np.cos(angle),
-                self.multipath_offset * np.sin(angle),
-            ])
-
-        return noisy
-
-
-# ---- 噪声注入测试 ----
-def simulate_sensor_noise():
-    """模拟机器人直线运动时的传感器噪声"""
-    lidar = LiDARNoiseModel()
-    odom = OdometryNoiseModel()
-    gps = GPSNoiseModel()
-
-    # 模拟 100 步直线运动
-    true_path = []
-    odom_path = []
-    gps_path = []
-
-    x, y, theta = 0.0, 0.0, 0.0
-    dt = 0.1
-
-    for step in range(100):
-        # 真实运动：以 0.5 m/s 直线前进
-        dx = 0.5 * dt * np.cos(theta)
-        dy = 0.5 * dt * np.sin(theta)
-        dtheta = 0.0  # 直线
-
-        x += dx
-        y += dy
-        true_path.append((x, y))
-
-        # 带噪声的里程计
-        dx_n, dy_n, dt_n = odom.apply(dx, dy, dtheta, dt)
-        # odom 是累积的，所以保持姿态估计
-        theta_n = theta + dt_n
-        if step == 0:
-            ox, oy = dx_n, dy_n
-        else:
-            ox += dx_n
-            oy += dy_n
-        odom_path.append((ox, oy))
-
-        # 带噪声的 GPS
-        gps_meas = gps.apply(np.array([x, y]), dt)
-        if gps_meas is not None:
-            gps_path.append(gps_meas)
-
-        theta = theta_n  # 实际控制用里程计更新的姿态
-
-    return true_path, odom_path, gps_path</code></pre>
-
-        <p>这段代码的关键在于：<strong>里程计的误差是累积的</strong>。随着机器人移动，里程计的偏置会不断漂移——这就是为什么只靠里程计的机器人在移动几十米后位置估计会严重偏离真实值。而 LiDAR 的误差是每次测量独立的（虽然也有系统性偏差），GPS 则偶尔会有多径效应导致的"跳变"。在你的规划器中，你必须考虑到这些不确定性——<strong>规划器的"世界模型"永远是不完美的</strong>。</p>
-
-        <h2>Sim-to-Real Gap</h2>
-
-        <p>Sim-to-real gap（仿真到现实的鸿沟）是机器人领域最棘手的问题之一。它指的是：在仿真中表现完美的系统，搬到真实世界后性能急剧下降的现象。这不是某一两个参数的问题，而是多方面的系统性差异：</p>
-
-        <h3>动力学失配</h3>
-        <p>仿真中的物理模型（摩擦力、惯性、弹性形变）是对真实物理的近似。你为仿真中的机器人规划的路径，假设它能以某个速度拐弯——但真实机器人的轮胎在地毯上和瓷砖上的摩擦力系数可能相差 30%。这意味着你规划的曲率半径在真实世界中可能是错误的。</p>
-
-        <h3>传感器真实性</h3>
-        <p>仿真中的 LiDAR 返回的是精确的射线-三角面片交点。真实的 LiDAR 点云包含混合像素（一个激光脉冲打到两个物体的边缘）、反射率导致的测量偏差、运动畸变（扫描过程中机器人移动了位置）。你的规划器可能完美地利用了仿真中的"干净"数据，但在面对真实点云时完全不知所措。</p>
-
-        <h3>环境多样性</h3>
-        <p>仿真环境通常只包含有限的场景变化。真实世界有无穷的变化：阳光直射导致视觉传感器过曝、雨滴反射导致 LiDAR 产生噪点、地毯边缘高出地面 1 毫米导致机器人颠簸。这些"小"事叠加起来，足以让最精巧的规划器崩溃。</p>
-
-        <div class="warning">
-            <strong>踩坑故事：</strong>我曾经参与一个 AGV（自动导引车）项目，所有算法在 Gazebo 仿真中跑得完美无缺——路径平滑、避障灵敏、停位精度 ±1 厘米。我们兴高采烈地把系统部署到实车上，结果第一圈就跑偏了 30 厘米。排查了两天发现罪魁祸首是：仿真中的轮胎摩擦模型假设了理想库伦摩擦，而真实仓库地面有微小的油渍残留，导致机器人在转弯时侧滑了约 5%。这个侧滑在单次转弯中微乎其微，但在经过 6 个连续转弯后累积了 30 厘米的偏差。我们的路径规划器完全不知道"轮胎可能打滑"这件事——它假设机器人可以精确跟踪任意路径。最后的解决方案是通过实车标定获取侧滑模型参数，并在规划器中的运动学约束里加入安全裕度。教训是：<strong>永远不要相信仿真中的动力学参数——它们永远是"接近真实"而非"等于真实"。</strong>
-        </div>
-
-        <h2>域随机化与鲁棒规划</h2>
-
-        <p>既然 sim-to-real gap 无法完全消除，我们需要系统性的方法来缩小它。两种最有效的方法是域随机化和鲁棒规划。</p>
-
-        <h3>域随机化（Domain Randomization）</h3>
-        <p>域随机化的思路很简单：在仿真中随机化各种参数（摩擦系数、质量、传感器噪声水平、光照条件等），让规划器在多样化的条件下训练，从而在真实世界中更具鲁棒性。它的哲学是：如果你见过足够多的"假真实"，你就不会被任何一个"特定假真实"所误导。</p>
-
-        <p>常用的域随机化参数包括：</p>
-        <ul>
-            <li><strong>物理参数</strong>——质量 ±20%、摩擦系数 ±50%、阻尼系数 ±30%</li>
-            <li><strong>传感器参数</strong>——噪声标准差 ±50%、采样频率 ±10%、丢包率 0-5%</li>
-            <li><strong>环境参数</strong>——光照强度 100-1000 lux、地面纹理、随机障碍物位置</li>
-            <li><strong>执行器参数</strong>——电机延迟 0-50ms、最大速度 ±10%、最大力矩 ±20%</li>
-        </ul>
-
-        <h3>鲁棒规划策略</h3>
-        <p>即使不做完整的域随机化训练，你也可以在规划器中加入鲁棒性设计：</p>
-        <ul>
-            <li><strong>安全裕度</strong>——在代价地图中将障碍物膨胀半径比实际值大 10-20%。仿真中的完美路径在真实机器人上可能根本走不出来——永远留 30% 的安全裕度。</li>
-            <li><strong>不确定性感知规划</strong>——将定位不确定性建模到代价函数中：不确定性越大的区域，代价越高。机器人在狭小空间中应该走得更慢、更谨慎。</li>
-            <li><strong>保守的速度规划</strong>——在靠近障碍物时主动减速。理想路径可能贴着障碍物边缘通过，但加上执行器延迟和定位误差后，这无异于自杀式导航。</li>
-            <li><strong>频繁重规划</strong>——不要期望一次规划管到底。每 100ms 重规划一次，让系统能够及时纠正偏差。</li>
-        </ul>
-
-        <div class="highlight">
-            <strong>核心要点：</strong>仿真中的完美路径在真实机器人上可能根本走不出来——永远留 30% 的安全裕度。具体来说：在代价地图中将所有障碍物额外膨胀 1-2 个栅格、将最大速度限制在理论值的 70%、让规划路径与最近的障碍物保持至少 20 厘米的距离。这些看起来"保守"的做法，恰恰是让系统在真实世界中可靠运行的关键。
-        </div>
-
-        <p>最后分享一个我亲身经历的 sim-to-real 故事。2020 年，我们团队为某制造工厂部署一批 AGV。仿真测试中，每台 AGV 在 4000 平米的车间内路径规划成功率接近 100%，平均路径长度仅比理论最短长 3%。但上线第一天就出事了：一台 AGV 在通过一个门洞时，由于地面有一条 3 毫米高的电缆槽盖板，机器人碾过时发生了轻微颠簸。这一颠簸导致 LiDAR 的一帧扫描产生了运动畸变，定位模块短暂跳变，航向角估计偏离了 2 度。2 度看起来极小，但结合机器人 0.8m/s 的速度和规划器的 500ms 重规划周期，这 2 度的航向偏差被放大成了 14 厘米的位置误差。机器人擦到了门框，触发了急停。整个车间的 AGV 因为交通管制策略的连锁反应全部停摆。根本原因不是规划算法本身有问题，而是我们的重规划周期和定位频率之间的时间解耦没有考虑到传感器噪声在实际物理环境中的传播效应。后来我们在规划器中加入了基于定位协方差的自适应安全距离：当定位不确定性增大时，自动扩大障碍物膨胀半径、降低最大速度。这个改动只花了 2 天时间，却彻底解决了这类问题——后来的 8 个月部署中再没有出现过类似事故。</p>
-
-        <p>这个故事告诉我们：sim-to-real 不是一个"可以解决"的问题，而是一个"需要持续管理"的风险。理解这个 gap 的存在，尊重它的复杂性，然后在系统设计中为它留出足够的空间。做好了这一步，你的路径规划系统才能从"玩具"变成"产品"。</p>
-
-        <p>下一章我们将进入本课程的第六部分——前沿与项目。我们将探讨如何用深度学习来提升路径规划的智能性，开启学习型路径规划的新篇章。我们第 26 章见。</p>
-
-        <div class="footer-nav">
-            <a href="24.html">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="26.html">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+config = {
+    "now": 10.,
+    "transforms": [("map","odom",9.96),
+                   ("odom","base_link",9.97),
+                   ("base_link","laser",9.95)],
+    "max_transform_age": .12,
+    "laser_stamp": 9.98,
+    "max_sensor_age": .12,
+    "resolution": .05,
+    "footprint_radius": .29,
+    "command": (.4,.2),
+    "limits": (.6,.8),
+}
+assert preflight(config) == []
+assert "stale laser scan" in preflight(
+    dict(config, laser_stamp=9.5))
+assert "speed command exceeds limit" in preflight(
+    dict(config, command=(.7,.2)))
+assert any("chain missing" in issue for issue in preflight(
+    dict(config,transforms=config["transforms"][1:])))
+print("offline preflight:",preflight(config),
+      "; stale sensor, overspeed, missing TF rejected")</code></pre><p>这不是实际 ROS 2 订阅器，没有实时读取 <code>/tf</code>、<code>/scan</code> 或 <code>/cmd_vel</code>，更不涉及电机急停。现实上线检查应从真实消息采集配置与统计，且用硬件看门狗和功能安全系统独立执行禁止运行的决策。</p></section><section id="ops" aria-labelledby="ops-title"><h2 id="ops-title">从终端和日志验证实车接口，不要只看导航成功弹窗</h2><p>可在有 ROS 2/Nav2 环境的机器上根据实际命名空间逐项运行 <code>ros2 topic list</code>、<code>ros2 topic hz /scan</code>、<code>ros2 topic echo /odom</code>、<code>ros2 run tf2_ros tf2_echo map base_link</code>、<code>ros2 lifecycle nodes</code> 及 <code>ros2 param list /controller_server</code>。实际主题名可能包含机器人命名空间和重映射，命令需要按本机配置调整。</p><p>若系统出现导航卡住、局部地图不更新或机器人朝向与路径不一致，优先比对 TF 链、里程计速度、传感器时间戳、footprint 与 costmap 实际障碍，随后才调控制器权重。<strong>先排除失效输入，再调算法性能</strong>，能避免把无法定位的问题“修”成另一种危险行为。</p></section><section id="sources" aria-labelledby="sources-title"><h2 id="sources-title">标准与官方指南</h2><ul><li><a href="https://reps.openrobotics.org/rep-0105/">ROS REP-105：Coordinate Frames for Mobile Platforms</a></li><li><a href="https://docs.nav2.org/rolling/configuration_and_development/first_time_robot_setup_guide/">Nav2：First-Time Robot Setup Guide</a></li><li><a href="https://docs.nav2.org/rolling/configuration_and_development/first_time_robot_setup_guide/transformation/setup_transforms/">Nav2：Setting Up Transformations</a></li><li><a href="https://docs.nav2.org/rolling/configuration_and_development/configuration_guide/core_servers/collision_monitor/configuring_collision_monitor_node/">Nav2：Collision Monitor</a></li><li><a href="https://docs.nav2.org/rolling/configuration_and_development/configuration_guide/core_servers/configuring_lifecycle_manager/">Nav2：Lifecycle Manager</a></li></ul></section><nav class="article-footer" aria-label="章节翻页"><a href="24.html">← 24 · 基准测试</a><a href="26.html">26 · 学习型路径规划 →</a></nav></article></main></div></body></html>

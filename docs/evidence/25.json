@@ -1,0 +1,45 @@
+{
+  "article": "25",
+  "claims": [
+    {
+      "id": "rep105",
+      "claim": "ROS移动机器人map、odom、base_link坐标语义及典型父子方向",
+      "kind": "standard",
+      "source_url": "https://reps.openrobotics.org/rep-0105/",
+      "locator": "REP-105 Coordinate Frames for Mobile Platforms",
+      "status": "verified"
+    },
+    {
+      "id": "setup",
+      "claim": "Nav2首次部署需要footprint、TF、odometry、传感器等配置",
+      "kind": "official-documentation",
+      "source_url": "https://docs.nav2.org/rolling/configuration_and_development/first_time_robot_setup_guide/",
+      "locator": "First-Time Robot Setup Guide",
+      "status": "verified"
+    },
+    {
+      "id": "tf",
+      "claim": "map-odom通常由定位/SLAM提供，odom-base_link由odometry提供",
+      "kind": "official-documentation",
+      "source_url": "https://docs.nav2.org/rolling/configuration_and_development/first_time_robot_setup_guide/transformation/setup_transforms/",
+      "locator": "Nav2 Setting Up Transformations",
+      "status": "verified"
+    },
+    {
+      "id": "collision-monitor",
+      "claim": "Nav2 Collision Monitor在导航规划层外提供附加减速停止",
+      "kind": "official-documentation",
+      "source_url": "https://docs.nav2.org/rolling/configuration_and_development/configuration_guide/core_servers/collision_monitor/configuring_collision_monitor_node/",
+      "locator": "Nav2 Collision Monitor",
+      "status": "verified"
+    },
+    {
+      "id": "toy",
+      "claim": "离线脚本检查构造TF父子链与时间戳、限速和footprint，不连接实际ROS硬件",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "25.html Python example",
+      "status": "illustrative"
+    }
+  ]
+}
