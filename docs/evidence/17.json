@@ -1,0 +1,37 @@
+{
+  "article": "17",
+  "claims": [
+    {
+      "id": "khatib",
+      "claim": "人工势场法由 Khatib 于 1986 年提出，用目标引力与障碍斥力的负梯度驱动机器人运动",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1177/027836498600500106",
+      "locator": "Khatib 1986, IJRR 5(1):90-98",
+      "status": "verified"
+    },
+    {
+      "id": "harmonic",
+      "claim": "调和势函数在区域内部没有局部极小（极值只能出现在边界），但需要数值求解",
+      "kind": "textbook",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/",
+      "locator": "LaValle, Planning Algorithms, 势场/反馈规划章节",
+      "status": "derived"
+    },
+    {
+      "id": "navfn",
+      "claim": "导航函数（Koditschek & Rimon）可证明无局部极小，但依赖工作空间/障碍形状假设",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1109/70.163777",
+      "locator": "Rimon & Koditschek 1992, IEEE T-RA 8(5):501-518",
+      "status": "verified"
+    },
+    {
+      "id": "example",
+      "claim": "页面 Python 示例为确定性教学示意：开阔环境到达目标，障碍位于连线时停在目标前约 2.7 m",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "17.html Python 代码块与断言",
+      "status": "derived"
+    }
+  ]
+}

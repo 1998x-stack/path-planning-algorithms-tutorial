@@ -88,3 +88,20 @@ document.addEventListener("DOMContentLoaded",()=>{
    for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));
  });
 });
+
+// Interactive start-position comparison used by chapter 17 (artificial potential fields).
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-apf-demo]");if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-apf-start]")],trails=[...demo.querySelectorAll("[data-apf-trail]")];
+ const notes={
+   A:"从左侧进入：斥力把机器人沿壁面导向目标，成功到达。",
+   B:"从正上方进入：引力把它拉向开口，两壁斥力在开口中点相消，停在局部极小。",
+   C:"从右侧进入：绕壁面滑入，成功到达。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{
+   const sel=b.dataset.apfStart;
+   for(const t of trails)t.setAttribute("opacity",t.dataset.apfTrail===sel?"1":"0.22");
+   status.textContent=notes[sel];
+   for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));
+ });
+});

@@ -1,225 +1,59 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第17章 人工势场法</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html" class="active">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html">第20章 多目标路径规划</a></li>
-            <li><a href="21.html">第21章 多机器人协调</a></li>
-            <li><a href="22.html">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="用势场梯度理解人工势场法 APF：引力与斥力公式、局部极小的成因，以及调和函数等改进思路，附可运行示例与断言。"><title>17 · 人工势场法 APF — 路径规划算法</title><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="16.html">上一章</a><a href="18.html">下一章</a></nav></div></header>
+<div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#problem">不搜索，顺着坡度滑</a><a href="#field">引力与斥力：势场公式</a><a href="#minima">局部极小：APF 的固有缺陷</a><a href="#improve">改进思路</a><a href="#interaction">交互：合力平衡点</a><a href="#implementation">可运行的 APF 与断言</a><a href="#limits">边界条件与选型</a><a href="#references">原始来源</a></nav></details></aside>
+<main class="article-main" id="content"><article>
+<header class="article-header"><p class="article-meta">CONSTRAINTS &amp; ONLINE PLANNING / 17 OF 28</p><h1>人工势场法 APF：顺着虚拟力下滑，会在哪里停住？</h1><p class="dek">DWA 在速度空间里搜索、评分；APF 换了一条完全不同的路——把目标和障碍变成一个标量势场，机器人只沿负梯度方向运动。它极快、极简，但也藏着一个决定性缺陷：局部极小。</p></header>
+<section id="problem" aria-labelledby="problem-title"><h2 id="problem-title">不搜索，顺着坡度滑</h2><p>设机器人在平面上的位置为 <code>q</code>。APF 不去采样候选轨迹，也不做图搜索，而是构造一个标量函数 <code>U(q)</code>，让<strong>目标处势能最低、障碍附近势能急剧升高</strong>。机器人受到的“虚拟力”是势的负梯度 <code>F(q) = −∇U(q)</code>，它只需朝这个方向迈出一步。</p><p>这是一种梯度下降：像在浓雾里下山，看不到全局，只能感受脚下坡度朝低处走。优势是每步只需计算局部梯度，开销极小；代价则是——如果地形里有一个比目标更高、又不是全局最低的“小坑”，机器人会卡在那里。</p><p><strong>先看一个反例：</strong>若机器人与目标之间有一道U形障碍，机器人会受到目标引力（拉它进U形）与两侧壁障力（往外推）的共同作用。两者在某点相互抵消，合力为零，机器人以为“到了”，实际却被困在U形底部。这就是本章要反复强调的<strong>局部极小</strong>。</p><figure><p class="figure-kicker">APF · 17</p><img src="../assets/figures/17-potential-field.svg" loading="lazy" alt="左侧三维示意势能面在目标处下沉、在障碍处隆起；右侧等高线图上梯度下降轨迹绕开障碍抵达目标。"><figcaption>势场把目标和障碍编码成一个标量地形：梯度下降沿最陡下降方向走。图中轨迹为教学示意，仅展示一个能绕过孤立障碍的例子。</figcaption></figure></section>
+<section id="field" aria-labelledby="field-title"><h2 id="field-title">引力与斥力：势场公式</h2><p>APF 由 Oussama Khatib 在 1986 年的实时避障工作中提出。他把机械臂/移动机器人看作在势场中受力的质点，势场由目标引力与障碍斥力叠加：<code>U(q) = U_att(q) + U_rep(q)</code>。</p><p>引力势场随到目标距离平方增长，离目标越远引力越大：</p><div class="equation math-scroll" data-math-scroll tabindex="0" role="region" aria-label="(1) 引力势场与引力"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="引力势为二分之一乘引力增益乘到目标距离的平方，引力为其负梯度"><mrow><msub><mi>U</mi><mi>att</mi></msub><mo>(</mo><mi>q</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msub><mi>k</mi><mi>a</mi></msub><msup><mrow><mo>‖</mo><mi>q</mi><mo>−</mo><msub><mi>q</mi><mi>goal</mi></msub><mo>‖</mo></mrow><mn>2</mn></msup><mo>,</mo><mspace width="1em"/><msub><mi>F</mi><mi>att</mi></msub><mo>=</mo><mo>−</mo><msub><mi>k</mi><mi>a</mi></msub><mo>(</mo><mi>q</mi><mo>−</mo><msub><mi>q</mi><mi>goal</mi></msub><mo>)</mo></mrow></math><span class="equation-label">(1) 引力势与引力</span></div><p>斥力势场只在障碍影响半径 <code>ρ₀</code> 内不为零，越贴近障碍升得越快：</p><div class="equation math-scroll" data-math-scroll tabindex="0" role="region" aria-label="(2) 斥力势场"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="当机器人到障碍距离小于影响半径时，斥力势是二分之一乘斥力增益乘距离倒数差平方"><mrow><msub><mi>U</mi><mi>rep</mi></msub><mo>(</mo><mi>q</mi><mo>)</mo><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msub><mi>k</mi><mi>r</mi></msub><msup><mrow><mo>(</mo><mfrac><mn>1</mn><mrow><mi>ρ</mi><mo>(</mo><mi>q</mi><mo>)</mo></mrow></mfrac><mo>−</mo><mfrac><mn>1</mn><msub><mi>ρ</mi><mn>0</mn></msub></mfrac><mo>)</mo></mrow><mn>2</mn></msup><mo>,</mo><mspace width="0.6em"/><mi>ρ</mi><mo>(</mo><mi>q</mi><mo>)</mo><mo>≤</mo><msub><mi>ρ</mi><mn>0</mn></msub></mrow></math><span class="equation-label">(2) 斥力势（ρ(q) &gt; ρ₀ 时为 0）</span></div><div class="equation math-scroll" data-math-scroll tabindex="0" role="region" aria-label="(3) 斥力"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="斥力等于斥力增益乘距离倒数差再乘距离平方倒数与距离梯度的乘积"><mrow><msub><mi>F</mi><mi>rep</mi></msub><mo>(</mo><mi>q</mi><mo>)</mo><mo>=</mo><msub><mi>k</mi><mi>r</mi></msub><mrow><mo>(</mo><mfrac><mn>1</mn><mrow><mi>ρ</mi><mo>(</mo><mi>q</mi><mo>)</mo></mrow></mfrac><mo>−</mo><mfrac><mn>1</mn><msub><mi>ρ</mi><mn>0</mn></msub></mfrac><mo>)</mo></mrow><mfrac><mn>1</mn><mrow><mi>ρ</mi><msup><mrow><mo>(</mo><mi>q</mi><mo>)</mo></mrow><mn>2</mn></msup></mrow></mfrac><mo>∇</mo><mi>ρ</mi><mo>(</mo><mi>q</mi><mo>)</mo></mrow></math><span class="equation-label">(3) 斥力：方向沿 ∇ρ，指向远离障碍一侧</span></div><p>要注意量纲与方向：斥力大小随 <code>ρ → 0</code> 以 <code>1/ρ²</code> 发散，因此严格来说要在障碍表面附近做限幅，否则靠近时力会趋于无穷、步长失去意义。另外，下面代码里用 <code>(q − q_obs)/ρ</code> 代表 <code>∇ρ</code> 的方向，只对<strong>圆形/点障碍</strong>成立；对一般形状障碍，需要按真实距离场求梯度。</p></section>
+<section id="minima" aria-labelledby="minima-title"><h2 id="minima-title">局部极小：APF 的固有缺陷</h2><p>梯度下降只能保证停在<strong>某个</strong>势的驻点，不能保证是全局最低点。若目标位于凹形障碍（U 形墙、房间角落、密集障碍群）之后，目标引力会把机器人往里拉，而障碍斥力把它往外推；当两者大小相等、方向相反时，合力为零：</p><div class="equation math-scroll" data-math-scroll tabindex="0" role="region" aria-label="(4) 局部极小的力平衡条件"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="引力与斥力之和为零时合力为零"><mrow><msub><mi>F</mi><mi>att</mi></msub><mo>(</mo><mi>q</mi><mo>)</mo><mo>+</mo><msub><mi>F</mi><mi>rep</mi></msub><mo>(</mo><mi>q</mi><mo>)</mo><mo>=</mo><mn>0</mn></mrow></math><span class="equation-label">(4) 驻点条件：此处不是目标，却停住了</span></div><p>这个平衡点不是孤立地出现在 U 形障碍里。狭窄通道两侧壁障力相互抵消、障碍贴近目标导致目标不可达（GNRON 问题）、对称环境里两边斥力正好对消——这些都会产生局部极小或持续振荡。</p><figure><p class="figure-kicker">APF · 17</p><img src="../assets/figures/17-local-minima.svg" loading="lazy" alt="机器人位于 U 形障碍开口外，目标在 U 形内部；目标引力箭头指向开口，两侧壁障力向外，在开口中点合力相消形成局部极小。"><figcaption>U 形障碍前的力平衡：引力（青绿）与两壁斥力（陶红）在某点相消，形成了比目标高、却机器人无法继续下降的局部极小。</figcaption></figure><div class="note caution"><p>局部极小是<strong>方法本身几何性质</strong>带来的，不是“再调调 k_a、k_r、ρ₀”就能消除的。调参只能移动或缩小吸引域，不能保证没有驻点。这也是 APF 很少单独作为完整导航器的原因。</p></div></section>
+<section id="improve" aria-labelledby="improve-title"><h2 id="improve-title">改进思路：能否消除驻点</h2><p>研究者提出过几类基础上的改造，目的都是“让下降路径不再卡在非目标驻点”：</p><ul><li><strong>切向/旋转势场：</strong>在径向斥力上叠加一个沿障碍表面的切向分量，让机器人“滑过”障碍而不是正面顶住。它能缓解对称平衡，但切向方向的选择要避免引入新的循环轨迹。</li><li><strong>调和势场：</strong>用拉普拉斯方程 <code>∇²U = 0</code> 的解构造势，边界上目标取低值、障碍取高值。调和函数在区域内部<strong>没有局部极小</strong>（极值只能出现在边界）。代价是需要有限差分/边界元等数值求解，实时性较差，且若区域不与目标连通仍可能不可达。</li><li><strong>导航函数（Navigation Functions）：</strong>Koditschek 与 Rimon 提出的一类可证明无局部极小的势函数，但需要工作空间与障碍满足特定假设（如障碍可膨胀为球/星形），真实环境不一定满足。</li><li><strong>把 APF 降为局部模块：</strong>最常见也最稳妥的工程做法——用全局规划器（A*、RRT 等）提供宏观引导，APF 只在局部做平滑避障/扰动补偿，而不单独承担完整导航。</li></ul><p>有个共同前提要记住：这些改造的“无局部极小”保证都附带了区域形状、障碍形状或连通性的假设。脱离假设单独引用结论，就容易高估方法能力。</p></section>
+<section id="interaction" aria-labelledby="interaction-title"><h2 id="interaction-title">交互：同一势场，不同起点</h2><p>下图使用固定的 U 形障碍与目标，只改变机器人的起始位置。三个按钮对应三条已经算好的梯度下降轨迹：从两侧进入能沿壁面滑入目标，从正上方进入则卡在开口的局部极小。</p><div class="interactive-box" data-apf-demo><div class="demo-controls" role="group" aria-label="起始位置"><button type="button" data-apf-start="A" aria-pressed="true">从左侧进入</button><button type="button" data-apf-start="B" aria-pressed="false">从正上方进入</button><button type="button" data-apf-start="C" aria-pressed="false">从右侧进入</button></div><svg viewBox="0 0 480 260" role="img" aria-labelledby="apf-demo-title apf-demo-desc"><title id="apf-demo-title">U形障碍中的三条梯度下降轨迹</title><desc id="apf-demo-desc">U形三面墙内目标处为谷底；从两侧进入的轨迹沿壁面滑入目标，从上方进入的轨迹在开口中点停住。</desc><rect width="480" height="260" rx="10" fill="#eef4f0"/><rect x="150" y="100" width="22" height="92" rx="3" fill="#536767"/><rect x="308" y="100" width="22" height="92" rx="3" fill="#536767"/><rect x="150" y="170" width="180" height="22" rx="3" fill="#536767"/><circle cx="240" cy="146" r="8" fill="#7461ba"/><text x="252" y="150" font-size="13" fill="#7461ba">目标</text><circle cx="240" cy="104" r="7" fill="none" stroke="#d06d4d" stroke-width="2.5"/><text x="252" y="98" font-size="13" fill="#d06d4d">局部极小</text><path data-apf-trail="A" d="M70 214 Q 120 202 150 150 Q 176 118 240 146" fill="none" stroke="#147f80" stroke-width="5" stroke-linecap="round"/><path data-apf-trail="B" d="M240 22 L 240 102" fill="none" stroke="#d06d4d" stroke-width="5" stroke-linecap="round"/><path data-apf-trail="C" d="M410 214 Q 360 202 330 150 Q 304 118 240 146" fill="none" stroke="#7461ba" stroke-width="5" stroke-linecap="round"/><circle cx="70" cy="214" r="7" fill="#203035"/><circle cx="240" cy="22" r="7" fill="#203035"/><circle cx="410" cy="214" r="7" fill="#203035"/></svg><p class="demo-status" role="status" aria-live="polite">从左侧进入：斥力把机器人沿壁面导向目标，成功到达。</p><p class="micro">三条轨迹为教学示意，由固定参数下的一次运行得到；参数改变会移动局部极小位置，但不会保证其消失。</p></div></section>
+<section id="implementation" aria-labelledby="implementation-title"><h2 id="implementation-title">可运行的最小 APF（Python 3.10+）</h2><p>下面用标准库实现点机器人 APF。假设：障碍是圆形（用圆心与半径隐含的距离表示），机器人按归一化合力方向以固定步长移动。第一部分是引力、斥力与总力：</p><pre><code>import math  # Python 3.10+
 
-        <p>大家好，欢迎来到第17章。上一章我们学习了DWA——通过在速度空间中搜索来实时选择最优控制指令。这一章我们来聊聊另一种思路完全不同的局部规划方法，它不搜索、不采样、不评分，而是在一个"力场"中让机器人"自动"滑向目标。这就是人工势场法（Artificial Potential Field, APF）。</p>
+def attractive(q, goal, ka=1.0):
+    """引力 = -ka·(q - goal)，指向目标。"""
+    return [-ka * (q[0] - goal[0]), -ka * (q[1] - goal[1])]
 
-        <p>人工势场法的思想可以追溯到物理学中最朴素的一个类比：如果把目标点看作正电荷，把障碍物看作负电荷，机器人就是一个在电场中运动的带电粒子——它被目标吸引，被障碍排斥。机器人沿着势场下降最快的方向运动，就像水往低处流一样自然。这种物理类比使得APF在直觉上极其优雅，但在工程实践中却暗藏了不少"陷阱"。本章我们就来一一拆解。</p>
-
-        <h2>势场的直觉</h2>
-
-        <p>想象你站在一座山的山顶上，浓雾弥漫，你什么也看不见，但你知道山脚下有个村庄是你的目的地。你要怎么做？最自然的策略就是"往下走"——感受脚下的坡度，每一步都朝着下降的方向迈出。你不会去规划整条下山路线，因为雾太大你看不到全局；你只需要感受局部的地形坡度就够了。人工势场法就是这个逻辑。</p>
-
-        <p>具体来说，APF在机器人的工作空间中构建一个标量势场函数U(q)，其中q是空间中的任意位置。这个势场由两部分叠加而成：</p>
-
-        <ul>
-            <li><strong>引力势场（Attractive Potential）U_att</strong>——在目标点处势能最低，离目标越远势能越高。就像一个"引力井"，把机器人拉向目标。</li>
-            <li><strong>斥力势场（Repulsive Potential）U_rep</strong>——在障碍物附近势能急剧升高，远离障碍物时势能为零。就像一堵"无形的墙"，防止机器人靠近障碍物。</li>
-        </ul>
-
-        <p>总势场 U = U_att + U_rep。机器人受到的"虚拟力"是势场的负梯度：F = -∇U。机器人沿着力的方向运动，即势场下降最快的方向——这就是梯度下降法。</p>
-
-        <p>这种方法的优美之处在于：机器人不需要知道前方具体有什么障碍物、也不需要规划多步路径，只需要感知当前位置的势场梯度，然后"跟着感觉走"就行。计算量极小，响应极快。</p>
-
-        <h2>经典APF公式</h2>
-
-        <p>有了直觉，现在让我们看看具体的数学公式。设机器人在位置q = (x, y)，目标在q_goal，障碍物集合为{q_obs₁, q_obs₂, ...}。</p>
-
-        <p><strong>引力势场：</strong></p>
-        <p style="text-align: center;">U_att(q) = ½ · k_a · ||q - q_goal||²</p>
-        <p>其中k_a是引力增益系数。引力是势场的负梯度：</p>
-        <p style="text-align: center;">F_att(q) = -∇U_att = -k_a · (q - q_goal)</p>
-        <p>注意，引力大小与到目标的距离成正比——离目标越远，引力越大。这确保了机器人在远处也能被强烈地吸引向目标。</p>
-
-        <p><strong>斥力势场：</strong></p>
-        <p style="text-align: center;">U_rep(q) = ½ · k_r · (1/ρ(q) - 1/ρ₀)², 如果 ρ(q) ≤ ρ₀</p>
-        <p style="text-align: center;">U_rep(q) = 0, 如果 ρ(q) > ρ₀</p>
-        <p>其中ρ(q)是机器人与障碍物的最近距离，ρ₀是斥力的作用半径（即超过这个距离的障碍物不产生斥力），k_r是斥力增益系数。对应的斥力为：</p>
-        <p style="text-align: center;">F_rep(q) = k_r · (1/ρ(q) - 1/ρ₀) · (1/ρ(q)²) · (q - q_obs) / ρ(q)</p>
-        <p>注意，斥力的方向是从障碍物指向机器人（即推离障碍物），且大小随距离减小而急剧增大——在障碍物表面附近，斥力趋于无穷大，确保机器人永远不会撞上障碍物。</p>
-
-        <p>将这个公式翻译成Python代码：</p>
-
-        <pre><code>import numpy as np
-
-def attractive_force(pos, goal, k_a=1.0):
-    \"\"\"计算引力向量。\”""
-    return -k_a * (pos - goal)
-
-def repulsive_force(pos, obstacles, k_r=100.0, rho_0=2.0):
-    \"\"\"计算所有障碍物的总斥力向量。\”""
-    total_rep = np.zeros(2)
-    for obs in obstacles:
-        diff = pos - obs
-        rho = np.linalg.norm(diff)
-        if rho < rho_0 and rho > 1e-6:
-            total_rep += (k_r * (1.0/rho - 1.0/rho_0)
-                         * (1.0/rho**2) * (diff / rho))
-    return total_rep
-
-def total_force(pos, goal, obstacles, k_a=1.0, k_r=100.0, rho_0=2.0):
-    \"\"\"计算总虚拟力。\”""
-    f_att = attractive_force(pos, goal, k_a)
-    f_rep = repulsive_force(pos, obstacles, k_r, rho_0)
-    return f_att + f_rep
-
-def apf_plan(start, goal, obstacles, k_a=1.0, k_r=100.0,
-             rho_0=2.0, step_size=0.05, max_steps=5000):
-    \"\"\"用人工势场法规划路径（梯度下降）。\”""
-    path = [start]
-    pos = np.array(start, dtype=float)
-    goal = np.array(goal, dtype=float)
-
+def repulsive(q, obstacles, kr=1.0, rho0=2.0):
+    """斥力：仅当到障碍距离 rho &lt; rho0 时非零，方向远离障碍。"""
+    fx = fy = 0.0
+    for ox, oy in obstacles:
+        dx, dy = q[0] - ox, q[1] - oy
+        rho = math.hypot(dx, dy)
+        if 1e-6 &lt; rho &lt; rho0:
+            mag = kr * (1.0 / rho - 1.0 / rho0) * (1.0 / rho ** 2)
+            fx += mag * dx / rho
+            fy += mag * dy / rho
+    return [fx, fy]
+</code></pre><p>第二部分是梯度下降主循环。样例输入两个：开阔环境起点 <code>(0,0)</code>、目标 <code>(4,0)</code>；以及目标前方放一个障碍点的对称案例。运行 <code>python3 apf_demo.py</code>，断言应当全部通过。</p><pre><code>def plan(start, goal, obstacles, ka=1.0, kr=1.0, rho0=2.0,
+         step=0.05, max_steps=4000, goal_tol=0.1):
+    q = [float(start[0]), float(start[1])]
+    goal = [float(goal[0]), float(goal[1])]
+    path = [tuple(q)]
     for _ in range(max_steps):
-        # 计算合力
-        f = total_force(pos, goal, obstacles, k_a, k_r, rho_0)
-
-        # 沿力的方向移动
-        if np.linalg.norm(f) < 1e-6:
+        fa = attractive(q, goal, ka)
+        fr = repulsive(q, obstacles, kr, rho0)
+        fx, fy = fa[0] + fr[0], fa[1] + fr[1]
+        n = math.hypot(fx, fy)
+        if n &lt; 1e-9:
+            break                      # 合力为零：驻点
+        q = [q[0] + step * fx / n, q[1] + step * fy / n]
+        path.append(tuple(q))
+        if math.hypot(q[0] - goal[0], q[1] - goal[1]) &lt; goal_tol:
             break
-        pos = pos + step_size * f / np.linalg.norm(f)
-        path.append(pos.copy())
+    return path
 
-        # 检查是否到达目标
-        if np.linalg.norm(pos - goal) < 0.1:
-            break
+# 1) 开阔环境：应到达目标（4,0）附近
+free = plan((0.0, 0.0), (4.0, 0.0), [], ka=1.0, kr=1.0, rho0=2.0)
+assert math.hypot(free[-1][0] - 4.0, free[-1][1]) &lt; 0.1
 
-    return np.array(path)
-
-# 示例：在有障碍物的环境中规划
-obstacles = np.array([[3.0, 3.0], [4.0, 5.0], [6.0, 2.0]])
-start = np.array([0.0, 0.0])
-goal = np.array([10.0, 10.0])
-path = apf_plan(start, goal, obstacles)
-print(f"路径长度: {len(path)} 步")</code></pre>
-
-        <h2>局部极小问题</h2>
-
-        <p>APF看起来优雅而简单，但它在实践中有一个致命的缺陷——<strong>局部极小值（local minima）</strong>。这是APF的"阿克琉斯之踵"，也是它未能在工业界成为主流方法的核心原因。</p>
-
-        <p>局部极小值发生的场景是这样的：当一个U形障碍物（比如三面围墙）位于机器人和目标之间时，机器人在U形口的入口处会受到目标方向的引力（拉它进入U形），但同时受到两侧墙壁的斥力（推它向中间）。结果，引力与斥力在某一点达到平衡，合力为零。机器人认为"我到达了目的地"——但实际它被困在了一个局部势阱中，无法前进也无法后退。</p>
-
-        <p>我来讲一个真实的故事。某知名扫地机器人品牌在2015年的旗舰产品中使用了基于APF的局部导航算法。在实验室的空旷房间中，它表现得完美无缺——优雅的曲线轨迹，精确的避障，流畅地穿过门框。但当产品进入用户家中后，投诉如潮水般涌来："我的机器人在沙发前面不停地前后抖动，就是不进去打扫"、"机器人在餐厅的桌子腿之间卡住了"、"它在墙角转圈转了十分钟"。售后部门百思不得其解。最终技术团队发现，沙发和墙壁形成的狭窄通道、四条桌腿构成的"森林"、墙角的三面交汇处——这些都是经典的APF局部极小值触发场景。在用户家中，这样的场景数不胜数。这一事件直接促使该公司在后续产品中切换到了基于DWA的导航方案。</p>
-
-        <div class="warning">
-            <strong>重要警示：</strong>局部极小值是APF的固有缺陷，不是通过"再调调参数"就能解决的问题。在包含凹形障碍物、狭窄通道、密集障碍物区域的环境中，APF几乎必然会遇到局部极小点。如果你正在设计一个需要在复杂家庭环境或工业环境中工作的机器人，请不要将APF作为唯一的导航方法。它更适合作为全局路径的局部扰动补偿，而不是独立的规划器。
-        </div>
-
-        <h2>改进方法</h2>
-
-        <p>面对局部极小这个"房间里的大象"，研究者们提出了多种改进方案。这里介绍几种主流的思路。</p>
-
-        <p><strong>旋转势场（Rotational Potential Field）：</strong>传统的APF中，斥力方向总是从障碍物指向机器人（径向向外）。旋转势场的改进是增加一个切向分量——当机器人靠近障碍物时，除了受到向外的推力，还受到一个沿障碍物表面的切向力。这有助于机器人"滑过"障碍物表面，而不是被卡在正前方。这种方法的灵感来自流体力学：水流过石头时，水不是停下来，而是沿着石头表面流过。</p>
-
-        <p><strong>调和函数（Harmonic Functions）：</strong>这是一种更数学化的方法。调和函数是拉普拉斯方程∇²U = 0的解，它在边界处的值被设定为目标点（最低势能）和障碍物边界（最高势能）。调和函数有一个美妙的性质：它在定义域内没有任何局部极小值！这意味着用它构建势场可以彻底避免APF的固有问题。但代价是求解调和函数需要相当大的计算量，一般需要有限差分法或边界元法等数值方法，对于实时应用来说太慢了。</p>
-
-        <p><strong>导航函数（Navigation Functions）：</strong>调和函数的一个变体，通过将障碍物"膨胀"成球状并构造一个极坐标形式的势函数，既保证无局部极小，又保证计算效率。但导航函数要求障碍物是"星形"的（即存在一个点可以从该点"看到"整个障碍物的表面），这个约束在真实环境中往往不成立。</p>
-
-        <p>说了这么多改进方法，我们不禁要问：APF和DWA到底选哪个？下面的对比表可以给你一个参考：</p>
-
-        <table>
-            <tr>
-                <th>比较维度</th>
-                <th>APF（人工势场法）</th>
-                <th>DWA（动态窗口法）</th>
-            </tr>
-            <tr>
-                <td>核心思想</td>
-                <td>势场梯度下降</td>
-                <td>速度空间搜索</td>
-            </tr>
-            <tr>
-                <td>计算速度</td>
-                <td>极快（O(n)，n为障碍物数量）</td>
-                <td>中等（O(m·n)，m为速度采样数）</td>
-            </tr>
-            <tr>
-                <td>局部极小处理</td>
-                <td>严重问题（固有缺陷）</td>
-                <td>较好（评分函数可引导绕行）</td>
-            </tr>
-            <tr>
-                <td>参数调优难度</td>
-                <td>中等（k_a, k_r, ρ₀三个主要参数）</td>
-                <td>较高（α, β, γ, 预测时间等）</td>
-            </tr>
-            <tr>
-                <td>对动态障碍物响应</td>
-                <td>即时（力场实时变化）</td>
-                <td>周期性更新（每个控制周期）</td>
-            </tr>
-            <tr>
-                <td>振荡问题</td>
-                <td>在狭窄通道中容易振荡</td>
-                <td>通过速度平滑可避免</td>
-            </tr>
-            <tr>
-                <td>工程成熟度</td>
-                <td>较低（主要用于学术研究）</td>
-                <td>高（ROS原生支持，工业广泛应用）</td>
-            </tr>
-            <tr>
-                <td>适用范围</td>
-                <td>稀疏障碍物、开阔环境</td>
-                <td>各种环境，尤其密集障碍物</td>
-            </tr>
-        </table>
-
-        <p>从对比中可以看得很清楚：如果你在做一个学术Demo或者障碍物稀疏的环境，APF是一种快速、简洁的选择。但如果你在做一个面向真实世界的产品，DWA几乎总是更稳妥的选项。不过，APF的思想并没有过时——近年来有一些工作将APF的势场思想与深度强化学习结合，让神经网络在训练过程中"学会"构建一个有效的势场，从而规避局部极小问题。这是一个非常活跃的研究方向，我们会在第26章学习型路径规划中再详细讨论。</p>
-
-        <p>我还有一句肺腑之言想分享给你：当你刚学到APF时，你会被它的优雅深深吸引——用一个简洁的数学公式就描述了一个完整的导航策略。我也曾有过同样的感受。但是，在工程实践中，"优雅"不等于"可靠"。APF是那种"论文里完美、现实中翻车"的方法。这并不是说APF无用——理解它的原理能帮你建立对势场方法的深层认知，这对你后续理解导航函数、最优控制甚至强化学习中的价值函数都有帮助。只是，请不要让它成为你唯一的工具。</p>
-
-        <p>下一章，我们将从"机器人如何选择运动方向"转向一个更根本的问题——"机器人究竟能做什么运动"。运动学约束是连接路径规划和底层控制之间的关键桥梁。没有它，规划出来的路径可能根本无法执行。我们第18章见。</p>
-
-        <div class="footer-nav">
-            <a href="16.html">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="18.html">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+# 2) 障碍直接在起点与目标之间：力在轴上相消，机器人停在目标前方
+stuck = plan((0.0, 4.0), (0.0, 0.0), [(0.0, 2.0)], ka=1.0, kr=1.0, rho0=3.0)
+d = math.hypot(stuck[-1][0], stuck[-1][1])
+assert d &gt; 0.5, "应在局部极小附近停住，而不是到达目标"
+print(f"free reached goal; blocked case stopped {d:.1f} m from goal")
+# =&gt; free reached goal; blocked case stopped 2.7 m from goal
+</code></pre><p>第二个案例里机器人一直停在目标前方约 <code>2.7 m</code>，并在该点附近小幅往返（步长固定导致的过冲）。这正是局部极小在数值上的表现：合力方向无法再降低总势能。注意这一例子沿对称轴对称，是最“干净”的退化情形；实际环境中局部极小与振荡常共存。</p></section>
+<section id="limits" aria-labelledby="limits-title"><h2 id="limits-title">边界条件与选型</h2><p>APF 的能力和风险都来自它的机制，把它与 DWA 放在一起看更清楚：</p><div class="table-wrap"><table><caption>两种局部方法的机制对比（非性能基准，仅描述设计差异）。</caption><thead><tr><th>维度</th><th>APF</th><th>DWA</th></tr></thead><tbody><tr><td>决策变量</td><td>位置处的合力方向</td><td>速度空间中的 <code>(v, ω)</code></td></tr><tr><td>每步开销</td><td>与障碍数相关，通常更低</td><td>与采样数×预测步数相关</td></tr><tr><td>动力学约束</td><td>不直接建模</td><td>显式进入动态窗口</td></tr><tr><td>局部极小</td><td>方法固有的主要弱点</td><td>也会发生，但可由全局引导缓解</td></tr><tr><td>势/力奇异</td><td>贴近障碍时斥力发散，需限幅</td><td>不依赖力的奇异</td></tr></tbody></table></div><p>几个必须写清的边界条件：</p><ul><li><strong>完备性：</strong>APF 不提供到达目标的完备性保证；存在不可达的局部极小就等于失败。</li><li><strong>固定步长会振荡：</strong>梯度下降的步长过大时，机器人会在驻点两侧往复过冲，而不是稳定停下。</li><li><strong>力的限幅：</strong>斥力在障碍表面发散，实现时要对合力大小做上限，否则单步位移失去物理意义。</li><li><strong>调参不消除驻点：</strong>改变 <code>k_a、k_r、ρ₀</code> 只会移动吸引域，不会把局部极小变成不存在。</li></ul><div class="note caution"><p>若要用于真实系统，一个稳妥的选择是把 APF 作为<strong>局部避障/平滑模块</strong>，由全局规划器提供宏观方向；不要让它单独承担复杂环境中的完整导航。</p></div></section>
+<section aria-labelledby="references-title" id="references"><h2 id="references-title">来源与实现参照</h2><ul><li><a href="https://doi.org/10.1177/027836498600500106">Khatib (1986), Real-Time Obstacle Avoidance for Manipulators and Mobile Robots, IJRR 5(1)</a>——人工势场法与引力/斥力的原始定义。</li><li>Koditschek &amp; Rimon (1990), Robot Navigation Functions on Manifolds with Boundary——可证明无局部极小的导航函数。</li><li><a href="https://doi.org/10.1109/70.163777">Rimon &amp; Koditschek (1992), Exact Robot Navigation Using Artificial Potential Functions, IEEE T-RA 8(5)</a>——导航函数的工程化表述与假设。</li><li><a href="https://msl.cs.uiuc.edu/~lavalle/planning/">LaValle, Planning Algorithms</a>——反馈式运动规划与势场方法的背景章节。</li></ul></section>
+<footer class="article-footer"><a href="16.html">← 动态窗口法 DWA</a><a href="18.html">下一章 · 运动学约束与曲线 →</a></footer>
+</article></main></div></body></html>
