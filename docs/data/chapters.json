@@ -38,35 +38,35 @@
     "num": "06",
     "title": "Dijkstra 算法",
     "href": "chapters/06.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 2
   },
   {
     "num": "07",
     "title": "A* 算法",
     "href": "chapters/07.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 2
   },
   {
     "num": "08",
     "title": "A* 改进与变体",
     "href": "chapters/08.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 2
   },
   {
     "num": "09",
     "title": "D* Lite 增量搜索",
     "href": "chapters/09.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 2
   },
   {
     "num": "10",
     "title": "JPS 跳点搜索",
     "href": "chapters/10.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 2
   },
   {

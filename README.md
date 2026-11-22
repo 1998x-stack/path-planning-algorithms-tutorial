@@ -4,7 +4,7 @@
 
 **[阅读网页版](https://1998x-stack.github.io/path-planning-algorithms-tutorial/)** · [从第一章开始](https://1998x-stack.github.io/path-planning-algorithms-tutorial/chapters/01.html)
 
-> 2026-11 首批精修：01–05 已重新设计，其余 06–28 保留原版内容待逐章审校。页面内标示状态，不能将保留旧版等同于完成质量复审。
+> 2026-11 第二批精修：01–10 已深度重构，并通过静态/示例/Chromium 验收；11–28 为可读原版，尚未完成逐章技术审校。
 
 ## 内容结构
 
@@ -26,9 +26,9 @@
 │   ├── assets/css/site.css   # 新设计系统
 │   ├── assets/js/site.js     # 轻量无依赖交互
 │   ├── assets/figures/       # 可单独查看的原创 SVG
-│   ├── evidence/             # 01–05 的主要事实来源登记
+│   ├── evidence/             # 01–10 的主要事实来源登记
 │   └── data/chapters.json    # 章节状态与导航元数据
-├── archive/2026-before-redesign/ # 第一批原始篇章存档
+├── archive/2026-before-redesign/ # 01–10 原始篇章存档
 ├── tools/build_site.py      # 离线复制构建
 ├── tools/validate_site.py   # 静态结构、链接、SVG 检查
 ├── .github/workflows/pages.yml
@@ -43,6 +43,7 @@ Python 3.10+，不需要 Node、第三方字体、在线数学脚本。
 
 ```bash
 python3 tools/validate_site.py
+python3 tools/validate_examples.py  # 验证前十篇微型算法示例
 python3 tools/build_site.py
 # 可选：实际 Chromium 多视口截图测试
 python3 -m pip install playwright==1.56.0
@@ -56,6 +57,14 @@ python3 -m http.server 8000 -d docs
 ## 编辑规范
 
 先读 [AGENTS.md](AGENTS.md)。文章要独立解释问题，不写“上一章介绍了”，每个关键结论应可由图、推导、代码或参考文献追溯；所有教学示例标注假设及适用范围。新 SVG 使用可访问标题和说明，复杂 MathML 离线可读。严禁捏造基准数值和部署验收结果。
+
+## 第二批（06–10）专项审校
+
+- **06 Dijkstra：** 非负边权、松弛、堆中过期条目、真实最小成本。
+- **07 A*：** 可纳与一致、最小 f 目标弹出、允许更优 g 重开。
+- **08 A* 变体：** Weighted A* 的 ε 次优界；ARA* 与反复重跑 WA* 的区别；双向和分层算法独立假设。
+- **09 D* Lite：** g/rhs 局部一致性、二元 key、km 更新与局部修复；对改变边权的代码断言。
+- **10 JPS：** 直线/对角、forced neighbor、禁止切角版本差异；原型代码仅是直线跳点检测器，不等于完整 JPS。
 
 ## 主要参考
 
