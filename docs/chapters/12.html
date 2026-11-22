@@ -1,221 +1,87 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第12章 RRT*渐进最优</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html" class="active">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html">第20章 多目标路径规划</a></li>
-            <li><a href="21.html">第21章 多机器人协调</a></li>
-            <li><a href="22.html">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="精细解释RRT*选父、重连、代价传播、渐进最优半径与Informed RRT*椭球下界。"><title>12 · RRT* 渐进最优规划 — 路径规划算法</title><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="13.html">下一章</a></nav></div></header><div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#gap">RRT 找到路径为何可能很绕</a><a href="#parent">ChooseParent：不仅考虑最近点</a><a href="#rewire">Rewire：旧节点也能换父亲</a><a href="#radius">连接半径与渐进最优的条件</a><a href="#informed">Informed RRT* 为什么选择椭球</a><a href="#experiment">可执行的选择父节点和重连</a><a href="#limits">收敛不是有限时间承诺</a><a href="#references">原始研究</a></nav></details></aside><main class="article-main" id="content"><article><header class="article-header"><p class="article-meta">SAMPLING METHODS / 12 OF 28</p><h1>RRT*：树不仅会生长，还会重新接线</h1><p class="dek">选择更便宜的父节点，重连旧顶点，再把成本变化传给整个后代；由此理解为何采样数的极限理论与有限预算下的真实路径质量不是一回事。</p></header><section id="gap" aria-labelledby="gap-title"><h2 id="gap-title">找到可行路线，不代表继续采样就能变好</h2><p>标准 RRT 一旦发现树顶点，只给它一个固定父节点。后来在空间中遇到更短的局部通路时，旧树结构未必会改造；只增加随机样本，不自动等于持续优化当前路径。<strong>RRT*</strong> 修改了“添加新顶点”的连接机制，在新增节点附近比较多种合法父节点，并尝试让附近已有节点改挂到新节点下面。</p><p>Karaman 与 Frazzoli 的 <a href="https://dspace.mit.edu/entities/publication/77dff1d1-ffd6-42f3-a3a5-fef87a964959">2011 年论文</a>给出了 RRT* / PRM* 的渐进最优性结果：在适用的几何运动规划、采样分布与连接范围等假设下，最优代价估计几乎必然趋于最优值。它不是说运行 100 或 1000 次就一定最优，也不是对任意运动学系统自动成立。</p><figure><p class="figure-kicker">ASYMPTOTIC OPTIMALITY · 12</p><img src="../assets/figures/12-parent-rewire.svg" loading="lazy" alt="同一顶点附近有父节点 A 和 B；最靠近新点的 A 路径成本更贵，B 经过合法短边形成更低总代价。"><figcaption>选择父节点比较的是起点到父节点累计成本再加局部边成本，而不只是 q_new 到候选父节点的距离。</figcaption></figure></section><section id="parent" aria-labelledby="parent-title"><h2 id="parent-title">ChooseParent：为什么最近邻未必给出最低到达成本</h2><p>假设候选新节点 x 离 A 更近，但从起点到 A 已经绕远；另一节点 B 略远，却来自一段非常便宜的主干。只选最近邻 A 产生的路径不一定成本最低。RRT* 把附近满足连接规则的节点组成集合 <code>X_near</code>，对每个合法连接计算：</p><div class="equation" tabindex="0" aria-label="(1) 在合法邻域中选使起点成本最小的父节点"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>parent</mi><mo>(</mo><mi>x</mi><mo>)</mo><mo>=</mo><munder><mi>argmin</mi><mrow><mi>v</mi><mo>∈</mo><msub><mi>X</mi><mtext>near</mtext></msub></mrow></munder><mo>{</mo><mi>g</mi><mo>(</mo><mi>v</mi><mo>)</mo><mo>+</mo><mi>c</mi><mo>(</mo><mi>v</mi><mo>,</mo><mi>x</mi><mo>)</mo><mo>}</mo></mrow></math><span class="equation-label">(1) 在合法邻域中选使起点成本最小的父节点</span></div><p>其中 <code>g(v)</code> 是树上从根到 v 的当前累计成本，<code>c(v,x)</code> 是合法局部运动的成本。先检验连接是否无碰撞、是否满足动力学，再比较成本。不能只凭点间欧氏距离就替代约束系统的局部运动代价。</p></section><section id="rewire" aria-labelledby="rewire-title"><h2 id="rewire-title">Rewire：新顶点也可能让旧路径更便宜</h2><p>新节点 x 加到树后，再对附近已有节点 v 计算 <code>g(x)+c(x,v)</code>。如果这个成本更小，且 x→v 的运动合法，就把 v 的父节点从旧父亲换为 x。树中 v 的<strong>所有后代</strong>也因此得到成本下降，必须同步更新它们的累计 g；只改 v 而不改后代，是教学实现里非常常见的 bug。</p><figure><p class="figure-kicker">ASYMPTOTIC OPTIMALITY · 12</p><img src="../assets/figures/12-rewire-propagation.svg" loading="lazy" alt="改挂前 B 经折线路线成本8，新节点 X 经更短路径使 B 降到6，B的后代 C 成本随之从10降到8。"><figcaption>图里的成本是为解释父子关系而构造的整数案例；新的边必须通过碰撞检查，子树代价的变化要传播给所有后代。</figcaption></figure><p>在欧氏空间对称边代价的条件下，若只在新节点添加后再尝试重连旧节点，严格小于的改进通常不会构成环；但泛化到有向状态图和非对称局部规划器时，需要额外的祖先/可达性检查，不能未经证明沿用。</p></section><section id="radius" aria-labelledby="radius-title"><h2 id="radius-title">为什么附近节点数需要随采样规模变化</h2><p>如果只连接固定 k 个最近邻或在一个随意固定半径内连接，未必满足 RRT* 的渐进最优性证明。二维欧氏构型空间里，一个经典的渐进连接半径形状是：</p><div class="equation" tabindex="0" aria-label="(2) d 维样本集常用的 r_n 连接尺度"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>r</mi><mi>n</mi></msub><mo>=</mo><mi>min</mi><mo>⁡</mo><mo>{</mo><mi>η</mi><mo>,</mo><mi>γ</mi><msup><mrow><mo>(</mo><mfrac><mrow><mi>log</mi><mo>⁡</mo><mi>n</mi></mrow><mi>n</mi></mfrac><mo>)</mo></mrow><mfrac><mn>1</mn><mi>d</mi></mfrac></msup><mo>}</mo></mrow></math><span class="equation-label">(2) d 维样本集常用的 r_n 连接尺度</span></div><p><code>d</code> 是空间维数；<code>η</code> 是局部可扩展长度上限；<code>γ</code> 不是任意调小仍有效的魔法数字，需要满足与自由空间测度、单位球体积以及原论文假设相关的下界要求。指数 <code>1/d</code> 表示维度越高近邻连接问题越困难。</p><figure><p class="figure-kicker">ASYMPTOTIC OPTIMALITY · 12</p><img src="../assets/figures/12-neighborhood-radius.svg" loading="lazy" alt="二维样本数较少时圆半径大，样本数较多时连边半径缩小但候选点数量可增多。"><figcaption>圆的绝对大小仅为示意；真正的理论下界取决于 γ 的选取及状态空间的维度、尺度和测度，不由截图中的圆圈证明。</figcaption></figure></section><section id="informed" aria-labelledby="informed-title"><h2 id="informed-title">Informed RRT*：有了一个可行解后再去哪里采样</h2><p>对于目标是<strong>欧氏路径长度</strong>的二维几何规划，若当前最好解长度为 <code>c_best</code>，任一点 q 能参与改进的必要条件是 <code>||q−s||+||q−g|| &lt; c_best</code>。这定义了以 s 和 g 为焦点、长轴总长度为 c_best 的椭圆内部；在高维则是 prolate hyperspheroid。其边界外的任何经 q 的路径长度都不可能打败当前最好解。</p><p>Gammell 等人的 <a href="https://publications.ri.cmu.edu/informed-rrt-optimal-sampling-based-path-planning-focused-via-direct-sampling-of-an-admissible-ellipsoidal-heuristic">Informed RRT*（IROS 2014）</a>利用这一几何可纳下界直接在可能改进解的子集采样，而不是每次都在全局采样后拒绝。若目标代价不是欧氏长度（如含风险、时延或曲率惩罚），不能照搬同一个椭圆作为严格的改进子集。</p><figure><p class="figure-kicker">ASYMPTOTIC OPTIMALITY · 12</p><img src="../assets/figures/12-informed-ellipse.svg" loading="lazy" alt="从起点和终点作为两个焦点构造成本上界对应的椭圆，展示椭圆内点可改进而椭圆外点没有欧氏长度改进可能。"><figcaption>椭圆仅限定可能改善长度代价的采样区域，不保证其内部全部点无碰撞，也不表示直接采样后不需要重新优化树。</figcaption></figure></section><section id="experiment" aria-labelledby="experiment-title"><h2 id="experiment-title">运行一个带成本传播的二维 RRT* 微型实现</h2><p>为避免抽象伪代码隐藏重连问题，以下代码真实建立父节点与子节点集合，执行 <code>ChooseParent</code>、<code>Rewire</code>、更新整个后代子树成本，并在所有采样完成后尝试合法目标连接。Python 3.10+，固定种子；邻域常数 10 是方便演示的选参，<strong>未验证其满足特定论文的理论阈值</strong>。</p><pre><code>from math import dist, inf, log, sqrt
+from random import Random
 
-        <p>大家好！上一章的 RRT 给了我们在高维空间中搜索的能力，但它有一个致命缺陷——<strong>找到的路径质量很差</strong>。锯齿、绕路、不必要的回头——RRT 的路径让你怀疑"这真的是一条可行的路径吗？"。如果你让一个 RRT 多跑几次，每次得到的路径还不一样。对于追求品质的工程师来说，这不可接受。</p>
+def small_rrt_star(seed=7, trials=350):
+    """二维点机器人演示，半径常数仅用于教学，不是理论阈值。"""
+    rng = Random(seed)
+    wall = (4., 2., 6., 8.)
+    def free(q):
+        x,y=q
+        return (0 &lt;= x &lt;= 10 and 0 &lt;= y &lt;= 10
+                and not (wall[0] &lt;= x &lt;= wall[2]
+                         and wall[1] &lt;= y &lt;= wall[3]))
+    def valid_edge(a,b):
+        n=max(1,int(dist(a,b)/0.09)+1)
+        return all(free((a[0]+(b[0]-a[0])*i/n,
+                         a[1]+(b[1]-a[1])*i/n))
+                   for i in range(n+1))
+    def steer(a,b):
+        length=dist(a,b)
+        return a if length &lt; 1e-9 else tuple(
+            x+min(.75/length,1.)*(y-x) for x,y in zip(a,b))
 
-        <p>RRT*（又称 RRT-Star）由 Sertac Karaman 和 Emilio Frazzoli 于 2010 年提出，解决了这个问题。它在 RRT 的基础上只增加了两个操作——<strong>ChooseParent</strong> 和 <strong>Rewire</strong>——但却带来了革命性的性质：<strong>渐进最优性</strong>（asymptotic optimality）。</p>
+    nodes=[(1.,5.)]
+    parent=[-1]
+    children=[set()]
+    g=[0.]
+    rewire_count=0
+    for _ in range(trials):
+        target=(10*rng.random(),10*rng.random())
+        nearest=min(range(len(nodes)),
+                    key=lambda j:dist(nodes[j],target))
+        q=steer(nodes[nearest],target)
+        if dist(q,nodes[nearest]) &lt; 1e-8:
+            continue
+        if not valid_edge(nodes[nearest],q):
+            continue
 
-        <h2>RRT 的致命缺陷</h2>
+        n=len(nodes)+1
+        radius=min(2.1,10*sqrt(log(n)/n))  # 教学选参
+        near=[i for i,p in enumerate(nodes)
+              if dist(p,q)&lt;=radius]
+        if nearest not in near: near.append(nearest)
+        candidates=[(g[i]+dist(nodes[i],q),i) for i in near
+                    if valid_edge(nodes[i],q)]
+        if not candidates: continue
+        best_cost, best_parent=min(candidates)
+        new=len(nodes)
+        nodes.append(q)
+        parent.append(best_parent)
+        children.append(set())
+        g.append(best_cost)
+        children[best_parent].add(new)
 
-        <p>为什么 RRT 的路径这么差？原因不在于 RRT 的 "探索" 逻辑有问题，而在于它<strong>完全没有"优化"的逻辑</strong>。当一个新节点被加入树中时，RRT 简单地把它挂到最近的节点下面。这样就产生了一个问题：</p>
+        for i in near:
+            if i==best_parent: continue
+            alt=g[new]+dist(q,nodes[i])
+            if alt+1e-8&lt;g[i] and valid_edge(q,nodes[i]):
+                old=parent[i]
+                children[old].remove(i)
+                parent[i]=new
+                children[new].add(i)
+                delta=alt-g[i]
+                stack=[i]
+                while stack:
+                    k=stack.pop()
+                    g[k]+=delta
+                    stack.extend(children[k])
+                rewire_count+=1
 
-        <ul>
-            <li>新节点可能通过另一个更远的父节点获得更短的路径——但 RRT 从不检查这种可能性</li>
-            <li>新节点可能成为它"附近"已有节点的更好父节点——但 RRT 也不做这种反向调整</li>
-            <li>随着树的生长，早期生成的连接方式可能不再是最优的——但 RRT 从不回溯修正</li>
-        </ul>
+    goal=(9.,5.)
+    options=[(g[i]+dist(p,goal),i)
+             for i,p in enumerate(nodes) if valid_edge(p,goal)]
+    if not options: return inf, [], rewire_count
+    total,i=min(options)
+    path=[goal]
+    while i!=-1:
+        path.append(nodes[i])
+        i=parent[i]
+    return total, path[::-1], rewire_count
 
-        <p>你可以把 RRT 想象成一个"只管铺路、从不修路"的工程队——路是铺出来了，但全是弯弯绕绕的土路。RRT* 就是那个愿意回头把土路修成高速公路的工程队。</p>
-
-        <h2>Rewire 操作——核心创新</h2>
-
-        <p>RRT* 在 RRT 的框架上做了两个关键的改动：</p>
-
-        <h3>ChooseParent：为新节点选择最佳父节点</h3>
-        <p>当新节点 <code>x_new</code> 加入时，不找最近的节点作为父节点，而是在一个半径 <code>r</code> 的邻域内<strong>遍历所有近邻节点</strong>，选择那个能使 <code>x_new</code> 的路径代价最小的节点作为父节点。</p>
-
-        <h3>Rewire：重连近邻</h3>
-        <p>然后反过来：检查 <code>x_new</code> 的所有近邻节点，看能否让 <code>x_new</code> 成为它们的父节点从而缩短路径。如果可以，就切断它们和原父节点的连接，连到 <code>x_new</code> 上来。</p>
-
-        <p>这个"双向检查"就是 Rewire 的全部。但它的效果令人惊叹——随着采样增加，路径会逐步趋向最优。</p>
-
-        <h2>手写 RRT*</h2>
-
-        <p>在上一章 RRT 代码的基础上，RRT* 只需要添加两个函数：</p>
-
-        <pre><code>import numpy as np
-from scipy.spatial import KDTree
-
-class RRTStar(RRT):  # 继承自上一章的 RRT
-    def __init__(self, start, goal, obstacle_check, bounds,
-                 max_iter=1000, step_size=5.0, goal_tolerance=5.0,
-                 search_radius=15.0):  # 新增：重连搜索半径
-        super().__init__(start, goal, obstacle_check, bounds,
-                         max_iter, step_size, goal_tolerance)
-        self.search_radius = search_radius
-        self.cost = {0: 0.0}  # 从起点到每个节点的代价
-
-    def plan(self):
-        tree = KDTree([self.start])
-        for i in range(self.max_iter):
-            x_rand = self.sample()
-            _, idx = tree.query(x_rand)
-            x_near = self.nodes[idx]
-            x_new = self.steer(x_near, x_rand)
-            if not self.obstacle_check(x_near, x_new):
-                continue
-
-            # 找邻域内的所有近邻
-            indices = tree.query_ball_point(x_new, self.search_radius)
-            self.nodes.append(x_new)
-
-            # ChooseParent：选择最佳父节点
-            best_parent = None
-            best_cost = float('inf')
-            for i_idx in indices:
-                if not self.obstacle_check(self.nodes[i_idx], x_new):
-                    continue
-                cand_cost = self.cost[i_idx] + np.linalg.norm(
-                    x_new - self.nodes[i_idx])
-                if cand_cost &lt; best_cost:
-                    best_cost = cand_cost
-                    best_parent = i_idx
-
-            if best_parent is None:
-                self.nodes.pop()  # 没有合法父节点，丢弃
-                continue
-
-            new_idx = len(self.nodes) - 1
-            self.parents[new_idx] = best_parent
-            self.cost[new_idx] = best_cost
-
-            # Rewire：尝试重连近邻
-            for i_idx in indices:
-                if i_idx == new_idx:
-                    continue
-                # 检查能否通过 x_new 缩短近邻的路径
-                old_cost = self.cost[i_idx]
-                new_cost = self.cost[new_idx] + np.linalg.norm(
-                    self.nodes[i_idx] - x_new)
-                if new_cost &lt; old_cost and \
-                   self.obstacle_check(x_new, self.nodes[i_idx]):
-                    self.parents[i_idx] = new_idx
-                    self.cost[i_idx] = new_cost
-
-            tree = KDTree(self.nodes)
-            if np.linalg.norm(x_new - self.goal) &lt; self.goal_tolerance:
-                return self._reconstruct_path(new_idx)
-        return None</code></pre>
-
-        <div class="highlight">
-            <strong>那个"啊哈"时刻：</strong>我第一次用 matplotlib 可视化 RRT* 时，看到了一个让我终生难忘的画面。算法运行了 100 次迭代，路径还是扭曲的——跟 RRT 差不多。200 次迭代，路径开始变直。500 次迭代，路径几乎是一条完美的直线穿过障碍物之间的缝隙。这个过程就像你在看着一个雕塑家不断修正他的作品——每次 Rewire 都是一次精修。当 1000 次迭代结束时，路径已经稳定在最优值附近，后续只是在做微调。这种"看着路径逐渐变好"的体验，跟 RRT 那种"一次成型、粗糙永不变"形成了鲜明对比。如果你也想体验这种感觉，强烈建议你亲自跑一遍，把每次迭代的路径画出来。
-        </div>
-
-        <h2>Informed RRT*——用椭球加速收敛</h2>
-
-        <p>RRT* 虽然能渐进最优，但收敛速度可能很慢——尤其是在高维空间中。这是因为即使已经找到了一条不错的路径，RRT* 仍然在整个自由空间中均匀采样——很多采样点对改善当前路径毫无贡献。</p>
-
-        <p>Informed RRT* 的思路：一旦找到一条初始路径（代价为 <code>c_best</code>），任何可以改善这条路径的点都必须满足 <code>h(start, x) + h(x, goal) &lt; c_best</code>——这个不等式在几何上定义了一个<strong>椭球</strong>。Informed RRT* 严格在这个椭球内部采样，大幅提升了采样效率。</p>
-
-        <p>效果有多显著？在典型场景中，Informed RRT* 达到同样路径质量所需的采样次数是原始 RRT* 的 1/5 到 1/3。这也是为什么在实际项目中，很少人用原始的 RRT*——大家都在用 Informed 版本。</p>
-
-        <h2>渐进最优性</h2>
-
-        <p>RRT* 最引人注目的理论贡献是<strong>渐进最优性</strong>的证明。Karaman 和 Frazzoli 证明了：当采样点数量 <code>n → ∞</code> 时，RRT* 返回的路径代价以概率 1 收敛到全局最优解的代价。</p>
-
-        <p>这个结论的成立依赖于一个关键设计：重连半径 <code>r</code> 必须满足 <code>r = γ · (log(n)/n)^(1/d)</code>，其中 <code>d</code> 是空间维度，<code>γ</code> 是环境相关的常数。这个半径设计保证了树中连接的"密度"足以覆盖全局最优路径。在实践中，我们通常取一个固定较大的半径值，虽然会牺牲一些计算效率，但收敛性在工程意义上已经足够好了。</p>
-
-        <p>下面是 RRT、RRT* 和 Informed RRT* 的对比：</p>
-
-        <table>
-            <tr>
-                <th>属性</th>
-                <th>RRT</th>
-                <th>RRT*</th>
-                <th>Informed RRT*</th>
-            </tr>
-            <tr>
-                <td>概率完备性</td>
-                <td>✓</td>
-                <td>✓</td>
-                <td>✓</td>
-            </tr>
-            <tr>
-                <td>渐进最优性</td>
-                <td>✗</td>
-                <td>✓</td>
-                <td>✓</td>
-            </tr>
-            <tr>
-                <td>首次找到路径的速度</td>
-                <td>快</td>
-                <td>中等</td>
-                <td>中等</td>
-            </tr>
-            <tr>
-                <td>收敛到最优的速度</td>
-                <td>N/A</td>
-                <td>慢</td>
-                <td>快</td>
-            </tr>
-            <tr>
-                <td>实现复杂度</td>
-                <td>低</td>
-                <td>中</td>
-                <td>中高</td>
-            </tr>
-            <tr>
-                <td>代码行数（核心）</td>
-                <td>~50</td>
-                <td>~80</td>
-                <td>~100</td>
-            </tr>
-        </table>
-
-        <p>RRT* 家族的另一个重要变体是 RRT#（RRT-Hash）——它用类似 D* Lite 中的 LPA* 机制来维护树的一致性，每次重连后传播代价更新。在需要实时重规划的场景中，RRT# 比 RRT* 更高效。</p>
-
-        <p>下一章我们将介绍采样方法的另一大流派——<strong>PRM（Probabilistic Roadmap，概率路线图）</strong>。如果说 RRT 是用于"单次查询"（single-query）的探索树，那么 PRM 就是用于"多次查询"（multi-query）的路线图。它花时间构建一张覆盖整个自由空间的图，然后可以在这张图上运行任意多次查询——这对静态环境中的多次规划任务来说是理想选择。</p>
-
-        <div class="footer-nav">
-            <a href="11.html">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="13.html">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+c100,p100,r100=small_rrt_star(trials=100)
+c350,p350,r350=small_rrt_star(trials=350)
+assert c100 &lt; inf and c350 &lt;= c100 + 1e-9
+assert p350[0]==(1.,5.) and p350[-1]==(9.,5.)
+assert r350 &gt;= r100 &gt; 0
+print("fixed seed; improving incumbent:", round(c100,3),
+      "to",round(c350,3),"; rewires:",r350)</code></pre><p>断言关注同一随机序列下从 100 次尝试增加到 350 次后<strong>当前最佳路线成本不升高</strong>、起终点正确以及发生了重连；这一小例子不是渐进最优性证明。图中只针对二维点模型进行离散化碰撞测试，不涉及整车轮廓和连续安全认证。</p></section><section id="limits" aria-labelledby="limits-title"><h2 id="limits-title">“渐进”是无限采样极限，而不是能画漂亮曲线</h2><div class="table-wrap"><table><thead><tr><th>说法</th><th>正确的限定</th></tr></thead><tbody><tr><td>RRT* 比 RRT 好</td><td>在适用假设下，RRT* 具有更强的渐进最优性结论；单次运行可能更慢</td></tr><tr><td>越采越优化</td><td>累计已知最好解可以单调不变/改善；不必每批都有提升</td></tr><tr><td>Rewire 一定降低成本</td><td>只有合法且严格更低成本的边才接受；成本更新要传播</td></tr><tr><td>Informed RRT* 用椭圆</td><td>是特定路径长度下界对应的几何结构；换代价要重推下界</td></tr><tr><td>高维方法通用</td><td>状态度量、steer、可行边连接与连续约束决定是否可用</td></tr></tbody></table></div><p>真正的算法基准要报告采样数、碰撞检测次数、邻居搜索成本、最优解或参考上界、成功率与多随机种子分布，不能只贴一条路径就断言优劣。</p></section><section id="references" aria-labelledby="references-title"><h2 id="references-title">主要理论来源</h2><ul><li><a href="https://dspace.mit.edu/entities/publication/77dff1d1-ffd6-42f3-a3a5-fef87a964959">Karaman &amp; Frazzoli (2011), Sampling-based Algorithms for Optimal Motion Planning</a></li><li><a href="https://arxiv.org/abs/1105.1186">论文作者预印本，含连通半径和最优性证明</a></li><li><a href="https://publications.ri.cmu.edu/informed-rrt-optimal-sampling-based-path-planning-focused-via-direct-sampling-of-an-admissible-ellipsoidal-heuristic">Gammell, Srinivasa &amp; Barfoot (2014), Informed RRT*</a></li><li><a href="https://ompl.kavrakilab.org/core/planners.html">OMPL 各种 RRT* 规划器说明</a></li></ul></section><nav class="article-footer" aria-label="章节翻页"><a href="11.html">← 11 · RRT</a><a href="13.html">13 · PRM →</a></nav></article></main></div></body></html>
