@@ -1,0 +1,37 @@
+{
+  "article": "12",
+  "claims": [
+    {
+      "id": "optimal",
+      "claim": "Karaman与Frazzoli证明RRT*和PRM*在指定条件下渐进最优",
+      "kind": "primary-paper",
+      "source_url": "https://dspace.mit.edu/entities/publication/77dff1d1-ffd6-42f3-a3a5-fef87a964959",
+      "locator": "Karaman & Frazzoli 2011",
+      "status": "verified"
+    },
+    {
+      "id": "near",
+      "claim": "理论连接半径与(log n/n)^(1/d)阶有关且gamma须满足阈值要求",
+      "kind": "primary-paper",
+      "source_url": "https://arxiv.org/abs/1105.1186",
+      "locator": "RRT* Near connections and proofs",
+      "status": "verified"
+    },
+    {
+      "id": "informed",
+      "claim": "欧氏路径长度优化可在以S,G为焦点的prolate hyperspheroid集合中直接采样",
+      "kind": "primary-paper",
+      "source_url": "https://publications.ri.cmu.edu/informed-rrt-optimal-sampling-based-path-planning-focused-via-direct-sampling-of-an-admissible-ellipsoidal-heuristic",
+      "locator": "Gammell et al. IROS 2014",
+      "status": "verified"
+    },
+    {
+      "id": "example",
+      "claim": "二维矩形障碍和半径常数10/上限2.1仅为微型程序",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "12.html Python example",
+      "status": "illustrative"
+    }
+  ]
+}

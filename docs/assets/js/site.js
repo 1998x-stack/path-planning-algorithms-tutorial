@@ -39,3 +39,35 @@ document.addEventListener("DOMContentLoaded",()=>{
  for(const b of buttons)b.addEventListener("click",()=>render(Number(b.dataset.weight)));
  render(1);
 });
+
+// Interactive structural tradeoff on sampling-planner overview.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-sampling-choice]");if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-choice]")];
+ const messages={
+   single:"单次规划：优先评估 RRT / RRT*（按可行性与最优性预算区分）。",
+   multi:"多次查询：优先评估 PRM / PRM*（分开计预处理与各次查询成本）。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{
+   const selected=b.dataset.choice;
+   status.textContent=messages[selected];
+   for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));
+ });
+});
+// Collision-validated shortcut geometry illustrated in chapter 15.
+// Both path variants are prevalidated against the fixed rectangle used in the teaching diagram.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-shortcut-demo]");if(!demo)return;
+ const line=demo.querySelector("[data-shortcut-polyline]");
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-path-mode]")];
+ const variants={
+   raw:{points:"67,120 67,196 153,207 327,207 413,196 413,120",text:"原始路径：6 个节点；每段保持不穿越禁区。"},
+   safe:{points:"67,120 153,207 327,207 413,120",text:"已检验捷径：4 个节点；仍经障碍下缘绕行。"}
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{
+   const value=variants[b.dataset.pathMode];
+   line.setAttribute("points",value.points);
+   status.textContent=value.text;
+   for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));
+ });
+});

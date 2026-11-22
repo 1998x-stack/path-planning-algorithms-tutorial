@@ -1,0 +1,37 @@
+{
+  "article": "14",
+  "claims": [
+    {
+      "id": "theory",
+      "claim": "RRT* PRM* 渐进最优性与RRT PRM的差异",
+      "kind": "primary-paper",
+      "source_url": "https://dspace.mit.edu/entities/publication/77dff1d1-ffd6-42f3-a3a5-fef87a964959",
+      "locator": "Karaman & Frazzoli 2011",
+      "status": "verified"
+    },
+    {
+      "id": "benchmark",
+      "claim": "OMPL提供Benchmark framework 支持多规划器、多配置与重复试验",
+      "kind": "official-documentation",
+      "source_url": "https://ompl.kavrakilab.org/benchmark.html",
+      "locator": "How to benchmark planners",
+      "status": "verified"
+    },
+    {
+      "id": "arena",
+      "claim": "Planner Arena可查看基准数据库中的属性、种子和运行结果",
+      "kind": "official-documentation",
+      "source_url": "https://planner-arena.kavrakilab.rice.edu/",
+      "locator": "Planner Arena",
+      "status": "verified"
+    },
+    {
+      "id": "toy",
+      "claim": "脚本只比较同一RRT的目标偏置变化，非跨算法基准",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "14.html Python example",
+      "status": "illustrative"
+    }
+  ]
+}

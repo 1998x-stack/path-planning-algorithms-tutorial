@@ -1,0 +1,37 @@
+{
+  "article": "15",
+  "claims": [
+    {
+      "id": "dp",
+      "claim": "Douglas–Peucker算法通过最大偏差准则递归简化折线",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.3138/FM57-6770-U75U-7727",
+      "locator": "Douglas & Peucker 1973, Cartographica 10(2)",
+      "status": "verified"
+    },
+    {
+      "id": "ompl",
+      "claim": "OMPL PathSimplifier有reduceVertices、shortcutPath和smoothBSpline接口",
+      "kind": "official-documentation",
+      "source_url": "https://ompl.kavrakilab.org/classompl_1_1geometric_1_1PathSimplifier.html",
+      "locator": "Class reference",
+      "status": "verified"
+    },
+    {
+      "id": "implementation",
+      "claim": "OMPL具体的shortcut判断与curve smoothing实现应参考源码",
+      "kind": "official-implementation",
+      "source_url": "https://ompl.kavrakilab.org/PathSimplifier_8cpp_source.html",
+      "locator": "PathSimplifier.cpp",
+      "status": "verified"
+    },
+    {
+      "id": "counterexample",
+      "claim": "DP宽容差将绕障碍有效折线简化为撞墙线段，short-cut需要单独碰撞验证",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "15.html Python assertions and SVG diagrams",
+      "status": "derived"
+    }
+  ]
+}
