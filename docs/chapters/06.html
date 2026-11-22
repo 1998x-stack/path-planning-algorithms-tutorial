@@ -1,296 +1,47 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第6章 Dijkstra算法</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html" class="active">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html">第20章 多目标路径规划</a></li>
-            <li><a href="21.html">第21章 多机器人协调</a></li>
-            <li><a href="22.html">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="在带权图上寻找一条真正成本最低的路线：从松弛、堆和不变量开始，弄清楚正确性、复杂度与不适用情形。"><title>06 · Dijkstra：为什么最小代价节点可以定稿？ — 路径规划算法</title><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="07.html">下一章</a></nav></div></header><div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#paradox">为什么边数少也可能更贵</a><a href="#relax">松弛：唯一关键操作</a><a href="#invariant">为什么弹出后就能确定</a><a href="#trace">队列与距离的逐轮变化</a><a href="#implementation">可运行最短路径程序</a><a href="#complexity">时间与空间复杂度</a><a href="#limits">适用边界与错误检查</a><a href="#references">资料与原始来源</a></nav></details></aside><main class="article-main" id="content"><article><header class="article-header"><p class="article-meta">GRAPH SEARCH / 06 OF 28</p><h1>Dijkstra：为什么最小代价节点可以定稿？</h1><p class="dek">在带权图上寻找一条真正成本最低的路线：从松弛、堆和不变量开始，弄清楚正确性、复杂度与不适用情形。</p></header><section id="paradox" aria-labelledby="paradox-title"><h2 id="paradox-title">为什么边数少的路径反而更贵？</h2><p>在一张仓库交通图上，S→B→G 只有两段路，但第一段收费（或风险代价）为 5，第二段为 2，总成本是 7。S→A→B→G 有三段，成本却是 2+1+2=5。<strong>最少经过几条边</strong>与<strong>边权相加最小</strong>不是同一优化目标；BFS 无法根据非统一权重作出正确选择。</p><p>设图 G=(V,E)，每条有向边 (u,v) 的代价 w(u,v)≥0。目标不是最短跳数，而是在从 s 到 t 的可行路径中，找到所有边权之和最小者。如果行驶代价按米、秒、能量或风险定义，也要保证累加方式有意义。</p><figure><p class="figure-kicker">SHORTEST PATH · 06</p><img src="../assets/figures/06-weighted-graph.svg" loading="lazy" alt="有向图 S、A、B、G。三边路径 S→A→B→G 总成本5，另一两边路线 S→B→G 成本7。"><figcaption>蓝绿色高亮最小成本路径 S→A→B→G = 2+1+2=5。直达 S→B 的权重为 5，路径 S→B→G 的总成本是 7；这些数字仅是手算教学图。</figcaption></figure></section><section id="relax" aria-labelledby="relax-title"><h2 id="relax-title">松弛：唯一关键操作</h2><p>从源点 s 开始，建立暂定距离 d(s)=0，其余顶点 d=∞。每次选择暂定距离最小的顶点 u，尝试通过边 (u,v) 改进 v 的距离。如果经过 u 的路线更便宜，就覆盖距离并记录父节点。这个动作叫<strong>松弛（relaxation）</strong>。</p><div class="equation" tabindex="0" aria-label="(1) 单边松弛更新"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>d</mi><mo>(</mo><mi>v</mi><mo>)</mo><mo>←</mo><mi>min</mi><mo>⁡</mo><mo>(</mo><mi>d</mi><mo>(</mo><mi>v</mi><mo>)</mo><mo>,</mo><mi>d</mi><mo>(</mo><mi>u</mi><mo>)</mo><mo>+</mo><mi>w</mi><mo>(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo>)</mo><mo>)</mo></mrow></math><span class="equation-label">(1) 单边松弛更新</span></div><p>注意这里的 <code>d(v)</code> 是目前<strong>发现的路径</strong>所给出的上界，不是下界；只有在合适的非负权条件下、节点从最小堆中以其有效最小距离弹出时，才可将 d(u) 认定为最终最短距离。父节点 <code>parent[v]=u</code> 与数值一起更新，用于结束时回溯路线。</p><figure><p class="figure-kicker">SHORTEST PATH · 06</p><img src="../assets/figures/06-relaxation-steps.svg" loading="lazy" alt="三幅阶段图：发现 S 后先更新 A=2 B=5，弹出 A 后 B 被松弛为3，最后 B 更新 G 为5。"><figcaption>逐阶段演示暂定代价如何下降：B 从 5 改为 3，G 最终变为 5。每一条队列条目对应一种目前已知的候选成本，不代表已经被确认的最终值。</figcaption></figure></section><section id="invariant" aria-labelledby="invariant-title"><h2 id="invariant-title">为什么弹出节点后可以把它“定稿”？</h2><p>核心不变量：当尚未定稿的顶点中，u 具有最小暂定距离 d(u)，并且所有边权非负时，不可能存在一条经过尚未定稿顶点、再返回 u、且总代价更低的路线。理由是：这样的路线第一次穿越到未定稿集合时，已走过的成本不小于此前已定稿前缀的成本，后面的非负边又不可能将其降低到 d(u) 以下。</p><p>于是 Dijkstra 通过“全局最小的有效堆顶 + 非负边权”实现最短路径。<strong>负边可能使已定稿的节点以后出现更优距离</strong>，破坏这条论证；有负权时应改用适当的算法，例如 Bellman–Ford，并另外检测负环。</p><div class="note"><p><strong>终止条件：</strong>如果只求 s 到 t，可以在 t 的有效堆项被弹出并确认时停止；仅在 t 被首次“发现”或入堆时停止是不正确的。</p></div></section><section id="trace" aria-labelledby="trace-title"><h2 id="trace-title">按照真实的堆顺序走一遍</h2><p>在同一小图上，将初始状态、第一次松弛、替换更好成本、最终确认为最短路的过程拆开。最小堆按 <code>(cost, node)</code> 排序：弹出 S(0)，加入 A(2)、B(5)；弹出 A(2)，用更好的 B(3) 更新 B，并加入 G(9)；弹出 B(3)，将 G 更新到 5；最后弹出 G(5)，停止。旧的 B(5)、G(9) 堆项不需要手动删除，检查是否与当前有效距离相等即可丢弃。</p><figure><p class="figure-kicker">SHORTEST PATH · 06</p><img src="../assets/figures/06-priority-queue.svg" loading="lazy" alt="四个不同搜索时刻的最小堆和 confirmed 集合，说明新堆项可与旧堆项共存并被跳过。"><figcaption>旧条目是实现中的常见现象，不应将“堆中有两个 B”误认为算法错误。绿色数字是有效暂定距离，灰字表示过期项。</figcaption></figure><p>在单位权网格中 Dijkstra 会表现为按距离扩张的层状前沿；若地图包含高代价区域，扩张前沿不再是几何圆形。在成本累计规则相同且启发 h≡0 时，Dijkstra 也等价于通常讨论的均匀代价搜索。</p></section><section id="implementation" aria-labelledby="implementation-title"><h2 id="implementation-title">完整而有限的 Python 实现</h2><p>这里采用 Python 3.10+ 标准库 <code>heapq</code>，邻接表以 <code>graph[u] = [(v,w),...]</code> 表示<strong>有向边</strong>。无向图需显式提供反向边。为了避免“过期堆项误被定稿”，在堆顶弹出后先比较当前最佳成本，并维护 settled 集合。</p><pre><code>from heapq import heappush, heappop
+from math import inf
 
-        <p>大家好！上一章我们学习了启发式搜索的概念，看到了贪心最佳优先搜索如何利用"方向感"来加速搜索。但 GBFS 有一个致命问题：它找到的路径不保证是最短的。有时候，我们需要的就是<strong>严格的最短路径</strong>——比如芯片布线、交通导航或移动机器人需要精确计算能耗成本的场景。</p>
-
-        <p>这就是我们今天的主角——<strong>Dijkstra 算法</strong>登场的地方。Edsger W. Dijkstra 于 1956 年在阿姆斯特丹的一家咖啡馆里想出了这个算法，当时他正和未婚妻一起喝咖啡。他后来写道："1956年，在一个阳光明媚的上午，我和我的未婚妻在阿姆斯特丹的一家露天咖啡馆里坐下来喝咖啡——就在那里我设计出了这个最短路径算法。" 据说他花了大约 20 分钟。而直到今天，70 年过去了，Dijkstra 算法仍然是图论中最基础、最重要的算法之一。</p>
-
-        <p>讲一个亲身经历。我研究生毕业后的第一个项目是为一家物流公司做 AGV 导航。当时我直接用了 A*（觉得 A* 比 Dijkstra 更新，肯定更好），忽略了公司的仓库地图中障碍物极多、通道非常曲折的环境特点。A* 的启发函数在这种环境中几乎不提供任何有效信息（因为从任何一个节点看，终点的直线方向都被障碍物挡住了），反而因为频繁的启发式计算增加了开销。后来我换成了 Dijkstra——搜索时间反而缩短了 10%，路径也更稳定。这个故事告诉我们一个道理：<strong>不要盲目追求"高级"算法，理解每个算法的假设和适用场景，选择对的才最重要</strong>。</p>
-
-        <h2>Dijkstra的核心思想</h2>
-
-        <p>Dijkstra 算法要解决的问题是：<strong>在一个带权有向图（或无向图）中，找到从起点到所有其他节点的最短路径</strong>（特别是到目标节点的最短路径）。</p>
-
-        <p>它的核心思想建立在三个基石上：</p>
-
-        <ul>
-            <li><strong>最优子结构（Optimal Substructure）</strong>——最短路径的子路径也是最短路径。也就是说，如果 A→C 是最短路径，且经过 B，那么 A→B 一定是所有 A→B 路径中最短的。这个性质保证了我们可以"增量地"构建最短路径。</li>
-            <li><strong>贪心扩展（Greedy Expansion）</strong>——每次从候选节点中选择"当前已知距离最小的"节点进行扩展。这个"当前最小"一旦确定就不会再改变（因为所有边权重非负）。</li>
-            <li><strong>优先队列（Priority Queue）</strong>——用优先队列来高效维护候选节点的距离顺序。每次取出距离最小的节点，通过它来"松弛"它的邻居。</li>
-        </ul>
-
-        <p>这种"一层一层向外扩展，但每次都选最近的"的策略，使得 Dijkstra 的搜索形状类似于一个<strong>以起点为中心的圆形波纹</strong>——它均匀地向所有方向扩张，直到波纹触碰到终点为止。</p>
-
-        <h2>算法步骤详解</h2>
-
-        <p>让我们通过一个具体的栅格地图例子来一步步理解 Dijkstra 的执行过程。</p>
-
-        <p>假设我们有一张 5×5 的栅格地图，起点在左上角 (0,0)，终点在右下角 (4,4)，中间有一个障碍物。我们使用 4-连通模型，每步移动的代价为 1：</p>
-
-        <ol>
-            <li><strong>初始化：</strong>
-                <ul>
-                    <li>所有节点的距离设为无穷大（∞）</li>
-                    <li>起点的距离设为 0</li>
-                    <li>将所有节点加入优先队列（距离小的优先）</li>
-                    <li>创建一个空的"已访问"集合</li>
-                </ul>
-            </li>
-            <li><strong>第一步：</strong>从队列中取出距离最小的节点——起点 (0,0)，距离 0。检查它的邻居：上（越界）、下 (1,0)、左（越界）、右 (0,1)。如果邻居的当前距离 > 起点距离 + 1，更新为 0+1=1。将 (1,0) 和 (0,1) 在队列中的距离更新为 1。</li>
-            <li><strong>第二步：</strong>队列中现在有多哥距离为 1 的节点。取出其中一个，比如 (0,1)，距离 1。检查其邻居：(0,0) 已访问，跳过；(0,2) 空闲，当前距离 ∞ > 1+1=2，更新为 2；(1,1) 是障碍物，跳过。更新队列。</li>
-            <li><strong>继续：</strong>这个过程持续进行——每次取出距离最小的节点，检查并更新其邻居。算法像涟漪一样扩散，直到取出的节点恰好是终点 (4,4)。</li>
-            <li><strong>回溯路径：</strong>从终点开始，沿着"父节点"指针一路回溯到起点，得到最短路径。</li>
-        </ol>
-
-        <p>注意一个关键点：当 Dijkstra 第一次"取出"终点时，它到起点的距离就是最短距离。后续即使有其他路径到达终点，也不可能比这个距离更小了——因为在负权边不存在的条件下，所有未被处理的节点距离都 ≥ 当前取出的最小距离。</p>
-
-        <div class="highlight">
-            <strong>Dijkstra 的"Aha"时刻：</strong>这个算法最精妙的地方在于"一个节点的最短距离一旦被确认，就永远不会被推翻"。为什么？因为优先队列保证我们总是扩展"当前已知距离最小"的节点。如果这个节点有更短的距离，它应该更早被扩展才对。而所有边权重非负，意味着不可能在经过另一个节点之后回头发现一条更短的路。这个"非负边"的前提极其重要——如果有负权边，Dijkstra 会给出错误结果，需要改用 Bellman-Ford 算法。
-        </div>
-
-        <h2>手写Dijkstra</h2>
-
-        <p>现在我们来亲手实现一个完整的 Dijkstra 算法。它只依赖 Python 标准库中的 <code>heapq</code>（堆队列），不需要任何第三方库。</p>
-
-        <pre><code>import heapq
-import math
-
-def dijkstra(grid, start, goal):
-    """在栅格地图上执行 Dijkstra 最短路径搜索。
-
-    Args:
-        grid: 2D 列表，0=可通行，1=障碍物
-        start: (row, col) 起点坐标
-        goal: (row, col) 终点坐标
-
-    Returns:
-        (path, explored_count): 路径点列表和扩展节点数
-    """
-    rows, cols = len(grid), len(grid[0])
-
-    # 距离数组，初始为无穷大
-    dist = [[math.inf] * cols for _ in range(rows)]
-    dist[start[0]][start[1]] = 0
-
-    # 父节点记录，用于回溯路径
-    parent = {}
-
-    # 优先队列：(distance, row, col)
-    # heapq 会自动按第一个元素排序
-    pq = [(0, start[0], start[1])]
-
-    # 已确认最短距离的节点集合
-    visited = set()
-
-    # 4-连通方向
-    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-
-    explored_count = 0
-
+def dijkstra(graph, start, goal):
+    """有向/无向邻接表，所有边权必须非负。"""
+    for edges in graph.values():
+        for _, weight in edges:
+            if weight &lt; 0:
+                raise ValueError("Dijkstra requires nonnegative edges")
+    distance, parent = {start: 0}, {start: None}
+    pq = [(0, start)]
+    settled = set()
     while pq:
-        d, r, c = heapq.heappop(pq)
+        cost, u = heappop(pq)
+        if u in settled or cost != distance.get(u, inf):
+            continue  # 去除过期队列项
+        settled.add(u)
+        if u == goal:
+            route = []
+            while u is not None:
+                route.append(u)
+                u = parent[u]
+            return cost, route[::-1], settled
+        for v, w in graph.get(u, []):
+            candidate = cost + w
+            if candidate &lt; distance.get(v, inf):
+                distance[v] = candidate
+                parent[v] = u
+                heappush(pq, (candidate, v))
+    return inf, None, settled
 
-        # 如果这个节点已经被确认过了，跳过（延迟删除）
-        if (r, c) in visited:
-            continue
-
-        visited.add((r, c))
-        explored_count += 1
-
-        # 到达终点
-        if (r, c) == goal:
-            # 回溯路径
-            path = []
-            node = (r, c)
-            while node in parent:
-                path.append(node)
-                node = parent[node]
-            path.append(start)
-            return path[::-1], explored_count
-
-        # 检查四个方向的邻居
-        for dr, dc in directions:
-            nr, nc = r + dr, c + dc
-
-            # 检查边界和障碍物
-            if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] == 0:
-                new_dist = d + math.sqrt(dr**2 + dc**2)  # 实际距离
-
-                if new_dist < dist[nr][nc]:
-                    dist[nr][nc] = new_dist
-                    parent[(nr, nc)] = (r, c)
-                    heapq.heappush(pq, (new_dist, nr, nc))
-
-    # 队列为空仍未找到终点——不存在可行路径
-    return None, explored_count
-
-# 使用示例
-if __name__ == "__main__":
-    # 创建一个简单的 6x6 地图，中间有一个障碍物
-    grid = [
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 1, 1, 0, 0],
-        [0, 0, 1, 1, 0, 0],
-        [0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0],
-    ]
-    start = (0, 0)
-    goal = (5, 5)
-
-    result = dijkstra(grid, start, goal)
-    if result[0]:
-        path, explored = result
-        print(f"找到路径！经过 {len(path)} 个节点，扩展了 {explored} 个节点")
-        print(f"路径: {path}")
-    else:
-        print("未找到路径")</code></pre>
-
-        <p>这段代码的核心机制值得仔细分析：</p>
-        <ul>
-            <li><code>dist</code> 数组存储从起点到每个节点的当前已知最短距离</li>
-            <li><code>pq</code> 优先队列保证我们总是扩展当前距离最小的节点</li>
-            <li><code>visited</code> 集合确保每个节点只被"确认"一次——这是 Dijkstra 正确性的关键</li>
-            <li>当 <code>new_dist < dist[nr][nc]</code> 时，说明我们找到了一条更短的路，更新之——这就是"松弛操作（Relaxation）"</li>
-        </ul>
-
-        <p>运行时，注意 <code>explored_count</code> 的值。你会看到 Dijkstra 扩展了大部分与起点连通的区域——因为它没有启发式引导，只能均匀地向各个方向扩散。这也是 Dijkstra 的主要缺点。</p>
-
-        <h2>复杂度分析与局限</h2>
-
-        <p>Dijkstra 算法的时间复杂度高度依赖于优先队列的实现方式：</p>
-
-        <table>
-            <tr>
-                <th>优先队列实现</th>
-                <th>时间复杂度</th>
-                <th>说明</th>
-            </tr>
-            <tr>
-                <td>二叉堆（Binary Heap）</td>
-                <td>O((V+E)log V)</td>
-                <td>最常用，Python 的 heapq 就是它</td>
-            </tr>
-            <tr>
-                <td>斐波那契堆（Fibonacci Heap）</td>
-                <td>O(E + V log V)</td>
-                <td>理论最优，但常数大，实际很少用</td>
-            </tr>
-            <tr>
-                <td>数组（Array / Unsorted List）</td>
-                <td>O(V²)</td>
-                <td>适合稠密图，但栅格地图稀疏不适用</td>
-            </tr>
-        </table>
-
-        <p>在路径规划中，V 是栅格地图的总格子数，E 约等于 4V（4-连通）或 8V（8-连通），所以复杂度大致为 O(V log V)。对于一张 1000×1000 的地图，V=10⁶，log V ≈ 20，复杂度约 2×10⁷ 次操作——现代计算机大约需要几十到几百毫秒。</p>
-
-        <p>但 Dijkstra 的真正问题不是时间复杂度的绝对值，而是<strong>它的搜索范围</strong>。因为没有任何启发式引导，Dijkstra 大致会扩展所有距离起点比终点近的节点——如果终点距离起点 500 步，Dijkstra 会扩展起点周围半径 500 步内的全部区域。在 2D 栅格中这意味着约 π×500² ≈ 785,000 个节点被扩展。如果地图非常大（比如城市级导航），这个数字可以轻松达到数千万。</p>
-
-        <div class="tip">
-            <strong>BFS vs Dijkstra：</strong>很多人以为 BFS 和 Dijkstra 是两种完全不同的算法，但实际上 BFS 是 Dijkstra 在"所有边权都是 1"时的特例。BFS 用队列（先入先出）替代优先队列，因为当所有边权相同时，先被发现的节点一定是距离最近的。理解了这个关系，你就明白：BFS 适用于无权图（或所有边权相等），Dijkstra 适用于带权图（边权非负）。
-        </div>
-
-        <p>下表更清晰地展示了两者的关系：</p>
-
-        <table>
-            <tr>
-                <th>特性</th>
-                <th>BFS</th>
-                <th>Dijkstra</th>
-            </tr>
-            <tr>
-                <td>数据结构</td>
-                <td>队列（Queue）</td>
-                <td>优先队列（Priority Queue）</td>
-            </tr>
-            <tr>
-                <td>边权支持</td>
-                <td>仅限无权图（所有边权相等）</td>
-                <td>任意非负权边</td>
-            </tr>
-            <tr>
-                <td>搜索形状</td>
-                <td>圆形均匀扩散</td>
-                <td>圆形均匀扩散（受边权影响）</td>
-            </tr>
-            <tr>
-                <td>扩展节点数</td>
-                <td>O(最短路径步数²)</td>
-                <td>O(最短路径距离²)</td>
-            </tr>
-            <tr>
-                <td>时间</td>
-                <td>O(V + E)</td>
-                <td>O((V+E)log V)</td>
-            </tr>
-            <tr>
-                <td>路径最优性</td>
-                <td>边数最少</td>
-                <td>路径总代价最小</td>
-            </tr>
-        </table>
-
-        <div class="highlight">
-            <strong>Dijkstra 是 A* 的特例——当 h(n) = 0 时：</strong>这句话在路径规划社区中广为流传，也揭示了两者深刻的联系。Dijkstra 的"距离"函数其实是 f(n) = g(n) + 0，而 A* 是 f(n) = g(n) + h(n)。当启发函数 h(n) 恒为 0（显然这既是一致也可纳的），A* 退化成了 Dijkstra。所以你在实现 A* 时，可以不写两个分支——只需要把 h(n) 设成 0 就得到了 Dijkstra。这个理解让我们可以写一个"统一框架"来处理 Dijkstra 和 A* 两种算法。
-        </div>
-
-        <p>Dijkstra 算法在实际系统中仍然有它的价值。当环境中障碍物极多、通道极其曲折时，启发式函数几乎无法提供有效信息——因为"直线方向"总是被障碍物挡住，此时 Dijkstra 和 A* 的扩展范围差不多，但 Dijkstra 省去了计算启发函数的开销，反而可能更快。另外，Dijkstra 还有一个独特的优势：<strong>它天然可以计算从起点到所有节点的最短路径</strong>（称为"单源最短路径"），这在某些场景中非常有用。</p>
-
-        <p>本章我们从零实现了 Dijkstra 算法，理解了它"基于最优子结构 + 贪心扩展 + 优先队列"的优美设计。我们分析了它的复杂度和两个主要局限：均匀扩散导致的搜索范围过大，以及无法利用方向信息。</p>
-
-        <p>下一章终于到了本课程的重头戏——<strong>A* 算法</strong>。它将 Dijkstra 的距离记录与启发式估计结合起来，创造出路径规划领域最经典的算法。你会看到，只需在 Dijkstra 的 f(n) = g(n) 中加入 h(n) 项，搜索的行为就会发生质的变化——"圆形波纹"变成了指向目标的"椭圆"，搜索效率提升数倍甚至数十倍。</p>
-
-        <div class="footer-nav">
-            <a href="05.html">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="07.html">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+graph = {
+    "S": [("A", 2), ("B", 5)],
+    "A": [("B", 1), ("G", 7)],
+    "B": [("G", 2)],
+    "G": [],
+}
+cost, path, settled = dijkstra(graph, "S", "G")
+assert cost == 5
+assert path == ["S", "A", "B", "G"]
+assert dijkstra(graph, "G", "S")[1] is None  # 有向边
+try:
+    dijkstra({"S": [("G", -1)]}, "S", "G")
+    raise AssertionError("negative edge should be rejected")
+except ValueError:
+    pass
+print("optimal cost:", cost, "route:", " → ".join(path))</code></pre><p>该示例的断言覆盖了最优总代价、路径回溯、有向不可逆、负边拒绝四个条件。它不包含机器人足迹、时间窗、实时变更与几何碰撞；这些需要在生成边时另外处理。</p></section><section id="complexity" aria-labelledby="complexity-title"><h2 id="complexity-title">复杂度与数据结构的真实区别</h2><div class="table-wrap"><table><thead><tr><th>实现</th><th>常见时间界</th><th>额外空间</th></tr></thead><tbody><tr><td>邻接矩阵 + 线性扫描</td><td>O(V²)</td><td>矩阵 O(V²)</td></tr><tr><td>邻接表 + 二叉堆</td><td>O((V+E) log V)，允许重复堆项时更精确可记 O((V+E)log(V+E))</td><td>O(V+E) 含图与队列条目</td></tr><tr><td>邻接表 + 支持 decrease-key 的堆</td><td>取决于数据结构；如 Fibonacci heap 的理论界 O(E+V log V) 摊还</td><td>与实现相关</td></tr></tbody></table></div><p>这些都是针对显式图计算的理论数量级，并不包括地图构建、碰撞检测或磁盘 I/O。图稀疏时，二叉堆实现通常比全矩阵扫描更有吸引力；不能不做实测就给出统一的运行时间倍数。</p></section><section id="limits" aria-labelledby="limits-title"><h2 id="limits-title">什么时候 Dijkstra 不是正确选择？</h2><ol><li><strong>边有负权：</strong>其节点定稿证明失效；负环还会导致“最短路”无定义。</li><li><strong>代价随时间变化：</strong>静态单一图无法表达提前到达时遇到不同拥堵或移动障碍。</li><li><strong>状态表示不完整：</strong>同位置不同朝向或速度并不一定可以视为同一顶点。</li><li><strong>目标很远且已有可信方向信息：</strong>若有一致的下界启发式，A* 往往可以更有目标地展开，但不是每张图都更快。</li></ol><p>工程验证应同时保存输入图、起终点、边权定义、路线成本、弹出次数与时间，做到比较的是相同问题，而非不同模型之间的数字。</p></section><section id="references" aria-labelledby="references-title"><h2 id="references-title">资料与原始来源</h2><ul><li><a href="https://doi.org/10.1007/BF01386390">Edsger W. Dijkstra, <cite>A Note on Two Problems in Connexion with Graphs</cite>, Numerische Mathematik 1, 269–271 (1959)</a></li><li><a href="https://msl.cs.uiuc.edu/~lavalle/planning/">Steven M. LaValle, <cite>Planning Algorithms</cite>, Chapter 2: Discrete Planning</a></li><li><a href="https://www.redblobgames.com/pathfinding/a-star/introduction.html">Red Blob Games, Introduction to A*: BFS / Dijkstra / A*</a></li></ul></section><nav class="article-footer" aria-label="章节翻页"><a href="05.html">← 05 · 启发式搜索</a><a href="07.html">07 · A* 搜索 →</a></nav></article></main></div></body></html>
