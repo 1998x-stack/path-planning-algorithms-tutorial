@@ -117,3 +117,73 @@ document.addEventListener("DOMContentLoaded",()=>{
  for(const b of buttons)b.addEventListener("click",()=>render(b.dataset.paretoMode));
  render("length");
 });
+
+// Chapter 21: explain the two high-level branches for the first CBS conflict.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-cbs-demo]"); if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-cbs-mode]")];
+ const labels={
+  root:"根节点：两机器人在 t=1 占据中间格，发生顶点冲突。",
+  a:"分支 A：禁止机器人 A 在 t=1 占据 (1,0)；低层只重规划 A，继续检查全部冲突。",
+  b:"分支 B：禁止机器人 B 在 t=1 占据 (1,0)；低层只重规划 B，继续检查全部冲突。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{
+  status.textContent=labels[b.dataset.cbsMode];
+  for(const x of buttons)x.setAttribute("aria-pressed",String(x===b));
+ });
+});
+// Chapter 22: controls are actual outputs of the deterministic 81-sequence example.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-mpc-demo]"); if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-mpc-mode]")];
+ const outputs={
+  initial:"初始预测：控制 a=[1,1,0,-1] m/s²；预测末端 x=1.775 m。",
+  replan:"受扰动后重规划：实测 x=0.225 m、v=0.5 m/s；新控制 a=[1,0,0,-1] m/s²；预测末端 x=1.975 m。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{
+  status.textContent=outputs[b.dataset.mpcMode];
+  for(const x of buttons)x.setAttribute("aria-pressed",String(x===b));
+ });
+});
+// Chapter 23: symptom to reproducible diagnostic evidence, no automatic root-cause claim.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-debug-demo]"); if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-debug-mode]")];
+ const diagnostics={
+  wall:"路径穿墙：检查边碰撞、足迹膨胀、四/八邻域切角规则和地图原点。",
+  oscillate:"路线频繁跳变：对齐地图更新时间、重规划触发、控制周期和状态估计抖动。",
+  pose:"RViz 位姿偏移：检查 TF map→odom→base_link、Fixed Frame、frame_id 与消息时间戳。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{
+  status.textContent=diagnostics[b.dataset.debugMode];
+  for(const x of buttons)x.setAttribute("aria-pressed",String(x===b));
+ });
+});
+// Chapter 24: show the denominator error without altering the underlying sample.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-benchmark-demo]"); if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-benchmark-mode]")];
+ const records=Array.from({length:10},(_,i)=>i<6);
+ const successes=records.filter(Boolean).length;
+ const modes={
+  all:"正确口径："+successes+" / "+records.length+" = "+(100*successes/records.length).toFixed(0)+"%；4 次失败仍保留在记录中。",
+  success:"错误筛选："+successes+" / "+successes+" = 100%；将 4 次失败从分母删除会产生选择偏差。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{
+  status.textContent=modes[b.dataset.benchmarkMode];
+  for(const x of buttons)x.setAttribute("aria-pressed",String(x===b));
+ });
+});
+// Chapter 25: different preflight stages must not be mistaken for safety approval.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-deployment-demo]"); if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-deploy-mode]")];
+ const gates={
+  sim:"仿真：检查地图、足迹、TF、路径碰撞、控制收敛和确定性重放。",
+  robot:"低速实车：除仿真证据外，验证硬件限速、急停与看门狗、TF/传感器时延、制动距离、隔离场地和故障注入；需人工批准。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{
+  status.textContent=gates[b.dataset.deployMode];
+  for(const x of buttons)x.setAttribute("aria-pressed",String(x===b));
+ });
+});
