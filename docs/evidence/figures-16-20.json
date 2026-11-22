@@ -1,0 +1,133 @@
+{
+  "batch": "16-20",
+  "figures": [
+    {
+      "file": "16-velocity-window.svg",
+      "chapter": "16",
+      "concept": "静态速度集、动态可达窗口与制动安全集合",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "16-arc-rollouts.svg",
+      "chapter": "16",
+      "concept": "候选速度积分成短时弧线并进行碰撞筛选",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "16-braking-admissibility.svg",
+      "chapter": "16",
+      "concept": "制动距离与可用净空的比较",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "17-field-superposition.svg",
+      "chapter": "17",
+      "concept": "目标吸引势与障碍斥力势的叠加",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "17-potential-gradient.svg",
+      "chapter": "17",
+      "concept": "吸引与斥力向量合成",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "17-local-minimum.svg",
+      "chapter": "17",
+      "concept": "非目标平衡点的力抵消反例",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "18-se2-state.svg",
+      "chapter": "18",
+      "concept": "SE(2)位姿中位置与朝向的状态差异",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "18-curvature-bound.svg",
+      "chapter": "18",
+      "concept": "最小转弯半径与曲率上限",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "18-dubins-lsr.svg",
+      "chapter": "18",
+      "concept": "Dubins LSR 前进曲线结构",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "18-reeds-shepp-cusp.svg",
+      "chapter": "18",
+      "concept": "Reeds-Shepp 倒车和 cusp 换向",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "19-space-time.svg",
+      "chapter": "19",
+      "concept": "移动障碍在空间时间中的占据带",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "19-relative-velocity.svg",
+      "chapter": "19",
+      "concept": "恒速相对运动的最近接近几何",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "19-replanning-loop.svg",
+      "chapter": "19",
+      "concept": "感知、预测、规划与短时执行闭环",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "20-multigoal-vs-multiobjective.svg",
+      "chapter": "20",
+      "concept": "多站点访问与多目标函数的区别",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "20-objective-vector.svg",
+      "chapter": "20",
+      "concept": "路径长度、风险与能耗成本向量",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "file": "20-pareto-front.svg",
+      "chapter": "20",
+      "concept": "非支配解与 Pareto 前沿",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    }
+  ]
+}
