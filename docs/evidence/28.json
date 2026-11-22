@@ -11,8 +11,8 @@
     },
     {
       "id": "rep105",
-      "claim": "REP-105 defines map, odom and base_link coordinate frame semantics for mobile platforms",
-      "kind": "standard",
+      "claim": "ROS REP-105 documents naming conventions and semantic meanings for map, odom and base_link frames, including their typical parent-child relationship.",
+      "kind": "ros-rep",
       "source_url": "https://reps.openrobotics.org/rep-0105/",
       "locator": "ROS REP-105",
       "status": "verified"

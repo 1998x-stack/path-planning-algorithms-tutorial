@@ -3,7 +3,7 @@
   "claims": [
     {
       "id": "dagger",
-      "claim": "DAgger aggregates expert labels on learner-induced state distributions and addresses sequential covariate shift",
+      "claim": "Canonical DAgger iteratively samples trajectories from an expert/learner mixture policy, queries expert labels on visited states, and aggregates the data to address sequential covariate shift.",
       "kind": "primary-paper",
       "source_url": "https://proceedings.mlr.press/v15/ross11a.html",
       "locator": "Ross, Gordon & Bagnell, AISTATS 2011, abstract and algorithm",
