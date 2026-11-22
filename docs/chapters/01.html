@@ -1,280 +1,34 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第1章 什么是路径规划</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html" class="active">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html">第20章 多目标路径规划</a></li>
-            <li><a href="21.html">第21章 多机器人协调</a></li>
-            <li><a href="22.html">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="一条从起点到终点的曲线，什么时候才算机器人真正能走的路？从问题定义、运动约束与代价函数开始，搭建规划的统一语言。"><title>01 · 什么是路径规划？ — 路径规划算法</title><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="02.html">下一章</a><a href="https://github.com/1998x-stack/path-planning-algorithms-tutorial">GitHub</a></nav></div></header><div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#problem">一条线为什么还不够</a><a href="#model">规划问题的五个对象</a><a href="#pipeline">从地图到控制</a><a href="#families">算法究竟分几类</a><a href="#example">两个候选路线</a><a href="#code">最小可运行实验</a><a href="#pitfalls">边界与常见误区</a><a href="#references">参考资料</a></nav></details></aside><main class="article-main" id="content"><article><header class="article-header"><p class="article-meta">FOUNDATIONS / 01 OF 28</p><h1>什么是路径规划？</h1><p class="dek">一条从起点到终点的曲线，什么时候才算机器人真正能走的路？从问题定义、运动约束与代价函数开始，搭建规划的统一语言。</p></header><section id="problem" aria-labelledby="problem-title"><h2 id="problem-title">一条线为什么还不够</h2><p>设想一台轮式机器人从仓库入口到达货架。二维地图上的两点之间，当然能画一条不穿过货架的曲线。但这条曲线可能穿过机器人自身的外轮廓、要求车体瞬间横移，或者在拐角处需要无限大的角速度。<strong>避开障碍、符合运动学、可被控制器跟踪</strong>是不同的条件。</p><p>路径规划首先回答：在允许的状态集合里，是否存在一条连续、无碰撞的连接？如果加上时间、速度、加速度以及动态障碍，问题就进入运动规划和轨迹规划的范畴。它们彼此相关，但不应混用。</p><figure><p class="figure-kicker">ILLUSTRATION · 01</p><img src="../assets/figures/01-path-vs-trajectory.svg" alt="左图为绕开障碍的几何路径；右图在路径上加时间采样和车头方向，显示相同几何路线仍需要满足速度与转向约束。" loading="lazy"><figcaption>示意：左边只规定经过哪些位置；右边规定何时、以什么姿态和速度经过。时间标记不代表实际实测车辆轨迹。</figcaption></figure></section><section id="model" aria-labelledby="model-title"><h2 id="model-title">规划问题的五个对象</h2><p>把任务形式化，可先定义<strong>状态/配置</strong> q、起点 q<sub>s</sub>、目标集合 G、允许的自由空间 C<sub>free</sub>，以及评价路线的代价函数 J。路径是参数化曲线 γ:[0,1]→C<sub>free</sub>；若是带时间的轨迹，还需明确 q(t) 与系统动力学。</p><div class="equation" tabindex="0" aria-label="路径必须连接起终点，并全程处于自由空间"><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><mrow><mi>γ</mi><mo>(</mo><mn>0</mn><mo>)</mo><mo>=</mo><msub><mi>q</mi><mi>s</mi></msub><mo>,</mo><mspace width="1em"/><mi>γ</mi><mo>(</mo><mn>1</mn><mo>)</mo><mo>∈</mo><mi>G</mi><mo>,</mo><mspace width="1em"/><mi>γ</mi><mo>(</mo><mi>s</mi><mo>)</mo><mo>∈</mo><msub><mi>C</mi><mtext>free</mtext></msub><mspace width=".3em"/><mo>∀</mo><mi>s</mi><mo>∈</mo><mo>[</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo>]</mo></mrow></math><span class="equation-label">(1) 可行路径的基本约束</span></div><p>只要需要优化，就还要选择评价指标：长度、耗时、能耗、风险、舒适性或其加权组合。不同的代价函数通常产生不同的“最优路线”。对于运动规划，连续性与碰撞检查也不能仅靠网格端点保证。</p><div class="note"><p><strong>概念边界：</strong>几何路径是空间顺序；轨迹增加时间参数；带动力学的运动规划还需符合状态转移方程及控制约束。术语在工程产品中可能存在重叠，使用时应说明自己的模型。</p></div></section><section id="pipeline" aria-labelledby="pipeline-title"><h2 id="pipeline-title">从地图到控制</h2><p>完整的规划系统通常将真实世界的感知结果转换成配置空间中的可行区域，再构建图或采样结构，寻找候选路径，随后做曲率、速度和碰撞验证，最终交给控制器执行。下面将复杂流程拆成五个明确的接口。</p><figure><p class="figure-kicker">ILLUSTRATION · 01</p><img src="../assets/figures/01-planning-pipeline.svg" alt="流程图展示环境地图经过构型空间、图或采样建模、规划器、时间参数化与执行反馈五个阶段。" loading="lazy"><figcaption>这些阶段不是总是严格串行：在线机器人会使用感知与执行反馈循环更新状态估计、地图和局部规划。</figcaption></figure><p>每个接口都有失败方式：传感器误标可能堵死走廊；分辨率过粗会漏掉薄障碍；启发式不匹配会浪费搜索；即使找出最短折线，转角也可能超出车辆最小转弯半径。因此评价算法前，应先锁定地图、机器人形状、运动原语和代价定义。</p></section><section id="families" aria-labelledby="families-title"><h2 id="families-title">算法究竟分几类</h2><p>一种有用的分类依据不是算法名字，而是它<strong>如何表示状态</strong>以及<strong>如何寻找连接</strong>。图搜索适用于已离散化的状态；采样法适用于连续或高维配置空间；优化法则直接调整带约束的连续轨迹。实践中经常混合这些思路。</p><figure><p class="figure-kicker">ILLUSTRATION · 01</p><img src="../assets/figures/01-algorithm-landscape.svg" alt="三列分别表示图搜索、采样规划和轨迹优化，每列列出输入表示、典型算法与主要限制。" loading="lazy"><figcaption>图搜索重在状态图与边代价；采样规划重在可行连接与碰撞查询；轨迹优化直接处理动力学和连续约束。图中关系是方法论概览，不表示某一类一定更快。</figcaption></figure><div class="table-wrap"><table><thead><tr><th>路线</th><th>常见方法</th><th>必须关注的假设</th></tr></thead><tbody><tr><td>图搜索</td><td>BFS、Dijkstra、A*</td><td>节点/边是否忠实表示可行动作；边代价是否非负</td></tr><tr><td>采样法</td><td>PRM、RRT、RRT*</td><td>采样覆盖性、局部连接器、碰撞检测与维数</td></tr><tr><td>局部控制与优化</td><td>DWA、MPC、轨迹优化</td><td>运动学/动力学、预测模型、实时性和局部最优</td></tr></tbody></table></div></section><section id="example" aria-labelledby="example-title"><h2 id="example-title">两个候选路线：短不等于好</h2><p>假设走廊 A 只有 10 米，却紧贴高风险货架；走廊 B 有 13 米，但留出更多侧向空间。若目标仅是最短路，A 优于 B；若定义 J = 路程 + λ × 风险积分，就可能选择 B。这里的 10 与 13 是手算示例，不是对具体算法的实验性能结果。</p><p>最优性永远相对于<strong>事先定义的代价和约束</strong>。不能先按长度搜索、再声称所得结果同时最安全、最舒适、最节能。真实系统还需对动态障碍、定位误差和地图滞后提供安全余量。</p></section><section id="code" aria-labelledby="code-title"><h2 id="code-title">一个可执行的最小规划器</h2><p>先用四方向、单位边代价的二值网格，把“从起点到目标的可行路径”落实为可检验程序。BFS 按经过边数逐层扩展，所以在所有边代价相同且可走栅格已确定的条件下，首次到达目标时边数最少。运行环境：Python 3.10+，无外部依赖。</p><pre><code>from collections import deque
 
-        <p>大家好，我是你们的讲师。今天我们要一起踏上一段旅程——从零开始，亲手构建路径规划算法。你可能会问：什么是路径规划？为什么它如此重要？如果你曾用过手机上的地图导航，或者看过机器人自动在仓库中穿梭取货，那么你已经见过路径规划在真实世界中的身影。但在这背后，究竟藏着怎样的数学原理和算法设计？这正是本课程要回答的问题。</p>
+def plan(grid, start, goal):
+    """4 邻域、单位边代价、0 可走、1 障碍。"""
+    rows, cols = len(grid), len(grid[0])
+    def neighbors(p):
+        r, c = p
+        for dr, dc in ((-1,0),(0,1),(1,0),(0,-1)):
+            nr, nc = r+dr, c+dc
+            if 0 &lt;= nr &lt; rows and 0 &lt;= nc &lt; cols and grid[nr][nc] == 0:
+                yield (nr, nc)
+    assert grid[start[0]][start[1]] == 0
+    assert grid[goal[0]][goal[1]] == 0
+    queue = deque([start])
+    parent = {start: None}  # 入队时标记
+    while queue:
+        u = queue.popleft()
+        if u == goal:
+            path = []
+            while u is not None:
+                path.append(u)
+                u = parent[u]
+            return path[::-1]
+        for v in neighbors(u):
+            if v not in parent:
+                parent[v] = u
+                queue.append(v)
+    return None
 
-        <p>在开始之前，我想先讲一个小故事。2003年，一家名为 Kiva Systems 的初创公司做了一个大胆的决定：让几百个"橙色小机器人"在仓库地板上跑来跑去，把货架搬到工人面前。当时所有人都觉得这是天方夜谭——这些机器人怎么知道去哪里、走哪条路、怎么避开彼此？十年后，亚马逊以 7.75 亿美元收购了 Kiva，这套路径规划系统每年为亚马逊节省了数十亿美元运营成本。今天，全球超过 20 万个 Kiva 风格的机器人每天在执行数十亿次路径规划。这就是路径规划的力量——它看不见摸不着，却在无声地驱动着现代世界的运转。</p>
-
-        <h2>什么是路径规划？</h2>
-
-        <p>最简洁的定义是：<strong>路径规划（Path Planning）</strong>是在给定的环境中，找到一条从起点到终点的、无碰撞的连续路径。听起来很简单，对吧？但让我们拆解一下这句话里的每一个要素。</p>
-
-        <p><strong>环境（Environment）</strong>——这是机器人或智能体所在的"世界"。它可以是连续的地形、离散的栅格地图、甚至是抽象的状态空间。在自动驾驶场景中，环境就是道路、建筑物、行人构成的复杂动态场景。在游戏中，环境就是虚拟地图的几何结构。</p>
-
-        <p><strong>起点（Start）与终点（Goal）</strong>——这两者定义了路径规划问题的边界。有时候我们清楚知道终点在哪（比如导航到具体地址），有时候我们只知道一个目标区域（比如"飞到那片区域上空侦察"），还有时候目标是"以特定姿态到达"，这被称为位姿（pose）目标。</p>
-
-        <p><strong>无碰撞（Collision-free）</strong>——这是路径规划中最核心的约束。路径不能穿过障碍物。听起来理所当然，但在高维空间中判断碰撞本身就是一个复杂问题。比如一个六轴机械臂在狭窄空间中运动，你需要确保它的每一个关节、每一个连杆都不与环境中的任何物体发生干涉。</p>
-
-        <p>让我们用几个日常例子来感受一下：</p>
-
-        <ul>
-            <li><strong>GPS 导航</strong>——从家到公司，地图应用计算出一条避开拥堵、距离合理的行车路线。这是最常见的路径规划。</li>
-            <li><strong>游戏 NPC 找路</strong>——在《星际争霸》中，一个机枪兵需要从基地走到前线，绕过地形和敌方单位。游戏 AI 每帧都在进行成千上万次路径规划。</li>
-            <li><strong>仓库机器人取货</strong>——Kiva 机器人在数十万平米的仓库中穿梭，选择最优路线到达指定货架，再搬运到打包站。它需要在几百个同伴间实时避让。</li>
-            <li><strong>手机芯片布线</strong>——EDA（电子设计自动化）工具在指甲盖大小的芯片上为数十亿晶体管规划连线路径，这是最精密、约束最苛刻的路径规划场景之一。</li>
-        </ul>
-
-        <div class="highlight">
-            <strong>核心要点：</strong>路径规划的三个要素——起点、终点、环境——构成了本课程所有算法的基础框架。无论算法多么复杂，归根结底都在问同一个问题："我如何从这里到达那里，且不撞上任何东西？"
-        </div>
-
-        <h2>路径规划 vs 运动规划 vs 轨迹规划</h2>
-
-        <p>在进入算法之前，我们需要澄清三个经常被混用的概念。很多初学者在这里踩坑——开会时跟同事说"我在做路径规划"，结果发现对方理解的"路径规划"和你说的根本不是一回事。</p>
-
-        <table>
-            <tr>
-                <th>概念</th>
-                <th>英文</th>
-                <th>输出</th>
-                <th>考虑因素</th>
-                <th>典型问题</th>
-            </tr>
-            <tr>
-                <td>路径规划</td>
-                <td>Path Planning</td>
-                <td>几何路径（一系列位置点）</td>
-                <td>障碍物、环境几何</td>
-                <td>"走哪条路不会被卡住？"</td>
-            </tr>
-            <tr>
-                <td>运动规划</td>
-                <td>Motion Planning</td>
-                <td>运动序列（含姿态、运动学约束）</td>
-                <td>障碍物 + 机器人运动学</td>
-                <td>"这辆车能拐过这个弯吗？"</td>
-            </tr>
-            <tr>
-                <td>轨迹规划</td>
-                <td>Trajectory Planning</td>
-                <td>时变轨迹（位置、速度、加速度随时间变化）</td>
-                <td>障碍物 + 运动学 + 动力学 + 时间</td>
-                <td>"如何在 3 秒内平滑经过弯道？"</td>
-            </tr>
-        </table>
-
-        <p>打个比方：假设你要去厨房倒杯水。</p>
-        <ul>
-            <li><strong>路径规划</strong>决定："绕过沙发，穿过走廊，进入厨房"——这是空间中的一条几何路径。</li>
-            <li><strong>运动规划</strong>决定："先转身避开茶几，再小碎步穿过狭窄的过道"——考虑了你的身体尺寸和转身能力。</li>
-            <li><strong>轨迹规划</strong>决定："前两步慢走避免水洒出，第三步快走跟上节奏"——加入了时间维度和物理约束。</li>
-        </ul>
-
-        <div class="tip">
-            <strong>小提示：</strong>在本课程中，我们将从最基础的路径规划开始，逐步引入运动学约束和动力学约束，最终让你能够独立搭建一个完整的轨迹规划系统。理解这三个层次的区别，对你后续选择正确的方法至关重要。
-        </div>
-
-        <h2>路径规划用在哪里？</h2>
-
-        <p>路径规划的应用广度可能远超你的想象。我们来看几个代表性领域：</p>
-
-        <table>
-            <tr>
-                <th>领域</th>
-                <th>具体应用</th>
-                <th>代表案例</th>
-                <th>算法需求特点</th>
-            </tr>
-            <tr>
-                <td>自动驾驶</td>
-                <td>L4 级自动驾驶车辆在全球道路网中自主行驶</td>
-                <td>Waymo 在凤凰城、Tesla FSD 在城市街道</td>
-                <td>实时性极高（毫秒级）、处理动态障碍物、遵守交规</td>
-            </tr>
-            <tr>
-                <td>仓储物流</td>
-                <td>数百台机器人同时在地面网格上搬运货架</td>
-                <td>Amazon Robotics (原 Kiva)、Geek+</td>
-                <td>多机器人协调、避免死锁、高吞吐量</td>
-            </tr>
-            <tr>
-                <td>游戏 AI</td>
-                <td>游戏中非玩家角色（NPC）在场景中智能移动</td>
-                <td>《星际争霸》寻路、《黑神话：悟空》Boss 追击逻辑</td>
-                <td>海量实体同时规划、内存效率优先、允许次优解</td>
-            </tr>
-            <tr>
-                <td>芯片 EDA</td>
-                <td>在芯片版图上为互连线规划路径</td>
-                <td>Cadence、Synopsys 的自动布线工具</td>
-                <td>约束极其复杂、可牺牲时间换最优性</td>
-            </tr>
-            <tr>
-                <td>无人机航迹</td>
-                <td>无人机在三维空间中避开建筑、实现全覆盖巡检</td>
-                <td>大疆智能飞行、农业植保无人机</td>
-                <td>三维空间、能量最优、风扰鲁棒性</td>
-            </tr>
-            <tr>
-                <td>医疗手术</td>
-                <td>手术机器人在人体内规划器械路径避开关键组织</td>
-                <td>达芬奇手术机器人术前规划</td>
-                <td>极高安全要求、精度达到亚毫米级</td>
-            </tr>
-        </table>
-
-        <p>在这些应用中，自动驾驶和仓储机器人对路径规划算法的需求最为典型。以 Amazon 的 Kiva 系统为例：一个 Kiva 机器人平均每天行走超过 20 公里，在 20 万平米的仓库中与数百个同伴协同作业。它的路径规划器需要在几十毫秒内完成一次规划，且要保证全局无死锁。这背后是图搜索、交通管制、资源调度等一系列算法的精密配合。2012 年亚马逊收购 Kiva 后，仅通过优化路径规划就将仓库运营效率提升了 3-5 倍——这正是算法带来的真实价值。</p>
-
-        <h2>算法分类全景图</h2>
-
-        <p>路径规划领域经过几十年发展，已经形成了多个不同的方法论流派。理解这张"全景图"有助于你在面对具体问题时快速确定应该采用哪类算法。下表将主要算法按方法论进行分类：</p>
-
-        <table>
-            <tr>
-                <th>类别</th>
-                <th>代表性算法</th>
-                <th>核心思想</th>
-                <th>适用场景</th>
-            </tr>
-            <tr>
-                <td>基于图搜索</td>
-                <td>Dijkstra, A*, D* Lite, JPS</td>
-                <td>将环境离散化为图结构，利用搜索策略在有向图中找到最短路径</td>
-                <td>已知静态环境、栅格地图、需要最优路径</td>
-            </tr>
-            <tr>
-                <td>基于采样</td>
-                <td>RRT, RRT*, PRM</td>
-                <td>通过随机采样构建路线图或搜索树，在高维空间中高效探索</td>
-                <td>高维空间、连续环境、机械臂规划</td>
-            </tr>
-            <tr>
-                <td>基于优化</td>
-                <td>MPC, 梯度优化, CHOMP</td>
-                <td>将路径规划建模为优化问题，通过数值优化方法求解</td>
-                <td>带动力学约束、需要轨迹平滑</td>
-            </tr>
-            <tr>
-                <td>基于学习</td>
-                <td>深度强化学习、模仿学习、GNN-based</td>
-                <td>利用神经网络从数据中学习规划策略，端到端或辅助决策</td>
-                <td>复杂动态环境、需要自适应、先验知识丰富</td>
-            </tr>
-            <tr>
-                <td>局部规划</td>
-                <td>DWA, 人工势场法, TEB</td>
-                <td>仅规划短时间窗口内的局部运动，快速响应环境变化</td>
-                <td>动态障碍物密集、实时避障</td>
-            </tr>
-        </table>
-
-        <p>值得注意的是，这五类方法并非互斥的。在实际系统中，它们往往被组合使用。经典的自动驾驶规划栈就是一个"全局路径规划 + 局部路径规划"的分层架构：上层用 A* 或类似算法做全局导航，下层用 DWA 或 MPC 做局部避障。</p>
-
-        <p>几乎所有路径规划算法都可以用一个统一的框架来理解：</p>
-
-        <pre><code>function PathPlanner(start, goal, environment):
-    // 1. 建模：将环境转化为算法可处理的表示
-    representation = buildRepresentation(environment)
-
-    // 2. 初始化：起点加入候选集
-    frontier = {start}
-    visited = {}
-
-    // 3. 迭代搜索：不断扩展直到抵达终点
-    while frontier is not empty:
-        current = selectMostPromising(frontier)
-        if current == goal:
-            return reconstructPath(current)
-        frontier.remove(current)
-        visited.add(current)
-        for neighbor in getNeighbors(current, representation):
-            if neighbor in visited:
-                continue
-            updateCost(neighbor, current)
-            frontier.add(neighbor)
-
-    // 4. 搜索失败：不存在可行路径
-    return None</code></pre>
-
-        <p>这个骨架贯穿了 Dijkstra、A*、RRT 等绝大多数经典算法。不同算法的本质差异在于：<code>selectMostPromising</code> 的选择策略（是贪心、是启发式、还是随机采样）、<code>representation</code> 的建模方式（是栅格、是图、还是采样点集）、以及 <code>updateCost</code> 的代价定义（是距离、是时间、还是能量）。理解了这一点，你就能举一反三地掌握整个算法家族。</p>
-
-        <h2>本课程学习路线</h2>
-
-        <p>本课程共 28 章，分为 6 个部分，带你从零基础成长为能够独立设计和实现路径规划系统的开发者：</p>
-
-        <ul>
-            <li><strong>第一部分（第 1-5 章）：基础概念</strong>——构型空间、图论、栅格地图、启发式搜索入门。打好理论基础。</li>
-            <li><strong>第二部分（第 6-14 章）：经典算法</strong>——Dijkstra、A* 及其变体、D* Lite、JPS、RRT、RRT*、PRM，以及采样方法对比。这是课程的核心内容。</li>
-            <li><strong>第三部分（第 15-18 章）：路径质量与局部规划</strong>——路径平滑、DWA、人工势场法、运动学约束与曲线。让你的路径不仅"能走"，而且"走得稳"。</li>
-            <li><strong>第四部分（第 19-21 章）：高级场景</strong>——动态环境重规划、多目标路径规划、多机器人协调。面对真实世界的复杂性。</li>
-            <li><strong>第五部分（第 22-25 章）：实战工具</strong>——优化模型方法、可视化与调试、性能基准测试、仿真到实车部署。把算法变成可运行的代码。</li>
-            <li><strong>第六部分（第 26-28 章）：前沿与项目</strong>——学习型路径规划、前沿趋势、综合项目。放眼未来，融会贯通。</li>
-        </ul>
-
-        <p>到课程结束时，你将能够：</p>
-        <ul>
-            <li>从零实现 A*、RRT、DWA 等核心算法</li>
-            <li>理解不同算法在最优性、完备性、实时性上的取舍</li>
-            <li>根据实际场景（已知 vs 未知、静态 vs 动态、2D vs 高维）选择正确的算法</li>
-            <li>搭建一个完整的导航栈，并在仿真环境中完成部署</li>
-        </ul>
-
-        <div class="warning">
-            <strong>学习建议：</strong>路径规划是一个动手远重于理论的领域。每学完一个算法，请在仿真环境（推荐 Python + matplotlib 快速验证，后用 C++ 做性能优化）中亲手实现一遍。光看不练，三个月后留在你脑子里的只剩下"A* 好像是用什么启发式搜索"。相信我，这是过来人的血泪教训。
-        </div>
-
-        <p>下一章我们将正式进入路径规划的数学基础——<strong>构型空间（Configuration Space / C-space）</strong>。这是理解所有路径规划算法之前必须掌握的核心概念。通俗地说，构型空间是把"机器人在地图中的位置"抽象成一个数学空间，让"寻找无碰撞路径"这个看似复杂的问题，转化为"在无障碍的高维空间中找一条连续曲线"——而后者要容易处理得多。我们第二章见。</p>
-
-        <div class="footer-nav">
-            <a href="javascript:void(0)">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="02.html">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+grid = [[0,0,0,0], [0,1,1,0], [0,0,0,0]]
+path = plan(grid, (0,0), (2,3))
+assert path[0] == (0,0) and path[-1] == (2,3)
+assert len(path) - 1 == 5
+print(path)</code></pre><p>该样例用断言检查路径端点和长度；如果 <code>grid</code> 中出现不同的移动代价，或允许斜向跨越，BFS 的“最短”就必须重新解释。第 3–7 章分别详解图表示、启发式与带权最短路。</p></section><section id="pitfalls" aria-labelledby="pitfalls-title"><h2 id="pitfalls-title">算法能力与问题假设的边界</h2><ol><li><strong>路径长度不等于行驶时间：</strong>速度曲线、曲率和安全减速可能改变比较。</li><li><strong>无碰撞的点不等于无碰撞的车体：</strong>需要配置空间/足迹检查。</li><li><strong>网格通行并不保证连续运动可行：</strong>斜向“切角”和轮式底盘转向限制是典型反例。</li><li><strong>仿真成功不是实际部署证明：</strong>感知噪声、定位误差和执行偏差要另做验证。</li></ol><p>更好的思维方式是每次写下：规划空间是什么？允许哪些动作？代价如何定义？碰撞如何判定？在什么条件下可以证明正确性或最优性？</p></section><section id="references" aria-labelledby="references-title"><h2 id="references-title">延伸阅读与来源</h2><p>本章术语与方法分类依据机器人规划教材与公开导航系统文档；示例和示意图是为教学重新构建的，不代表正式基准测试。</p><ul><li><a href="https://msl.cs.uiuc.edu/~lavalle/planning/">S. M. LaValle, <cite>Planning Algorithms</cite> (2006), Ch. 2, 4–7, 13–15</a></li><li><a href="https://www.redblobgames.com/pathfinding/a-star/introduction.html">Amit Patel, Introduction to A* (Red Blob Games)</a></li><li><a href="https://docs.nav2.org/">ROS 2 Navigation2 documentation</a></li></ul></section><nav class="article-footer" aria-label="章节翻页"><a href="../index.html">← 课程首页</a><a href="02.html">02 · 状态与构型空间 →</a></nav></article></main></div></body></html>
