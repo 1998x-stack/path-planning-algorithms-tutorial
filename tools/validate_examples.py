@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Execute the first twenty curated Python examples in isolated processes.
+"""Execute the first twenty-five curated Python examples in isolated processes.
 
 The snippets are small pedagogical tests, not benchmark measurements.
 """
@@ -12,7 +12,7 @@ import sys
 ROOT=Path(__file__).resolve().parents[1]
 def main():
     failed=[]
-    for num in range(1,21):
+    for num in range(1,26):
         path=ROOT/"docs"/"chapters"/f"{num:02}.html"
         content=path.read_text(encoding="utf-8")
         blocks=re.findall(r"<pre><code>(.*?)</code></pre>",content,re.S)
@@ -28,6 +28,6 @@ def main():
     if failed:
         print("\n".join(failed),file=sys.stderr)
         return 1
-    print("All twenty curated Python snippets passed")
+    print("All twenty-five curated Python snippets passed")
     return 0
 if __name__=="__main__":sys.exit(main())

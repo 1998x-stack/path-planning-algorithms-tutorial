@@ -1,490 +1,63 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第24章 算法性能基准测试</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html">第20章 多目标路径规划</a></li>
-            <li><a href="21.html">第21章 多机器人协调</a></li>
-            <li><a href="22.html">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html" class="active">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="可复现路径规划基准测试：公平配对任务、成功率、失败删失、首次解、解成本、展开次数和OMPL Benchmark。"><title>24 · 路径规划算法性能基准：如何公平比较</title><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="25.html">下一章</a></nav></div></header><div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#question">快和好为什么不能直接相互推导</a><a href="#protocol">从配对任务构建公平实验</a><a href="#metrics">成功率、成本、首解时间与资源</a><a href="#failure">失败样本绝不能悄悄删除</a><a href="#hardware">计时、碰撞模型和环境公平性</a><a href="#anytime">对随时优化的算法记录成本曲线</a><a href="#interactive">交互：分母如何改变成功率报告</a><a href="#example">十张确定地图上的真实搜索对比</a><a href="#reproduce">如何将演示扩展为严谨基准</a><a href="#sources">权威工具与资料</a></nav></details></aside><main class="article-main" id="content"><article><header class="article-header"><p class="article-meta">BENCHMARKING / 24 OF 28</p><h1>算法基准测试：一次漂亮的成功，为什么不能代表算法更好？</h1><p class="dek">设计可复现的配对实验，分别报告成功率、解质量与计算资源；用十张固定地图的真正算法执行，识别删掉失败样本产生的偏差。</p></header><section id="question" aria-labelledby="question-title"><h2 id="question-title">算法 A 找到路径用了 10 ms，算法 B 只用了 5 ms：结论成立吗？</h2><p>若两次运行的地图不同、碰撞检查分辨率不同，或一个方法事先建图而另一个从零开始探索，那么一组时延数字并不足以比较算法。路径规划的基本结果至少有三部分：<strong>是否在预算内找到可行解</strong>、找到时解的代价、以及为得到它所用的资源。</p><p>更容易误导的一种结果是：从所有运行中删掉失败与超时，只展示成功运行的平均时间，最后把一个“经常失败但偶尔很快”的算法展示为最优。严谨基准必须完整保留这些失败。</p><figure><p class="figure-kicker">REPRODUCIBLE BENCHMARKS / 24</p><img src="../assets/figures/24-metrics-matrix.svg" loading="lazy" alt="可行率、成本和计算资源三种不同指标各自带有独立的统计口径与缺失情况。"><figcaption>一个成功率很低但成功时快速的规划器，不能只凭成功样本平均耗时得出总体更优的结论。</figcaption></figure></section><section id="protocol" aria-labelledby="protocol-title"><h2 id="protocol-title">一个公平实验由固定问题对、预算和随机种子开始</h2><p>先冻结一组地图与起终点任务。两个规划器必须接受相同的障碍几何、机器人足迹、运动学模型、碰撞有效性定义和成本目标。对于随机采样规划器，还应采用多次运行和固定的种子集合；对于确定性图搜索，种子可以用于生成对照地图，保持每对地图相同。</p><p>在真实系统上也要固定 CPU/内存环境、线程数、算法版本、最近邻或碰撞加速结构、地图缓存策略及停止规则。预算可以是墙钟秒数、CPU 时间、碰撞检查调用或搜索展开次数，但<strong>不同的预算不应假装等价</strong>。</p><figure><p class="figure-kicker">REPRODUCIBLE BENCHMARKS / 24</p><img src="../assets/figures/24-benchmark-protocol.svg" loading="lazy" alt="多张配对地图和相同预算分别输入两个规划器，然后按任务成对记录结果，失败也进入输出表。"><figcaption>比较算法使用完全相同的输入条件。这里不同的随机种子生成不同地图，两个算法共享同一张地图。</figcaption></figure></section><section id="metrics" aria-labelledby="metrics-title"><h2 id="metrics-title">成功率、解质量、首次可行解和资源是不同随机变量</h2><p>若在 N 次运行中有 S 次成功，成功率估计为 <code>S/N</code>。对于路径代价，可以给出“条件于成功”的均值、中位数、分位数和样本数，但绝不能将失败路径虚构成成本 0。对于 anytime 规划器，还应报告首次可行解时间与不同预算的 best-known cost。</p><div class="equation" tabindex="0" role="region" aria-label="(1) 成功率与仅成功样本的条件成本"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="(1) 成功率与仅成功样本的条件成本"><mrow><mover><mi>p</mi><mo>^</mo></mover><mo>=</mo><mfrac><mi>S</mi><mi>N</mi></mfrac><mo>,</mo><mspace width="1em"/><mover><mi>C</mi><mo>¯</mo></mover><msub><mrow></mrow><mi>success</mi></msub><mo>=</mo><mfrac><mrow><munderover><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>success</mi></mrow><mrow></mrow></munderover><msub><mi>C</mi><mi>i</mi></msub></mrow><mi>S</mi></mfrac></mrow></math><span class="equation-label">(1) 成功率与仅成功样本的条件成本</span></div><p>当 <code>S=0</code> 时，成功样本成本均值未定义，不能显示为 0。对于有超时的运行，应记录右删失或超时上限；当只计算成功时间时，必须同时展示成功率和总尝试数。</p></section><section id="failure" aria-labelledby="failure-title"><h2 id="failure-title">失败应该进入每一个结论的上下文</h2><p>失败可能来自真正不可达、算法超时、数值错误、内存不足或无效碰撞。它们都需要分别分类；把“在预算内未找到解”说成“这个场景不存在解”是不成立的。对求解成功率的比较，还可以采用配对分析或适当的置信区间；十张地图上的 60% 只是微型样例，不足以推导真实总体概率。</p><figure><p class="figure-kicker">REPRODUCIBLE BENCHMARKS / 24</p><img src="../assets/figures/24-censoring-trap.svg" loading="lazy" alt="左侧只统计六次成功，右侧把四次超时失败也保留在总样本中，成功率从误导性的100%纠正为6/10。"><figcaption>示意的十次任务对应本章教学示例的成功/失败分布；这不是任何生产规划器或论文基准的统计数据。</figcaption></figure></section><section id="hardware" aria-labelledby="hardware-title"><h2 id="hardware-title">时钟读数公平，不代表碰撞和代码路径公平</h2><p>真实计时应该明确：是否包含初始化、预处理、地图加载、GPU 冷启动、路径后处理和碰撞检查。PRM 的预处理可摊销到多次查询，单次 RRT 的建树不能用相同方式扣除。对 GPU、缓存和多线程，应分别记录初始化和稳态统计。</p><p>搜索展开数是一个易于复现的算法内部指标，但不同算法一次展开所做的工作可能差别巨大；尤其在高维规划中，<strong>一次碰撞检测的耗时</strong>可能比一次队列操作大很多。本章示例用展开数说明差异，不声称它代表真实运行秒数。</p></section><section id="anytime" aria-labelledby="anytime-title"><h2 id="anytime-title">对 RRT* / anytime 搜索，最后一条路径不足以说明全部过程</h2><p>一些算法会先快速找到一条可行路线，然后随着计算时间增加不断更新更低的路径成本。这时应记录 <code>best-so-far cost(t)</code> 曲线、首次可行解时刻、预算停止时的最终质量，以及在整个预算期间没有找到解的运行。</p><figure><p class="figure-kicker">REPRODUCIBLE BENCHMARKS / 24</p><img src="../assets/figures/24-anytime-curves.svg" loading="lazy" alt="两条抽象的路径成本随预算增加而分阶段下降，首次可行解与最终停止时间单独标注，失败应显示缺失而不是零。"><figcaption>曲线是概念图，没有宣称某个具体规划器在某台机器上的数值表现；最优成本随时间只会保持或改善，非必然连续下降。</figcaption></figure><p><a href="https://ompl.kavrakilab.org/benchmark.html">OMPL Benchmark</a>支持记录规划时间、成功与进度属性，其日志可交给 <a href="https://planner-arena.kavrakilab.rice.edu/">Planner Arena</a>分析。对实际论文级对比，应保留配置文件、版本、原始运行日志及绘图脚本，不能只分享一张排名柱状图。</p></section><section id="interactive" aria-labelledby="interactive-title"><h2 id="interactive-title">交互：六次成功算 100%，还是十次尝试中的 60%？</h2><p>同一组 10 次任务有 6 次成功、4 次失败。点击切换分母，观察为什么只保留成功样本会造成筛选偏差。正确的成功率分母应是全部预先指定的尝试次数。</p><div class="interactive-box" data-benchmark-demo><div class="demo-controls" role="group" aria-label="成功率分母"><button type="button" data-benchmark-mode="all" aria-pressed="true">包括所有尝试</button><button type="button" data-benchmark-mode="success" aria-pressed="false">错误：只保留成功样本</button></div><p class="demo-status" role="status" aria-live="polite">正确口径：6 / 10 = 60%；4 次失败仍保留在记录中。</p><p class="micro">本章数据来自 10 张构造地图的真实 Python 搜索结果；切换分母只为解释统计陷阱。</p></div></section><section id="example" aria-labelledby="example-title"><h2 id="example-title">可运行对照：十张相同地图比较 Dijkstra 与 A*</h2><p>Python 3.10+，只依赖标准库。地图尺寸固定为 8×6，起点 (0,0)、目标 (7,5)，每张地图用确定种子随机放置障碍。种子 10–19 生成十张地图，不同种子使用两种预设障碍概率；Dijkstra 和 A* 在每张地图上完全共享障碍。搜索都采用四邻域单位边代价，A* 使用一致的曼哈顿启发式，因此成功时应返回与 Dijkstra 相同的最短路成本。</p><pre><code>from random import Random
+from heapq import heappush, heappop
+from itertools import count
 
-        <p>大家好，上一章我们聊了可视化与调试——确保算法实现正确。但实现正确只是第一步。现在问题来了：你的 A* 实现比别人快吗？你的 RRT* 找到的路径质量如何？你改进了 DWA 的代价函数，到底是变好了还是变差了？要回答这些问题，你需要一个严格的基准测试（benchmark）体系。</p>
+WIDTH, HEIGHT = 8, 6
+START, GOAL = (0,0), (7,5)
+SEEDS = tuple(range(10,20))
 
-        <p>2015 年我在某自动驾驶公司实习时，同事小明说他优化后的 A* 比原来的快了一倍。我问他怎么测的，他说："我找了一张地图跑了三次。"结果我替他做了 100 次测试后发现，他的"优化"版本平均只快了 8%，而且有 15% 的情况下新版本更慢。问题出在哪？单次运行的随机波动被当成了性能提升。从那以后我养成了一个习惯：<strong>任何性能声明，必须有完整的基准测试数据作为支撑，否则一律视为"感觉"而非"事实"。</strong></p>
+def make_map(seed, density):
+    rng = Random(seed)
+    return {(x,y) for x in range(WIDTH) for y in range(HEIGHT)
+            if (x,y) not in (START,GOAL)
+            and rng.random() &lt; density}
 
-        <h2>评价指标体系</h2>
+def solve(blocked, algorithm):
+    serial = count()
+    heap = [(0,next(serial),0,START)]
+    best = {START:0}
+    expanded = 0
+    while heap:
+        _,_,cost,node = heappop(heap)
+        if cost != best[node]:
+            continue
+        expanded += 1
+        if node == GOAL:
+            return cost, expanded
+        x,y = node
+        for nxt in ((x+1,y),(x-1,y),(x,y+1),(x,y-1)):
+            if not (0 &lt;= nxt[0] &lt; WIDTH and 0 &lt;= nxt[1] &lt; HEIGHT):
+                continue
+            if nxt in blocked:
+                continue
+            candidate = cost+1
+            if candidate &lt; best.get(nxt,float("inf")):
+                best[nxt] = candidate
+                h = (abs(nxt[0]-GOAL[0])+abs(nxt[1]-GOAL[1])
+                     if algorithm == "A*" else 0)
+                heappush(heap,(candidate+h,next(serial),candidate,nxt))
+    return None, expanded
 
-        <p>路径规划算法的"好"是多维度的。只用一个指标评价算法就像只用身高评价篮球运动员——可能是最不重要的一项被当成了全部。下面是我们在评价路径规划算法时最常用的指标体系：</p>
+records = []
+for seed in SEEDS:
+    density = .24 if seed % 2 == 0 else .34
+    blocked = make_map(seed,density)
+    d_cost,d_exp = solve(blocked,"Dijkstra")
+    a_cost,a_exp = solve(blocked,"A*")
+    assert a_cost == d_cost  # Same problem and exact shortest cost.
+    records.append((seed,d_cost,d_exp,a_exp))
 
-        <table>
-            <tr>
-                <th>指标</th>
-                <th>单位</th>
-                <th>含义</th>
-                <th>适用范围</th>
-                <th>注意事项</th>
-            </tr>
-            <tr>
-                <td>路径长度</td>
-                <td>米 / 栅格数</td>
-                <td>从起点到终点的路径总长度</td>
-                <td>所有算法</td>
-                <td>最短路径不一定是最优路径（需要考虑平滑度、安全性）</td>
-            </tr>
-            <tr>
-                <td>计算时间</td>
-                <td>毫秒（ms）</td>
-                <td>算法从调用到返回路径的总耗时</td>
-                <td>所有算法</td>
-                <td>注意区分单次 vs 平均、排除 Python 解释器开销</td>
-            </tr>
-            <tr>
-                <td>成功率</td>
-                <td>百分比（%）</td>
-                <td>在 N 次试验中找到可行路径的比例</td>
-                <td>采样算法为主</td>
-                <td>和地图难度强相关，报告成功率时必须附带地图信息</td>
-            </tr>
-            <tr>
-                <td>路径平滑度</td>
-                <td>弧度 / 曲率变化</td>
-                <td>路径中转弯的剧烈程度，通常用最大曲率或累积转弯角衡量</td>
-                <td>全局规划 + 后处理</td>
-                <td>对人类来说"平滑"的路径很难用单一指标量化</td>
-            </tr>
-            <tr>
-                <td>内存使用</td>
-                <td>MB</td>
-                <td>算法运行过程中占用的峰值内存</td>
-                <td>嵌入式系统、大规模地图</td>
-                <td>Python 的内存管理会掩盖真实使用量，C++ 实现更准确</td>
-            </tr>
-            <tr>
-                <td>扩展节点数</td>
-                <td>个</td>
-                <td>搜索过程中访问的节点/状态数量</td>
-                <td>图搜索算法</td>
-                <td>与计算时间强相关，但更稳定（不受 CPU 调度影响）</td>
-            </tr>
-        </table>
-
-        <div class="warning">
-            <strong>血的教训：</strong>不要只看路径长度！一个比 A* 短 5% 但慢 10 倍的算法在机器人上毫无意义。真实的机器人规划是一个在线问题——如果规划耗时 500 毫秒而机器人速度是 1m/s，这意味着机器人在这 0.5 秒内要盲开半米。在狭窄空间中这半米足以酿成碰撞事故。我见过不止一个团队把论文级别的规划器搬到机器人上，精度无可挑剔，但计算时间太长导致机器人撞墙。评价算法时，永远把实时性放在和最优性同等重要的位置。
-        </div>
-
-        <h2>测试场景设计</h2>
-
-        <p>基准测试的第二个关键要素是测试场景。如果你只在一种地图上测试算法，你学到的只是这个算法在那一种地图上的表现——这个结论对其他地方几乎没有参考价值。我们需要一组多样化的、有代表性的测试场景：</p>
-
-        <h3>五种标准地图类型</h3>
-
-        <table>
-            <tr>
-                <th>地图类型</th>
-                <th>描述</th>
-                <th>测试目的</th>
-                <th>典型尺寸</th>
-            </tr>
-            <tr>
-                <td>狭窄通道</td>
-                <td>两个大障碍物之间有一条仅容一车通过的窄缝</td>
-                <td>测试算法处理约束瓶颈的能力</td>
-                <td>100x100</td>
-            </tr>
-            <tr>
-                <td>稠密障碍</td>
-                <td>地图上密集分布随机大小和位置的障碍物</td>
-                <td>测试算法在高复杂度环境中的搜索效率</td>
-                <td>200x200</td>
-            </tr>
-            <tr>
-                <td>迷宫</td>
-                <td>标准迷宫结构，从入口到出口</td>
-                <td>测试算法的探索策略和避免死胡同的能力</td>
-                <td>100x100</td>
-            </tr>
-            <tr>
-                <td>开阔平原</td>
-                <td>几乎没有障碍物的空旷地图</td>
-                <td>测试算法的基线表现和路径质量</td>
-                <td>100x100</td>
-            </tr>
-            <tr>
-                <td>随机杂乱</td>
-                <td>随机生成的多边形/圆形障碍物</td>
-                <td>模拟真实场景的不可预测性</td>
-                <td>200x200</td>
-            </tr>
-        </table>
-
-        <p>下面是一个生成标准测试地图的 Python 函数。我建议你将这批地图保存下来作为你的"算法测试套件"，每次新算法上线前都要在这套地图上跑一遍：</p>
-
-        <pre><code>import numpy as np
-from scipy.ndimage import binary_dilation
-
-def generate_benchmark_maps(size=100, seed=42):
-    """生成五种标准测试地图"""
-    rng = np.random.RandomState(seed)
-    maps = {}
-
-    # 1. 狭窄通道
-    m = np.zeros((size, size))
-    m[:, size//2 - 2:size//2 + 2] = 1  # 竖墙
-    # 在墙中间开一个小口
-    m[size//2 - 3:size//2 + 3, size//2 - 2:size//2 + 2] = 0
-    maps['narrow_passage'] = m
-
-    # 2. 稠密障碍
-    m = np.zeros((size, size))
-    num_obstacles = 200
-    for _ in range(num_obstacles):
-        cx, cy = rng.randint(5, size-5, 2)
-        r = rng.randint(3, 10)
-        rr, cc = np.ogrid[:size, :size]
-        obstacle = (rr - cy)**2 + (cc - cx)**2 <= r**2
-        m[obstacle] = 1
-    maps['cluttered'] = m
-
-    # 3. 迷宫（递归回溯算法生成）
-    m = np.ones((size, size))
-    # 用简单的螺旋迷宫
-    for i in range(size // 4):
-        layer_start = 2 * i + 1
-        layer_end = size - 2 * i - 1
-        if layer_start >= layer_end:
-            break
-        m[layer_start:layer_end, layer_start] = 0  # 左竖
-        m[layer_start, layer_start:layer_end] = 0  # 上横
-        m[layer_start:layer_end, layer_end-1] = 0  # 右竖
-        m[layer_end-1, layer_start:layer_end] = 0  # 下横
-        # 开缺口
-        m[layer_start, layer_start + 2] = 1
-        m[layer_start + 2, layer_end - 1] = 1
-    maps['maze'] = m
-
-    # 4. 开阔平原
-    maps['open'] = np.zeros((size, size))
-
-    # 5. 随机杂乱
-    m = np.zeros((size, size))
-    for _ in range(50):
-        cx, cy = rng.randint(10, size-10, 2)
-        w, h = rng.randint(5, 20, 2)
-        angle = rng.uniform(0, np.pi)
-        # 粗略旋转矩形
-        x, y = np.meshgrid(np.arange(size), np.arange(size))
-        x_rot = (x - cx) * np.cos(angle) + (y - cy) * np.sin(angle)
-        y_rot = -(x - cx) * np.sin(angle) + (y - cy) * np.cos(angle)
-        rect = (np.abs(x_rot) < w/2) & (np.abs(y_rot) < h/2)
-        m[rect] = 1
-    # 用膨胀让障碍物略微扩大
-    m = binary_dilation(m, iterations=1).astype(int)
-    maps['random_clutter'] = m
-
-    return maps</code></pre>
-
-        <h2>公平对比的原则</h2>
-
-        <p>做基准测试最核心的诉求是公平。不公平的对比比不对比更糟糕——因为它给你错误的结论。以下是确保公平对比的几个黄金原则：</p>
-
-        <h3>同一硬件环境</h3>
-        <p>同一组对比实验必须在同一台机器上运行。不同代的 CPU（比如 i7-12700 vs i7-14700）对计算时间的影响可能达到 2 倍以上。如果实在需要在不同机器上跑，请使用"归一化"指标，比如把计算时间除以同机器上 Dijkstra 的运行时间作为相对比值。</p>
-
-        <h3>同一时间预算</h3>
-        <p>对于 anytime 算法（RRT*、PRM 等），算法在运行 10ms 时的表现和在运行 1000ms 时完全不同。对比时必须固定时间预算，或者绘制"时间-质量"曲线来全面对比。我常用的是在不同时间预算下分别跑 50 次，然后绘制路径长度随时间的衰减曲线。</p>
-
-        <h3>统计显著性</h3>
-        <p>单次测试毫无意义。路径规划算法（尤其是基于采样的算法）具有很强的随机性。至少跑 30-50 次试验，计算均值和标准差。用 t 检验或 Mann-Whitney U 检验来判断两个算法的差异是否统计显著。</p>
-
-        <div class="tip">
-            <strong>经验法则：</strong>RRT 在相同条件下两次运行的计算时间差异可达 3-5 倍。如果你只跑一次就下结论，你的结论几乎肯定会被下一次运行推翻。对于采样算法，至少跑 50 次；对于确定性算法（A*、Dijkstra），至少跑 10 次（虽然结果确定，但系统负载会影响计时）。
-        </div>
-
-        <h2>基准测试脚本</h2>
-
-        <p>下面是一个完整的基准测试框架。它将所有算法统一包装成相同的接口，自动在多种地图上运行、收集指标、生成报告：</p>
-
-        <pre><code>import time
-import json
-import numpy as np
-from dataclasses import dataclass, field
-from typing import Callable, Dict, List, Optional
-from pathlib import Path
-
-
-@dataclass
-class BenchmarkResult:
-    """单次测试的结果"""
-    algorithm: str
-    map_name: str
-    trial: int
-    success: bool
-    path_length: float
-    computation_time_ms: float
-    nodes_expanded: int
-    max_memory_mb: float
-
-
-@dataclass
-class BenchmarkConfig:
-    """基准测试配置"""
-    algorithms: Dict[str, Callable]  # 名称 -> 规划函数
-    maps: Dict[str, np.ndarray]      # 名称 -> 栅格地图
-    start_goal_pairs: List[tuple]    # [(start, goal), ...]
-    trials_per_config: int = 30      # 每种配置的试验次数
-    time_budget_ms: float = 1000.0   # anytime 算法的时间预算
-    seed: int = 42
-
-
-def run_benchmark(config: BenchmarkConfig) -> List[BenchmarkResult]:
-    """运行完整的基准测试"""
-    results = []
-    rng = np.random.RandomState(config.seed)
-
-    for algo_name, planner_fn in config.algorithms.items():
-        for map_name, grid in config.maps.items():
-            for trial in range(config.trials_per_config):
-                # 选择 start-goal 对（随机或固定）
-                if config.start_goal_pairs:
-                    sg = config.start_goal_pairs[
-                        rng.randint(len(config.start_goal_pairs))]
-                else:
-                    sg = _pick_random_start_goal(grid, rng)
-
-                start_time = time.perf_counter()
-                try:
-                    path, stats = planner_fn(
-                        grid, sg[0], sg[1],
-                        time_budget=config.time_budget_ms / 1000.0,
-                    )
-                    elapsed = (time.perf_counter() - start_time) * 1000  # ms
-                    success = path is not None
-
-                    result = BenchmarkResult(
-                        algorithm=algo_name,
-                        map_name=map_name,
-                        trial=trial,
-                        success=success,
-                        path_length=sum(
-                            np.sqrt((path[i][0]-path[i-1][0])**2 +
-                                    (path[i][1]-path[i-1][1])**2)
-                            for i in range(1, len(path))
-                        ) if success else float('inf'),
-                        computation_time_ms=elapsed,
-                        nodes_expanded=stats.get('nodes_expanded', 0),
-                        max_memory_mb=stats.get('max_memory', 0),
-                    )
-                except Exception as e:
-                    result = BenchmarkResult(
-                        algorithm=algo_name, map_name=map_name,
-                        trial=trial, success=False,
-                        path_length=float('inf'),
-                        computation_time_ms=0,
-                        nodes_expanded=0, max_memory_mb=0,
-                    )
-                results.append(result)
-
-    return results
-
-
-def summarize_results(results: List[BenchmarkResult]) -> Dict:
-    """汇总基准测试结果，生成报告"""
-    summary = {}
-    for result in results:
-        key = (result.algorithm, result.map_name)
-        if key not in summary:
-            summary[key] = {
-                'success_rate': [],
-                'path_lengths': [],
-                'times': [],
-                'nodes': [],
-            }
-        if result.success:
-            summary[key]['success_rate'].append(1)
-            summary[key]['path_lengths'].append(result.path_length)
-            summary[key]['nodes'].append(result.nodes_expanded)
-        else:
-            summary[key]['success_rate'].append(0)
-        summary[key]['times'].append(result.computation_time_ms)
-
-    report = {}
-    for (algo, mname), vals in summary.items():
-        success_rate = np.mean(vals['success_rate'])
-        report[f"{algo}@{mname}"] = {
-            'success_rate': f"{success_rate*100:.1f}%",
-            'path_length_mean': f"{np.mean(vals['path_lengths']):.2f}",
-            'path_length_std': f"{np.std(vals['path_lengths']):.2f}",
-            'time_ms_mean': f"{np.mean(vals['times']):.1f}",
-            'time_ms_std': f"{np.std(vals['times']):.1f}",
-            'nodes_mean': f"{np.mean(vals['nodes']):.0f}",
-            'trials': len(vals['success_rate']),
-        }
-    return report
-
-
-def _pick_random_start_goal(grid, rng):
-    """在地图空白区域随机选取起点和终点"""
-    free = np.argwhere(grid == 0)
-    idx = rng.choice(len(free), 2, replace=False)
-    return (tuple(free[idx[0]][::-1]), tuple(free[idx[1]][::-1]))
-
-
-# ---- 使用示例 ----
-if __name__ == '__main__':
-    from planners import astar_planner, rrt_planner, dwa_planner
-
-    maps = generate_benchmark_maps(size=100)
-
-    config = BenchmarkConfig(
-        algorithms={
-            'A*': astar_planner,
-            'RRT': rrt_planner,
-        },
-        maps=maps,
-        start_goal_pairs=[((5, 5), (95, 95))],
-        trials_per_config=30,
-    )
-
-    results = run_benchmark(config)
-    report = summarize_results(results)
-    print(json.dumps(report, indent=2))</code></pre>
-
-        <p>当你的框架就绪后，就可以在不同的算法和地图上运行测试了。下面是一个典型的基准测试结果示例：</p>
-
-        <table>
-            <tr>
-                <th>算法</th>
-                <th>地图</th>
-                <th>成功率</th>
-                <th>路径长度</th>
-                <th>时间 (ms)</th>
-                <th>扩展节点</th>
-            </tr>
-            <tr>
-                <td>A*</td>
-                <td>开阔平原</td>
-                <td>100%</td>
-                <td>128.7</td>
-                <td>12.3</td>
-                <td>2,150</td>
-            </tr>
-            <tr>
-                <td>A*</td>
-                <td>狭窄通道</td>
-                <td>100%</td>
-                <td>132.4</td>
-                <td>18.7</td>
-                <td>3,280</td>
-            </tr>
-            <tr>
-                <td>A*</td>
-                <td>迷宫</td>
-                <td>100%</td>
-                <td>298.5</td>
-                <td>45.2</td>
-                <td>8,740</td>
-            </tr>
-            <tr>
-                <td>RRT</td>
-                <td>开阔平原</td>
-                <td>100%</td>
-                <td>145.3 ± 12.1</td>
-                <td>25.4 ± 8.3</td>
-                <td>520</td>
-            </tr>
-            <tr>
-                <td>RRT</td>
-                <td>狭窄通道</td>
-                <td>72%</td>
-                <td>168.9 ± 21.4</td>
-                <td>187.6 ± 95.2</td>
-                <td>3,400</td>
-            </tr>
-            <tr>
-                <td>RRT</td>
-                <td>迷宫</td>
-                <td>35%</td>
-                <td>342.1 ± 48.7</td>
-                <td>420.3 ± 210.5</td>
-                <td>7,800</td>
-            </tr>
-            <tr>
-                <td>RRT*</td>
-                <td>开阔平原</td>
-                <td>100%</td>
-                <td>129.8 ± 3.2</td>
-                <td>210.5 ± 30.1</td>
-                <td>8,200</td>
-            </tr>
-            <tr>
-                <td>PRM (500节点)</td>
-                <td>开阔平原</td>
-                <td>100%</td>
-                <td>131.2 ± 5.1</td>
-                <td>55.3 ± 5.7</td>
-                <td>500</td>
-            </tr>
-            <tr>
-                <td>DWA</td>
-                <td>开阔平原</td>
-                <td>100%</td>
-                <td>141.5 ± 8.9</td>
-                <td>3.2 ± 0.5</td>
-                <td>—</td>
-            </tr>
-        </table>
-
-        <p>从这张表中你能读出什么？首先，A* 在所有地图上都能找到最优路径，但在迷宫中计算时间显著增加。RRT 在开阔地图上表现不错，但在狭窄通道和迷宫中成功率急剧下降——这是采样算法的典型弱点。RRT* 路径质量接近最优，但计算时间是 A* 的 10 倍以上。DWA 作为局部规划器极快，但路径质量略逊。这些结论只有通过系统的基准测试才能得出。</p>
-
-        <div class="highlight">
-            <strong>关键洞察：</strong>世界上没有"最好的"路径规划算法，只有"最适合特定场景"的算法。基准测试的真正价值不是告诉你哪个算法赢了，而是告诉你每个算法在什么场景下能做什么、不能做什么。当你面对新的规划问题时，回过头查阅你的基准测试数据库，你就能迅速缩小候选范围。这就是基准测试的复利效应——用得越多，收益越大。
-        </div>
-
-        <p>建立你自己的基准测试管道需要一些前期投入，但这是整个路径规划工具箱中回报率最高的投资之一。每次你改进了一个算法、或者设计了一个新的规划器，只需运行 <code>python benchmark.py</code>，几分钟后你就能看到它在所有场景下的完整表现。不再靠感觉、不再凭运气。下一章我们将把经过基准测试验证的算法从仿真环境搬到真实机器人上——这才是真正的考验。我们第 25 章见。</p>
-
-        <div class="footer-nav">
-            <a href="23.html">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="25.html">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+success = [row for row in records if row[1] is not None]
+failures = len(records)-len(success)
+assert len(success) == 6 and failures == 4
+assert all(row[3] &lt;= row[2] for row in records)
+assert all(row[1] &gt;= 12 for row in success)
+print("paired maps:",len(records),
+      "solved:",len(success),"failed:",failures)
+print("success rate for each algorithm:",len(success)/len(records))
+print("expanded states, all cases:",
+      sum(row[2] for row in records),
+      sum(row[3] for row in records))
+print("successful-case path cost:",
+      [row[1] for row in success])
+print("Note: no wall-clock timing or robot benchmark here.")</code></pre><p>代码断言这十张样例里有六张找到路、四张失败；成功样本成本相同；<strong>只对这十张图</strong>的有效扩展数执行检查。它没有测量墙钟时间、没有随机重启，也不包含真实机器人或碰撞模型，因此不得把输出当作“Dijkstra 与 A* 的总体速度排名”。</p></section><section id="reproduce" aria-labelledby="reproduce-title"><h2 id="reproduce-title">将这个演示升级为可信的实验协议</h2><ol><li>公开地图生成器、地图文件、种子、起终点和失败归因。</li><li>明确规划器版本、硬件、运行模式、停机时间及缓存预热。</li><li>记录逐次成功/失败、首解时间、最终代价、碰撞检查调用和完整运行时间。</li><li>分场景难度展示指标分布，对每个汇总标注 N 和条件成功样本数量。</li><li>对参数选择使用与最终测试不同的验证集，避免调参后反过来只报告同一张地图上的最佳结果。</li><li>给出可执行脚本、原始 CSV/SQLite/JSON 日志和报告再生成方式。</li></ol><p>地图级配对试验可以减少不同场景差异带来的统计波动，但它本身不能消除算法实现质量、代码语言、硬件和任务分布的系统性偏差。</p></section><section id="sources" aria-labelledby="sources-title"><h2 id="sources-title">原始工具文档</h2><ul><li><a href="https://ompl.kavrakilab.org/benchmark.html">OMPL — How to Benchmark Planners</a></li><li><a href="https://planner-arena.kavrakilab.rice.edu/">Planner Arena — benchmark databases and progress plots</a></li><li><a href="https://moveit.picknik.ai/main/doc/how_to_guides/benchmarking/benchmarking_tutorial.html">MoveIt Rolling — Benchmark a Planning Pipeline</a></li></ul></section><nav class="article-footer" aria-label="章节翻页"><a href="23.html">← 23 · 调试可视化</a><a href="25.html">25 · 仿真到实车 →</a></nav></article></main></div></body></html>

@@ -1,0 +1,37 @@
+{
+  "article": "21",
+  "claims": [
+    {
+      "id": "cbs",
+      "claim": "标准CBS高层按SOC扩展约束树，低层为各机器人解独立最短路",
+      "kind": "primary-paper",
+      "source_url": "https://www.sciencedirect.com/science/article/pii/S0004370214001386",
+      "locator": "Sharon et al. 2015, Artificial Intelligence 219, pp.40-66",
+      "status": "verified"
+    },
+    {
+      "id": "icbs",
+      "claim": "ICBS在CBS之上引入冲突优先级、bypass等改进",
+      "kind": "primary-paper",
+      "source_url": "https://ijcai.org/proceedings/2015/110",
+      "locator": "Boyarski et al. 2015, IJCAI",
+      "status": "verified"
+    },
+    {
+      "id": "continuous",
+      "claim": "离散MAPF与连续时间MAPF拥有不同的冲突时序和运动时间假设",
+      "kind": "primary-paper",
+      "source_url": "https://www.sciencedirect.com/science/article/abs/pii/S0004370222000029",
+      "locator": "Multi-agent pathfinding with continuous time",
+      "status": "verified"
+    },
+    {
+      "id": "toy",
+      "claim": "3x2两机器人CBS玩具实例SOC=6且无顶点或交换冲突，单机器人时间上限16",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "21.html Python example with assertions",
+      "status": "illustrative"
+    }
+  ]
+}

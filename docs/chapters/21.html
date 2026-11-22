@@ -1,283 +1,107 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第21章 多机器人协调</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html">第20章 多目标路径规划</a></li>
-            <li><a href="21.html" class="active">第21章 多机器人协调</a></li>
-            <li><a href="22.html">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="从顶点冲突、边交换冲突和SOC目标出发理解多机器人CBS冲突搜索，附可运行两机器人解与交互分支。"><title>21 · 多机器人 CBS 与冲突搜索 — 路径规划算法</title><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="22.html">下一章</a></nav></div></header><div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#motivation">两条各自最短的路，为什么不能同时走</a><a href="#model">MAPF 的空间、时间和目标约定</a><a href="#conflicts">顶点冲突和边交换冲突</a><a href="#strategies">优先级规划与联合状态搜索</a><a href="#cbs">CBS 两层搜索怎样工作</a><a href="#interactive">交互：第一处冲突怎样分叉</a><a href="#example">标准库实现一个小型 CBS</a><a href="#limits">最优性条件与系统边界</a><a href="#sources">参考资料</a></nav></details></aside><main class="article-main" id="content"><article><header class="article-header"><p class="article-meta">MULTI-AGENT PATH FINDING / 21 OF 28</p><h1>多机器人协调：两条最短路为什么会互相阻挡？</h1><p class="dek">从同步时空冲突理解 MAPF，用 CBS 把联合问题拆成逐次约束的单机器人搜索；完整实现顶点冲突、边交换与目标持续占据。</p></header><section id="motivation" aria-labelledby="motivation-title"><h2 id="motivation-title">两台机器人都走最短路，反而会在同一格迎面相撞</h2><p>考虑一个只有两排、三列的通道：A 从左上格出发要去右上格；B 从右上格出发要去左上格。分别运行单机器人 BFS，二者会在 <code>t=1</code> 同时到达上排中间格。这两条路各自合法，却无法作为多机器人系统的联合计划执行。</p><p><strong>多智能体路径规划（Multi-Agent Path Finding, MAPF）</strong> 要寻找一组同步路径，要求任意两台机器人不会在同一时刻占据同一顶点，也不会在同一时间步沿同一无向边反向交换。此处讨论离散网格、同一速度、同步时钟；它与真实仓库中的连续时间、不同机器人尺寸和避碰优先权并不天然等价。</p><figure><p class="figure-kicker">MULTI-AGENT PATH FINDING / 21</p><img src="../assets/figures/21-conflict-timeline.svg" alt="两台机器人在相同时刻到达中间格产生顶点冲突，时间列从t0到t2逐步显示。" loading="lazy"><figcaption>单智能体最短路的拼接不能替代同步的联合碰撞检查；图中每格表示相同持续时间的离散动作。</figcaption></figure></section><section id="model" aria-labelledby="model-title"><h2 id="model-title">MAPF 需要明确：一格走多久？到达目标后还在不在？</h2><p>形式化地，图 <code>G=(V,E)</code> 的节点表示机器人可占据的离散位置。机器人 i 有起点 <code>s_i</code>、目标 <code>g_i</code>，时间为非负整数。每一步允许沿有效边移动，或选择原地等待。机器人路线 <code>π_i(t)</code> 在到达目标后通常定义为继续占据目标（<em>stay-at-goal</em>），而不是瞬间从地图消失。</p><p>目标函数也要先固定。本章采用 <strong>sum of costs（SOC）</strong>：各机器人首次到达目标的动作数之和；另一常见指标 <strong>makespan</strong> 则是最后一台机器人完成任务的时间。二者可选择不同的联合方案，不能都称为“最优”而不说优化什么。</p><div class="equation" role="region" aria-label="(1) 两种不同的完成代价" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="(1) 两种不同的完成代价"><mrow><mi>SOC</mi><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>k</mi></munderover><msub><mi>T</mi><mi>i</mi></msub><mo>,</mo><mspace width="1em"/><mi>makespan</mi><mo>=</mo><munder><mi>max</mi><mi>i</mi></munder><msub><mi>T</mi><mi>i</mi></msub></mrow></math><span class="equation-label">(1) 两种不同的完成代价</span></div><p>这里 <code>T_i</code> 是机器人 i 首次到达并能安全留在其目标的时间。所有机器人从 <code>t=0</code> 同时开始，移动与等待的时间代价为 1。</p></section><section id="conflicts" aria-labelledby="conflicts-title"><h2 id="conflicts-title">两类必须检查的冲突：同点与对向换边</h2><p><strong>顶点冲突</strong>：两机器人在同一时间占据同一顶点，即 <code>π_a(t)=π_b(t)</code>。<strong>边交换冲突</strong>：它们在同一时段沿同一条边相反方向通过，即 <code>π_a(t−1)=π_b(t)</code> 且 <code>π_a(t)=π_b(t−1)</code>。后者即使在每个离散时刻的顶点检查都通过，也仍然不安全。</p><p>按 stay-at-goal 约定，较早到达的机器人也要延长其目标占据状态，用于和其它尚在移动的机器人比较。若模型允许穿过同向边、不同速度或保持距离，就需要进一步定义跟驰和连续时空碰撞。</p><figure><p class="figure-kicker">MULTI-AGENT PATH FINDING / 21</p><img src="../assets/figures/21-vertex-edge-conflicts.svg" alt="左侧两个机器人同一时刻占用中央节点；右侧两个机器人在一个时间步内沿相同边反方向互换。" loading="lazy"><figcaption>顶点冲突和边交换冲突是两个不同检查条件，不能只看各帧的终点集合。</figcaption></figure></section><section id="strategies" aria-labelledby="strategies-title"><h2 id="strategies-title">优先级规划很快，但不保证找到全局最小成本解</h2><p>最直接的方案是按固定优先级依次规划：先求 A 的路线，把它在各时刻的占据作为约束，然后为 B 规划。它实现简单、能够在某些场景快速得到可行解，但结果明显依赖优先级顺序；较低优先级机器人甚至可能因固定先行方案而无路可走。</p><p>另一端是联合状态搜索：把所有机器人位置拼成一个状态，每步枚举合法联合动作。这样容易描述完整问题，但如果每台机器人有 b 种局部动作，联合动作数在最坏情况下按 <code>b^k</code> 增长。<strong>Conflict-Based Search（CBS）</strong>利用一个中间思路：单机器人规划保持相对便宜，只有发生冲突时才在高层引入额外约束。</p></section><section id="cbs" aria-labelledby="cbs-title"><h2 id="cbs-title">CBS：高层分叉处理冲突，低层单独修补路线</h2><p><a href="https://www.sciencedirect.com/science/article/pii/S0004370214001386">Sharon、Stern、Felner 与 Sturtevant 的 CBS（2015）</a>维护一个约束树（constraint tree）。每个高层节点保存约束集合及各机器人在约束下的最短路，并以 SOC 为优先级弹出。</p><ol><li>在根节点分别为每台机器人求最短路。</li><li>在所有同步路线中检测第一处顶点或边交换冲突。</li><li>若无冲突，则该节点给出一组联合可行路线。</li><li>若冲突涉及 A 与 B，创建两个孩子：一边禁止 A 使用冲突顶点/边，另一边禁止 B 使用。</li><li>只重规划新增约束所属的那台机器人，并将子节点按新的 SOC 入队，重复直至冲突消除。</li></ol><figure><p class="figure-kicker">MULTI-AGENT PATH FINDING / 21</p><img src="../assets/figures/21-cbs-constraint-tree.svg" alt="CBS根节点路径发生冲突，高层分别施加对A和B的禁入约束，低层只对受影响机器人重算。" loading="lazy"><figcaption>每个孩子排除当前冲突的一种参与者，不是把两台机器人同时永久禁止进入该位置；可行性与代价都需在子节点重新求解。</figcaption></figure><p>如果低层始终在给定约束下求最短路径，高层按 SOC 非递减扩展，且问题满足标准的离散 MAPF 假设，那么 CBS 是 SOC 最优求解方法。加入未验证的截断时间窗、次优低层或随意的冲突剪枝后，不能原封不动地继承该结论。</p></section><section id="interactive" aria-labelledby="interactive-title"><h2 id="interactive-title">交互：第一次冲突怎么变成两条搜索分支？</h2><p>在同一 <code>t=1</code> 的中间节点，A、B 初始路径同时经过。选择不同的高层约束，观察需要重新规划的是哪台机器人。这个控件展示 CBS 高层的一步，不模拟完整搜索树的所有后续节点。</p><div class="interactive-box" data-cbs-demo><div class="demo-controls" role="group" aria-label="CBS分支约束"><button type="button" data-cbs-mode="root" aria-pressed="true">根节点冲突</button><button type="button" data-cbs-mode="a" aria-pressed="false">禁止 A 在 t=1 占据中点</button><button type="button" data-cbs-mode="b" aria-pressed="false">禁止 B 在 t=1 占据中点</button></div><p class="demo-status" role="status" aria-live="polite">根节点：两机器人在 t=1 占据中间格，发生顶点冲突。</p><p class="micro">点击后展示局部约束与受影响机器人；最终求解仍需重新检查所有时刻的顶点/边冲突。</p></div></section><section id="example" aria-labelledby="example-title"><h2 id="example-title">标准库实现一个能检查边交换的两机器人 CBS</h2><p>下面是 Python 3.10+ 独立例子。低层使用 <code>(position,time)</code> 上的 BFS，包含等待动作与顶点/边约束；高层使用堆按 SOC 扩展冲突树。例子范围限定 3×2 无障碍网格、2 台机器人及 16 步单机器人搜索上限。它会验证初始最短路线确实冲突、最后路线无冲突、SOC 为 6，并检查目标持续占据语义。</p><pre><code>from collections import deque
+from heapq import heappush, heappop
+from itertools import count
 
-        <p>大家好！前面几章我们一直在讨论"一个机器人"的路径规划——不管环境怎么变、目标点有多少，主角都只有一个。但在真实世界里，机器人很少形单影只。Amazon 仓库里有上千台 Kiva 机器人在地板上穿梭，港口中有几十台 AGV 同时搬运集装箱，工厂流水线旁多台协作机器人共舞。当多个机器人共享同一物理空间时，它们之间会相互影响——你的路径可能挡住我的路，我的减速可能导致你被迫绕行。这种<strong>多机器人协调（Multi-Robot Coordination）</strong>问题，是路径规划领域中最困难、也最迷人的课题之一。</p>
+WIDTH, HEIGHT = 3, 2
+starts = ((0, 0), (2, 0))
+goals = ((2, 0), (0, 0))
 
-        <p>讲一个让我印象深刻的踩坑经历。有个项目需要在 100 平米的空间内部署 5 台送货机器人，给办公楼送快递。我们设计了"完美"的路径——每台机器人都走最优路线，出发前用全局规划算好了每条路径。结果第一次联调就炸了：5 台机器人在一个 T 型路口全部卡住，形成了一个完美的死锁（deadlock）——每台机器人都等着另一个机器人让路，结果谁都不让。保安大哥跑过来问："你们这机器人是吵架了吗？" 从那天起我认识到一个残酷的事实：<strong>多个机器人的"最优个体路径"之和，不等于"系统最优"</strong>。</p>
+def neighbors(p):
+    x, y = p
+    # Wait is a legal one-step action.
+    return [q for q in ((x,y),(x+1,y),(x-1,y),(x,y+1),(x,y-1))
+            if 0 &lt;= q[0] &lt; WIDTH and 0 &lt;= q[1] &lt; HEIGHT]
 
-        <h2>多机器人场景的复杂性</h2>
-
-        <p>多机器人协调的难点远超直觉想象。让我用几个数据来说明：</p>
-
-        <ul>
-            <li><strong>状态空间指数爆炸</strong>——一台机器人在 100x100 的栅格地图上有 10,000 个可能位置。两台呢？是 10,000 × 10,000 = 100,000,000。三台就是 10¹²。即使你有一台超级计算机，也无法暴力搜索 50 台机器人的联合状态空间。</li>
-            <li><strong>资源争用（Resource Contention）</strong>——空间是共享资源，路径交叉区域就是资源争用的"热点"。多个机器人同时想要通过同一个狭窄通道时，冲突不可避免。</li>
-            <li><strong>死锁（Deadlock）</strong>——当机器人 A 挡住了机器人 B 的路，而 B 又挡住了 A 的路（或者涉及更多机器人的循环依赖），系统就陷入了不可恢复的僵局。</li>
-            <li><strong>活锁（Livelock）</strong>——比死锁更气人：机器人们都在动，但都在互相让路，结果谁都无法前进。它们在"谦让"中无限循环。</li>
-        </ul>
-
-        <h2>冲突类型</h2>
-
-        <p>为了更好地处理多机器人冲突，我们需要先对冲突进行分类。常见的冲突类型有四种：</p>
-
-        <ul>
-            <li><strong>正面冲突（Head-on）</strong>——两台机器人在同一条直线通道上相向而行。最直接的冲突，往往发生在走廊、通道中。</li>
-            <li><strong>交叉冲突（Crossing）</strong>——两台机器人从不同方向驶向同一个交叉路口，路径呈十字交叉。典型的路口场景。</li>
-            <li><strong>汇合冲突（Merging）</strong>——一台机器人从支路汇入主路，而主路上已有机器人在行驶。类似高速公路入口。</li>
-            <li><strong>跟驰冲突（Following）</strong>——一台机器人在另一台后面同向行驶，前车减速导致后车被迫减速。这是最常见的"软冲突"，处理不好会引发连锁反应。</li>
-        </ul>
-
-        <p>检测这些冲突通常有两种思路：一种是<strong>基于路径的冲突检测</strong>，在规划阶段就检查各机器人的路径是否存在时空重叠；另一种是<strong>基于传感器的反应式检测</strong>，在运动过程中实时感知并避免冲突。前者精度高但计算量大，后者实时性好但可能不够"有远见"。</p>
-
-        <h2>优先级规划</h2>
-
-        <p>优先级规划（Prioritized Planning）是多机器人协调中最经典、最工程友好的方法。它的思路非常直观：</p>
-
-        <ol>
-            <li>为每个机器人分配一个优先级（Priority）</li>
-            <li>按优先级从高到低依次规划路径：高优先级机器人的路径"冻结"为障碍物，低优先级机器人的规划必须避开高优先级机器人的路径</li>
-            <li>如果需要在线更新，低优先级机器人检测到新障碍物（其实就是高优先级机器人）时触发重规划</li>
-        </ol>
-
-        <p>这种方法的优点是实现简单、计算高效——n 台机器人的规划问题被分解成了 n 个独立的单机器人规划问题（每个的复杂度是 O(nlogn) 而不是指数级）。缺点也很明显：低优先级机器人的路径质量可能很差，甚至可能找不到可行路径——如果高优先级机器人把所有的好路线都占了，低优先级就只能绕远路，或者被"困在"某个区域出不去。</p>
-
-        <p>那优先级怎么分配呢？常见的方法有：</p>
-
-        <ul>
-            <li><strong>静态优先级</strong>——根据任务重要性事先固定（比如"执行紧急任务的机器人优先级最高"）</li>
-            <li><strong>随机优先级</strong>——每次规划时随机排列，避免系统偏差</li>
-            <li><strong>动态优先级</strong>——根据当前状态实时计算（比如"最快接近冲突区域的机器人获得更高优先级"）</li>
-        </ul>
-
-        <h2>交通规则法</h2>
-
-        <p>如果你觉得优先级规划"太不公平"，那么交通规则法（Traffic Rules）可能更合你的胃口。它的想法也很简单：把人类社会成熟的交通规则搬到机器人世界中来。</p>
-
-        <p>具体实现包括：</p>
-
-        <ul>
-            <li><strong>虚拟交通灯（Virtual Traffic Lights）</strong>——在交叉路口设置虚拟的红绿灯。机器人靠近路口时通过通信协商获取通行权，绿灯亮时通过，红灯时等待。可以基于令牌（Token）或分布式共识实现。</li>
-            <li><strong>右侧优先/让行规则（Right-of-Way Rules）</strong>——在无信号灯的路口，规定"右侧来车优先"或"直行优先于转弯"等规则。这不需要额外的通信，只要所有机器人遵循同一套规则。</li>
-            <li><strong>车道化（Lane-based Coordination）</strong>——将地面空间划分为明确的车道，强制机器人沿固定方向行驶。Amazon 仓库就采用了类似的方法——机器人全部在地面的二维码网格上沿固定方向行进，不允许逆行。</li>
-        </ul>
-
-        <p>交通规则法的优势在于它几乎不需要全局通信——每个机器人只需要感知局部环境并遵守规则。但缺点也同样突出：规则无法覆盖所有场景，在复杂非结构化环境中，"转弯让直行"这种规则可能根本用不上。</p>
-
-        <h2>去中心化协调</h2>
-
-        <p>当机器人数量很多（几十上百台）时，集中式的规划方法开始失效——你不可能让一个中央服务器为所有机器人规划路径，通信带宽和计算延时都不允许。这时我们需要<strong>去中心化（Decentralized）</strong>的协调方法。</p>
-
-        <p>其中最著名的算法是<strong>速度障碍法</strong>家族的三个成员：</p>
-
-        <ul>
-            <li><strong>VO（Velocity Obstacle）</strong>——这是基础版本。对于一对机器人 A 和 B，VO 定义了所有会导致 A 在将来某个时间与 B 发生碰撞的速度集合。A 只需要避开这些"禁止速度"即可。</li>
-            <li><strong>RVO（Reciprocal Velocity Obstacle）</strong>——考虑了双方的相互避让。如果 A 和 B 都按照 VO 的原理避让对方，会导致"振荡"——两人都向左让，发现要撞上了，又都向右让。RVO 假设双方各承担一半的避让责任，从而消除振荡。</li>
-            <li><strong>ORCA（Optimal Reciprocal Collision Avoidance）</strong>——RVO 的改进版。ORCA 为每个机器人生成一个半平面约束——只要 A 和 B 各自选择一个位于各自半平面内的速度，就能保证在 τ 时间内互不碰撞，且选择的轨迹与机器人当前首选速度的偏差最小。</li>
-        </ul>
-
-        <p>下面是一个简化的 ORCA 实现，展示了核心的碰撞避免逻辑：</p>
-
-        <pre><code>import math
-import random
-
-class Robot:
-    def __init__(self, x, y, vx, vy, radius=0.5):
-        self.pos = (x, y)
-        self.vel = (vx, vy)
-        self.radius = radius
-        self.pref_vel = (vx, vy)  # 首选速度（无碰撞时的理想速度）
-
-def orca_collision_avoidance(robot, others, time_horizon=2.0, delta=0.1):
-    """
-    简化版 ORCA 避碰逻辑。
-    为 robot 计算一个新的速度，使其在未来 time_horizon 秒内不与 others 中的任何机器人碰撞。
-    """
-    best_vel = robot.pref_vel
-    best_cost = float('inf')
-
-    # 在首选速度附近采样候选速度
-    for _ in range(200):
-        # 在半径 delta 范围内随机采样速度
-        sample_vx = robot.pref_vel[0] + random.uniform(-delta, delta)
-        sample_vy = robot.pref_vel[1] + random.uniform(-delta, delta)
-        sample_vel = (sample_vx, sample_vy)
-
-        # 检查是否与任何其他机器人在时间窗口内碰撞
-        collision = False
-        for other in others:
-            # 相对位置和相对速度
-            rel_pos = (robot.pos[0] - other.pos[0],
-                       robot.pos[1] - other.pos[1])
-            rel_vel = (sample_vel[0] - other.vel[0],
-                       sample_vel[1] - other.vel[1])
-            # 最近距离和时间
-            dist = math.hypot(rel_pos[0], rel_pos[1])
-            speed_sq = rel_vel[0]**2 + rel_vel[1]**2
-            if speed_sq < 1e-6:
-                # 相对速度为零，检查当前距离
-                if dist < robot.radius + other.radius:
-                    collision = True
-                    break
+def single_agent(agent, constraints, horizon=16):
+    start, goal = starts[agent], goals[agent]
+    vertex = {(c[2], c[3]) for c in constraints
+              if c[0] == "v" and c[1] == agent}
+    edge = {(c[2], c[3], c[4]) for c in constraints
+            if c[0] == "e" and c[1] == agent}
+    if (start, 0) in vertex:
+        return None
+    queue = deque([(start, 0)])
+    parent = {(start, 0): None}
+    while queue:
+        p, t = queue.popleft()
+        # Goal occupancy persists after arrival. Future constraints matter.
+        blocked_later = any(v == goal and time &gt;= t
+                            for v, time in vertex) or any(
+            u == goal and v == goal and time &gt; t
+            for u, v, time in edge)
+        if p == goal and not blocked_later:
+            route, state = [], (p, t)
+            while state is not None:
+                route.append(state[0])
+                state = parent[state]
+            return tuple(reversed(route))
+        if t == horizon:
+            continue
+        for q in neighbors(p):
+            if (q, t+1) in vertex or (p, q, t+1) in edge:
                 continue
-            # 计算达到最近距离的时间
-            t_closest = -(rel_pos[0]*rel_vel[0] + rel_pos[1]*rel_vel[1]) / speed_sq
-            if t_closest < 0:
-                t_closest = 0
-            if t_closest > time_horizon:
+            nxt = (q, t+1)
+            if nxt not in parent:
+                parent[nxt] = (p, t)
+                queue.append(nxt)
+    return None
+
+def at(path, t):
+    return path[min(t, len(path)-1)]
+
+def first_conflict(paths):
+    for t in range(max(map(len, paths))):
+        for a in range(len(paths)):
+            for b in range(a+1, len(paths)):
+                pa, pb = at(paths[a], t), at(paths[b], t)
+                if pa == pb:
+                    return ("v", a, b, pa, t)
+                if t and at(paths[a],t-1) == pb and at(paths[b],t-1) == pa:
+                    return ("e", a, b,
+                            (at(paths[a],t-1),pa),
+                            (at(paths[b],t-1),pb), t)
+    return None
+
+def cbs():
+    initial = tuple(single_agent(i, ()) for i in range(2))
+    assert all(initial)
+    counter = count()
+    opened = [(sum(len(p)-1 for p in initial),
+               next(counter), (), initial)]
+    seen = {frozenset()}
+    expanded = 0
+    while opened:
+        cost, _, constraints, paths = heappop(opened)
+        expanded += 1
+        conflict = first_conflict(paths)
+        if conflict is None:
+            return paths, cost, expanded
+        for agent in conflict[1:3]:
+            if conflict[0] == "v":
+                extra = ("v", agent, conflict[3], conflict[4])
+            else:
+                move = conflict[3] if agent == conflict[1] else conflict[4]
+                extra = ("e", agent, move[0], move[1], conflict[5])
+            child_constraints = constraints + (extra,)
+            key = frozenset(child_constraints)
+            if key in seen:
                 continue
-            # 计算最近距离
-            closest_dist = math.hypot(
-                rel_pos[0] + rel_vel[0] * t_closest,
-                rel_pos[1] + rel_vel[1] * t_closest
-            )
-            if closest_dist < robot.radius + other.radius:
-                collision = True
-                break
+            seen.add(key)
+            child_path = single_agent(agent, child_constraints)
+            if child_path is None:
+                continue
+            changed = list(paths)
+            changed[agent] = child_path
+            changed = tuple(changed)
+            heappush(opened,(sum(len(p)-1 for p in changed),
+                            next(counter),child_constraints,changed))
+    raise RuntimeError("No solution within this finite horizon")
 
-        if not collision:
-            # 计算与首选速度的偏差
-            cost = math.hypot(
-                sample_vel[0] - robot.pref_vel[0],
-                sample_vel[1] - robot.pref_vel[1]
-            )
-            if cost < best_cost:
-                best_cost = cost
-                best_vel = sample_vel
-
-    return best_vel
-
-
-# ---------- 仿真主循环 ----------
-def simulate(robots, steps=100):
-    for step in range(steps):
-        new_velocities = []
-        for i, robot in enumerate(robots):
-            others = [r for j, r in enumerate(robots) if j != i]
-            new_vel = orca_collision_avoidance(robot, others)
-            new_velocities.append(new_vel)
-        # 更新所有机器人的速度和位置
-        for i, robot in enumerate(robots):
-            robot.vel = new_velocities[i]
-            robot.pos = (robot.pos[0] + robot.vel[0] * 0.1,
-                         robot.pos[1] + robot.vel[1] * 0.1)
-        # 检查是否有碰撞发生
-        for i in range(len(robots)):
-            for j in range(i+1, len(robots)):
-                d = math.hypot(robots[i].pos[0] - robots[j].pos[0],
-                               robots[i].pos[1] - robots[j].pos[1])
-                if d < robots[i].radius + robots[j].radius:
-                    print(f"步骤 {step}: 机器人 {i} 和 {j} 发生碰撞!")
-
-# 创建两个相向而行的机器人测试
-r1 = Robot(0, 0, 1, 0)    # 向右走
-r2 = Robot(5, 0, -1, 0)   # 向左走
-simulate([r1, r2], 20)</code></pre>
-
-        <p>这段代码的核心思想很朴素：在首选速度附近采样，找到所有不会导致碰撞的速度中与首选速度偏差最小的一个。真实的 ORCA 算法使用半平面约束来精确计算可行速度区域（而不是盲目采样），但这里为了清晰展示工作原理，使用了采样方法。你可以看到，即使只有两个相向而行的机器人，ORCA 也能自动让它们"各让一步"，完成安全交错。</p>
-
-        <p>下面是几种协调方法的对比：</p>
-
-        <table>
-            <tr>
-                <th>方法</th>
-                <th>通信需求</th>
-                <th>计算方式</th>
-                <th>完备性</th>
-                <th>适用规模</th>
-                <th>典型场景</th>
-            </tr>
-            <tr>
-                <td>优先级规划</td>
-                <td>低（只需优先级信息）</td>
-                <td>集中式顺序规划</td>
-                <td>中等</td>
-                <td>10-50 台</td>
-                <td>仓库 AGV、实验室</td>
-            </tr>
-            <tr>
-                <td>交通规则法</td>
-                <td>低（局部感知即可）</td>
-                <td>去中心化</td>
-                <td>低（依赖规则覆盖）</td>
-                <td>50-500 台</td>
-                <td>Amazon Kiva 仓库</td>
-            </tr>
-            <tr>
-                <td>ORCA / RVO</td>
-                <td>中（需交换速度信息）</td>
-                <td>去中心化</td>
-                <td>高（数学保证）</td>
-                <td>10-100 台</td>
-                <td>密集人群、无人机编队</td>
-            </tr>
-            <tr>
-                <td>集中式全局规划</td>
-                <td>极高（全信息）</td>
-                <td>集中式联合搜索</td>
-                <td>最高（可达全局最优）</td>
-                <td>2-10 台</td>
-                <td>小规模精密协作</td>
-            </tr>
-        </table>
-
-        <div class="warning">
-            <strong>警惕"走廊死锁"陷阱：</strong>在多机器人系统中，有一种场景极难处理——两台机器人在一条狭窄走廊中相向而行，走廊宽度只够一台机器人通过。如果双方都不愿（或无法）后退，它们会面对面卡住，形成死锁。解决这个问题通常需要引入"后退"行为——一方主动倒车到走廊外让路。但"谁该后退"的决策本身就涉及协调问题。更糟糕的是，如果走廊较长且中间有多个机器人，可能会形成多米诺骨牌式的连锁阻塞。在项目设计中，<strong>请尽量避免这种"单点瓶颈"的拓扑结构</strong>——规划行走路线时优先选择环路而非单线走廊。
-        </div>
-
-        <p>多机器人协调是一个还在快速发展中的领域。随着机器人普及率的提高，这个问题只会变得越来越重要。如果你感兴趣，可以进一步研究<strong>多智能体强化学习（MARL）</strong>——这是目前最前沿的解决方案：让机器人在仿真环境中通过试错学会自动协调，而不需要人工预设任何规则。</p>
-
-        <p>下一章我们将从另一个角度来处理复杂场景：<strong>优化模型方法</strong>。如果说本章的策略是通过"协调"来处理多机器人，那么下一章的思路是把路径规划本身建模成一个数学优化问题，让求解器来帮我们找到最优解。这也是 ROS2 Nav2 等主流框架中使用的核心方法。</p>
-
-        <div class="footer-nav">
-            <a href="20.html">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="22.html">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+paths, soc, expanded = cbs()
+assert first_conflict(paths) is None
+assert soc == 6
+assert at(paths[0], 10) == goals[0] and at(paths[1], 10) == goals[1]
+assert single_agent(0, ()) == ((0,0),(1,0),(2,0))
+assert single_agent(1, ()) == ((2,0),(1,0),(0,0))
+print("conflict-free SOC:", soc,
+      "high-level nodes:", expanded, "paths:", paths)</code></pre><p>这个实现将时间上限硬编码为 16，<strong>因此不是任意规模 MAPF 的完备实现</strong>。标准 CBS 的最优性结论依赖低层最优搜索及足够完整的状态空间；这里能够验证的只是此固定教学实例的搜索结果。</p></section><section id="limits" aria-labelledby="limits-title"><h2 id="limits-title">真实车队还需要处理时延、尺寸与协作协议</h2><p>离散 CBS 假设同步决策与等长动作，现实系统中的机器人可能速度不同、轨迹有加速度约束、尺寸不一致，还存在通信延迟和定位误差。把一个网格点当作整车占据区域会遗漏擦碰。应该使用连续时空碰撞检测、足迹膨胀、死锁恢复、任务分配与在线重规划等机制。</p><p>在连续时间的真实车队里，即使离散顶点与交换检查都通过，机器人仍可能在格子间移动时擦碰；必须改用一致的时间轨迹与足迹扫掠模型。</p><figure><p class="figure-kicker">MULTI-AGENT PATH FINDING / 21</p><img src="../assets/figures/21-continuous-time.svg" alt="连续时间机器人轨迹与障碍占据带需要在相同时间坐标下比较，离散同步冲突不足以表达全部碰撞。" loading="lazy"><figcaption>离散网格的同步占位只是一个模型；具有不同速度、动作持续时间和外形的机器人需要连续时空碰撞检查。</figcaption></figure><p>要公平评估 MAPF，还应记录机器人数量、地图密度、起终点冲突难度、SOC、makespan、总失败数以及规划超时；仅用某一张地图上的“拓展了多少高层节点”不能推导算法的普遍优劣。</p></section><section id="sources" aria-labelledby="sources-title"><h2 id="sources-title">原始研究与进一步阅读</h2><ul><li><a href="https://www.sciencedirect.com/science/article/pii/S0004370214001386">Sharon et al. (2015), Conflict-Based Search for Optimal Multi-Agent Pathfinding</a>（Artificial Intelligence 219）</li><li><a href="https://ijcai.org/proceedings/2015/110">Boyarski et al. (2015), ICBS：Improved CBS</a>（冲突选择和 bypass 等扩展）</li><li><a href="https://www.sciencedirect.com/science/article/abs/pii/S0004370222000029">Multi-agent pathfinding with continuous time</a>（连续时间变体）</li></ul></section><nav class="article-footer" aria-label="章节翻页"><a href="20.html">← 20 · 多目标规划</a><a href="22.html">22 · 优化模型与 MPC →</a></nav></article></main></div></body></html>

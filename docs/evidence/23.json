@@ -1,0 +1,37 @@
+{
+  "article": "23",
+  "claims": [
+    {
+      "id": "nav2-setup",
+      "claim": "Nav2首次机器人配置需要一致的footprint、TF、odometry、costmap等",
+      "kind": "official-documentation",
+      "source_url": "https://docs.nav2.org/rolling/configuration_and_development/first_time_robot_setup_guide/",
+      "locator": "Nav2 First-Time Robot Setup Guide",
+      "status": "verified"
+    },
+    {
+      "id": "tf",
+      "claim": "map、odom、base_link变换层级及时间戳语义",
+      "kind": "official-documentation",
+      "source_url": "https://docs.nav2.org/rolling/configuration_and_development/first_time_robot_setup_guide/transformation/setup_transforms/",
+      "locator": "Nav2 Setting Up Transformations",
+      "status": "verified"
+    },
+    {
+      "id": "search",
+      "claim": "A*与启发式图搜索记录g h f",
+      "kind": "textbook",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/",
+      "locator": "LaValle, Planning Algorithms, discrete search",
+      "status": "verified"
+    },
+    {
+      "id": "demo",
+      "claim": "7x5栅格A*示例断言路径通过底部唯一缺口及f值单调",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "23.html Python example",
+      "status": "illustrative"
+    }
+  ]
+}

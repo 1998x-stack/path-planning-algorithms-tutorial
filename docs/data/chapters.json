@@ -143,35 +143,35 @@
     "num": "21",
     "title": "多机器人协调",
     "href": "chapters/21.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 4
   },
   {
     "num": "22",
     "title": "优化模型方法",
     "href": "chapters/22.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 4
   },
   {
     "num": "23",
     "title": "可视化与调试",
     "href": "chapters/23.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 5
   },
   {
     "num": "24",
     "title": "算法性能基准测试",
     "href": "chapters/24.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 5
   },
   {
     "num": "25",
     "title": "仿真到实车部署",
     "href": "chapters/25.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 5
   },
   {

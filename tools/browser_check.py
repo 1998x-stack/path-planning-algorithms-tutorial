@@ -15,7 +15,7 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 OUTPUT = ROOT / "reports" / "browser"
-PAGES = ["index.html"] + [f"chapters/{n:02}.html" for n in range(1, 21)]
+PAGES = ["index.html"] + [f"chapters/{n:02}.html" for n in range(1, 26)]
 VIEWS = [("desktop", 1440, 900), ("tablet", 768, 1024),
          ("mobile390", 390, 844), ("mobile360", 360, 800)]
 
@@ -127,6 +127,36 @@ def main():
                             changed = demo.locator("[data-shortcut-polyline]").get_attribute("points")
                             if original == changed or "捷径" not in demo.locator(".demo-status").inner_text():
                                 failures.append("15: collision-checked shortcut demo did not update")
+                        if key == "desktop" and path.endswith("/21.html"):
+                            status = page.locator("[data-cbs-demo] .demo-status")
+                            original = status.inner_text()
+                            page.locator("[data-cbs-mode='a']").click()
+                            if status.inner_text()==original or "A" not in status.inner_text():
+                                failures.append("21: CBS conflict constraint interaction did not update")
+                        if key == "desktop" and path.endswith("/22.html"):
+                            status = page.locator("[data-mpc-demo] .demo-status")
+                            original = status.inner_text()
+                            page.locator("[data-mpc-mode='replan']").click()
+                            if status.inner_text()==original or "重规划" not in status.inner_text():
+                                failures.append("22: MPC receding-horizon interaction did not update")
+                        if key == "desktop" and path.endswith("/23.html"):
+                            status = page.locator("[data-debug-demo] .demo-status")
+                            original = status.inner_text()
+                            page.locator("[data-debug-mode='pose']").click()
+                            if status.inner_text()==original or "TF" not in status.inner_text():
+                                failures.append("23: planner debug symptom interaction did not update")
+                        if key == "desktop" and path.endswith("/24.html"):
+                            status = page.locator("[data-benchmark-demo] .demo-status")
+                            original = status.inner_text()
+                            page.locator("[data-benchmark-mode='success']").click()
+                            if status.inner_text()==original or "100%" not in status.inner_text():
+                                failures.append("24: failure denominator interaction did not update")
+                        if key == "desktop" and path.endswith("/25.html"):
+                            status = page.locator("[data-deployment-demo] .demo-status")
+                            original = status.inner_text()
+                            page.locator("[data-deploy-mode='robot']").click()
+                            if status.inner_text()==original or "实车" not in status.inner_text():
+                                failures.append("25: deployment safety gates interaction did not update")
                         name=path.replace("/", "-").replace(".html", "")
                         page.screenshot(path=str(OUTPUT / f"{name}-{key}.png"), full_page=True)
                         results.append({"page": path, "viewport": key, "http": response.status if response else None,
