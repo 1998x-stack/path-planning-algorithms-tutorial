@@ -15,7 +15,7 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 OUTPUT = ROOT / "reports" / "browser"
-PAGES = ["index.html"] + [f"chapters/{n:02}.html" for n in range(1, 11)]
+PAGES = ["index.html"] + [f"chapters/{n:02}.html" for n in range(1, 16)]
 VIEWS = [("desktop", 1440, 900), ("tablet", 768, 1024),
          ("mobile390", 390, 844), ("mobile360", 360, 800)]
 
@@ -87,6 +87,20 @@ def main():
                             after = status.inner_text()
                             if (before == after or "S→B→G" not in after):
                                 failures.append("08: weighted A* epsilon change did not update computed path")
+                        if key == "desktop" and path.endswith("/14.html"):
+                            status = page.locator("[data-sampling-choice] .demo-status")
+                            original = status.inner_text()
+                            page.locator("[data-choice='multi']").click()
+                            updated = status.inner_text()
+                            if original == updated or "PRM" not in updated:
+                                failures.append("14: sampling method decision did not change")
+                        if key == "desktop" and path.endswith("/15.html"):
+                            demo = page.locator("[data-shortcut-demo]")
+                            original = demo.locator("[data-shortcut-polyline]").get_attribute("points")
+                            demo.locator("[data-path-mode='safe']").click()
+                            changed = demo.locator("[data-shortcut-polyline]").get_attribute("points")
+                            if original == changed or "捷径" not in demo.locator(".demo-status").inner_text():
+                                failures.append("15: collision-checked shortcut demo did not update")
                         name=path.replace("/", "-").replace(".html", "")
                         page.screenshot(path=str(OUTPUT / f"{name}-{key}.png"), full_page=True)
                         results.append({"page": path, "viewport": key, "http": response.status if response else None,

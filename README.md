@@ -4,7 +4,7 @@
 
 **[阅读网页版](https://1998x-stack.github.io/path-planning-algorithms-tutorial/)** · [从第一章开始](https://1998x-stack.github.io/path-planning-algorithms-tutorial/chapters/01.html)
 
-> 2026-11 第二批精修：01–10 已深度重构，并通过静态/示例/Chromium 验收；11–28 为可读原版，尚未完成逐章技术审校。
+> 2026-11 第三批精修：01–15 已深度重构，16–28 为可读原版、仍待逐章技术审校。已改造章节的 CI 状态以 GitHub Actions 最新实际运行记录为准。
 
 ## 内容结构
 
@@ -26,9 +26,9 @@
 │   ├── assets/css/site.css   # 新设计系统
 │   ├── assets/js/site.js     # 轻量无依赖交互
 │   ├── assets/figures/       # 可单独查看的原创 SVG
-│   ├── evidence/             # 01–10 的主要事实来源登记
+│   ├── evidence/             # 01–15 的主要事实来源登记
 │   └── data/chapters.json    # 章节状态与导航元数据
-├── archive/2026-before-redesign/ # 01–10 原始篇章存档
+├── archive/2026-before-redesign/ # 01–15 原始篇章存档
 ├── tools/build_site.py      # 离线复制构建
 ├── tools/validate_site.py   # 静态结构、链接、SVG 检查
 ├── .github/workflows/pages.yml
@@ -43,7 +43,7 @@ Python 3.10+，不需要 Node、第三方字体、在线数学脚本。
 
 ```bash
 python3 tools/validate_site.py
-python3 tools/validate_examples.py  # 验证前十篇微型算法示例
+python3 tools/validate_examples.py  # 验证前十五篇微型算法示例
 python3 tools/build_site.py
 # 可选：实际 Chromium 多视口截图测试
 python3 -m pip install playwright==1.56.0
@@ -65,6 +65,14 @@ python3 -m http.server 8000 -d docs
 - **08 A* 变体：** Weighted A* 的 ε 次优界；ARA* 与反复重跑 WA* 的区别；双向和分层算法独立假设。
 - **09 D* Lite：** g/rhs 局部一致性、二元 key、km 更新与局部修复；对改变边权的代码断言。
 - **10 JPS：** 直线/对角、forced neighbor、禁止切角版本差异；原型代码仅是直线跳点检测器，不等于完整 JPS。
+
+## 第三批（11–15）专题审校
+
+- **11 RRT**：Sample、Nearest、Steer、MotionValid、Voronoi 探索偏置；有限预算失败不等于不可达。
+- **12 RRT***：选择父节点、重连、子树成本传播与理论近邻半径；明确示例参数未证实理论阈值。
+- **13 PRM**：预处理路网、两个独立查询、合法局部边、PRM 与 PRM* 的边界。
+- **14 方法比较**：成功率、预算、解成本和预处理分开报告；五组配对种子测试仅比较 RRT 目标偏置。
+- **15 后处理**：Shortcut、Douglas–Peucker 几何偏差与碰撞反例、B-spline/Bézier、曲率约束及解析线段碰撞测试。
 
 ## 主要参考
 

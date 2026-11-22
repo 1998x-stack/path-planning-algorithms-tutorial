@@ -73,35 +73,35 @@
     "num": "11",
     "title": "RRT 快速随机树",
     "href": "chapters/11.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 3
   },
   {
     "num": "12",
     "title": "RRT* 渐进最优",
     "href": "chapters/12.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 3
   },
   {
     "num": "13",
     "title": "PRM 概率路线图",
     "href": "chapters/13.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 3
   },
   {
     "num": "14",
     "title": "采样方法大对比",
     "href": "chapters/14.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 3
   },
   {
     "num": "15",
     "title": "路径平滑与后处理",
     "href": "chapters/15.html",
-    "status": "legacy",
+    "status": "redesigned",
     "part": 3
   },
   {
