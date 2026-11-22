@@ -39,7 +39,7 @@ def check():
         p=Tags()
         try: p.feed(file.read_text(encoding="utf-8"))
         except Exception as e: errors.append(f"{file}: parse {e}"); continue
-        if file == DOCS / "index.html" or (file.parent.name=="chapters" and file.stem in [f"{i:02}" for i in range(1,26)]):
+        if file == DOCS / "index.html" or (file.parent.name=="chapters" and file.stem in [f"{i:02}" for i in range(1,29)]):
             if p.h1!=1: errors.append(f"{file}: expected one h1, got {p.h1}")
             if file.parent.name=="chapters" and p.figure<3: errors.append(f"{file}: expected >=3 figures, got {p.figure}")
         errors.extend(f"{file}: {e}" for e in p.errors)
@@ -52,7 +52,7 @@ def check():
                 errors.append(f"{file}: missing asset {link}")
             elif u.fragment and dest.suffix==".html" and dest==file.resolve() and u.fragment not in p.ids:
                 errors.append(f"{file}: unknown anchor {link}")
-    for i in range(1, 26):
+    for i in range(1, 29):
         evidence = DOCS / 'evidence' / f'{i:02}.json'
         if not evidence.is_file(): errors.append(f'missing evidence ledger: {evidence}')
     manifest = DOCS / "evidence" / "figures-16-20.json"
@@ -84,6 +84,23 @@ def check():
                     errors.append("figure not referenced in article: " + entry["file"])
         except Exception as exc:
             errors.append(f"figure manifest parse error: {exc}")
+    final_manifest = DOCS / "evidence" / "figures-26-28.json"
+    if not final_manifest.is_file():
+        errors.append("missing 26-28 figure manifest")
+    else:
+        try:
+            entries = json.loads(final_manifest.read_text(encoding="utf-8")).get("figures", [])
+            if len(entries) != 12:
+                errors.append(f"expected 12 figures in final manifest, got {len(entries)}")
+            for entry in entries:
+                asset = DOCS / "assets" / "figures" / entry["file"]
+                if not asset.is_file():
+                    errors.append("missing final figure: " + entry["file"])
+                chapter = DOCS / "chapters" / (entry["chapter"] + ".html")
+                if chapter.is_file() and entry["file"] not in chapter.read_text(encoding="utf-8"):
+                    errors.append("final figure not referenced in article: " + entry["file"])
+        except Exception as exc:
+            errors.append(f"final figure manifest parse error: {exc}")
     for file in DOCS.rglob("*.svg"):
         try:
             xml=ET.parse(file).getroot()

@@ -187,3 +187,48 @@ document.addEventListener("DOMContentLoaded",()=>{
   for(const x of buttons)x.setAttribute("aria-pressed",String(x===b));
  });
 });
+
+// Chapter 26: distinguish what the learned component outputs from downstream guarantees.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-learning-demo]");if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-learning-mode]")];
+ const messages={
+  cost:"学习代价：模型输出风险或通行代价；碰撞几何、未知区域和代价尺度仍需独立检查。",
+  policy:"学习策略：模型直接提出动作；运行时必须检查状态是否分布外、动作是否可执行以及制动是否安全。",
+  search:"可微分搜索：学习表示接入显式搜索；最优性仍取决于代价、启发式和搜索近似的具体假设。",
+  hybrid:"混合回退：学习模块提出候选，验证器拒绝不可行命令；失败时调用经典规划器或安全停车。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{
+  status.textContent=messages[b.dataset.learningMode];
+  for(const x of buttons)x.setAttribute("aria-pressed",String(x===b));
+ });
+});
+// Chapter 27: the frontier stack separates semantic grounding, generation and verification.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-frontier-demo]");if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-frontier-layer]")];
+ const messages={
+  semantic:"语义理解：把自然语言和图像落到地图中的目标区域；输出应包含坐标系与不确定度。",
+  diffusion:"生成轨迹：扩散策略产生多模态候选动作序列；采样结果不是天然无碰撞的执行命令。",
+  verify:"几何验证：检查碰撞、足迹、曲率、速度和时间戳；只有通过显式约束的候选才能进入控制层。",
+  gpu:"并行优化：GPU可并行评估多个初始化与碰撞代价；吞吐量不等于端到端控制延迟。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{
+  status.textContent=messages[b.dataset.frontierLayer];
+  for(const x of buttons)x.setAttribute("aria-pressed",String(x===b));
+ });
+});
+// Chapter 28: staged evidence for the discrete capstone and its real-robot extension.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-capstone-demo]");if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-capstone-mode]")];
+ const messages={
+  offline:"离线单测：验证A*路径、边界、障碍检查、时空状态、等待动作和顶点/边交换断言。",
+  dynamic:"动态仿真：记录每个tick的预测障碍、等待动作、顶点/边交换冲突和重规划原因。",
+  release:"实车准入：补足真实footprint、TF/传感器时延、速度与制动限制、独立急停、故障注入和人工评审。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{
+  status.textContent=messages[b.dataset.capstoneMode];
+  for(const x of buttons)x.setAttribute("aria-pressed",String(x===b));
+ });
+});

@@ -1,100 +1,113 @@
 # 路径规划算法 · Path Planning Algorithms Tutorial
 
-28 篇中文路径规划课程。从状态 / 构型空间、图搜索、采样法、约束与动态规划，到工程验证。
+28 篇中文路径规划课程，从构型空间、图搜索、采样与局部控制，到学习型规划、前沿研究和可验证的导航系统。
 
 **[阅读网页版](https://1998x-stack.github.io/path-planning-algorithms-tutorial/)** · [从第一章开始](https://1998x-stack.github.io/path-planning-algorithms-tutorial/chapters/01.html)
 
-> 2026-11 第五批精修：01–25 已深度重构，26–28 为可读原版、仍待逐章技术审校。已改造章节的 CI 状态以 GitHub Actions 最新实际运行记录为准。
+> 2026-11 收官精修：01–28 全部完成独立教学重构。课程分为六个学习模块；每篇都具有独立上下文、原创 SVG、可追溯来源与可执行教学示例。CI 状态以 GitHub Actions 最新实际运行记录为准。
 
 ## 内容结构
 
-| 部分 | 章节 | 主要问题 |
+| 模块 | 章节 | 主要问题 |
 | --- | --- | --- |
-| 基础建模 | 01–05 | 地图如何变成规划问题？启发式怎样帮助搜索？ |
+| 基础建模 | 01–05 | 地图如何变成规划问题？ |
 | 图搜索算法 | 06–10 | 如何在离散状态图上寻找低代价路径？ |
 | 采样与路径质量 | 11–15 | 高维空间如何探索、连接与后处理？ |
-| 约束与在线规划 | 16–22 | 如何将运动约束、动态障碍和优化结合？ |
-| 工程与实验 | 23–28 | 如何调试、评估、部署和复现算法？ |
+| 约束与在线规划 | 16–22 | 如何处理运动约束、动态障碍、多机器人与优化？ |
+| 工程与实验 | 23–25 | 如何调试、评估、部署和验证规划系统？ |
+| 学习与综合实践 | 26–28 | 如何让学习模型参与规划，并构建完整导航闭环？ |
 
 ## 仓库结构
 
 ```text
 .
-├── docs/                     # 唯一的 Web 站点源码，同时是 Pages 发布源
-│   ├── index.html            # 课程主页
-│   ├── chapters/01.html…28.html
-│   ├── assets/css/site.css   # 新设计系统
-│   ├── assets/js/site.js     # 轻量无依赖交互
-│   ├── assets/figures/       # 可单独查看的原创 SVG
-│   ├── evidence/             # 01–25 的主要事实来源登记
-│   └── data/chapters.json    # 章节状态与导航元数据
-├── archive/2026-before-redesign/ # 01–25 原始篇章存档
-├── tools/build_site.py      # 离线复制构建
-├── tools/validate_site.py   # 静态结构、链接、SVG 检查
-├── .github/workflows/pages.yml
-├── AGENTS.md                # 写作/插图/验证/发布约定
-├── 01.html…28.html          # 旧链接跳转存根
-└── index.html               # 旧站入口跳转存根
+├── docs/                         # 唯一的 Web 站点源码，也是 Pages 发布源
+│   ├── index.html                # 六模块课程主页
+│   ├── chapters/01.html…28.html  # 28 篇独立教学页面
+│   ├── assets/css/site.css       # 统一阅读与图表设计系统
+│   ├── assets/js/site.js         # 原生、无依赖交互
+│   ├── assets/figures/           # 独立原创 SVG
+│   ├── evidence/                 # 01–28 事实来源与图示清单
+│   └── data/chapters.json        # 章节状态与模块元数据
+├── archive/2026-before-redesign/ # 01–28 原始页面归档
+├── tools/build_site.py           # 离线复制构建
+├── tools/validate_site.py        # 结构、链接、SVG、证据清单检查
+├── tools/validate_examples.py    # 执行 28 篇 Python 教学示例
+├── tools/browser_check.py        # Chromium 四视口交互与打印检查
+├── .github/workflows/            # 质量门禁与 Pages 发布
+├── AGENTS.md                     # 写作、技术审校、SVG 和发布契约
+├── 01.html…28.html               # 稳定旧链接跳转存根
+└── index.html                    # 旧站入口跳转存根
 ```
 
 ## 开发与发布
 
-Python 3.10+，不需要 Node、第三方字体、在线数学脚本。
+Python 3.10+。站点本身不依赖在线字体、CDN 数学脚本或第三方运行时 JS。
 
 ```bash
 python3 tools/validate_site.py
-python3 tools/validate_examples.py  # 验证前二十五篇微型算法示例
+python3 tools/validate_examples.py
 python3 tools/build_site.py
-# 可选：实际 Chromium 多视口截图测试
+
+# 可选：实际 Chromium 多视口截图、交互和打印测试
 python3 -m pip install playwright==1.56.0
 python3 -m playwright install chromium
 python3 tools/browser_check.py
+
 python3 -m http.server 8000 -d docs
 ```
 
-在浏览器访问 http://localhost:8000。 `build_site.py` 会把 `docs/` 复制到 `_site/`，不会修改源文件。GitHub Actions 会先静态校验，再从 `_site/` 上传部署。**仓库 Settings → Pages → Source 必须选择 GitHub Actions**；仅提交工作流不代表 Pages 已完成启用或部署。
+在浏览器访问 http://localhost:8000。构建脚本把 `docs/` 复制到 `_site/`，不会修改源文件。GitHub Actions 负责静态验证、代码示例和浏览器 QA，再上传 Pages 构建产物。仓库 Settings → Pages → Source 应选择 GitHub Actions；只有实际部署工作流成功后，才能称为已发布。
 
-## 编辑规范
+## 编辑与验证原则
 
-先读 [AGENTS.md](AGENTS.md)。文章要独立解释问题，不写“上一章介绍了”，每个关键结论应可由图、推导、代码或参考文献追溯；所有教学示例标注假设及适用范围。新 SVG 使用可访问标题和说明，复杂 MathML 离线可读。严禁捏造基准数值和部署验收结果。
+先读 [AGENTS.md](AGENTS.md)。每篇文章都应当让第一次接触该主题的读者独立理解问题、变量、假设、推导、示例和边界；不以“上一章介绍了”代替解释。所有定量结论必须对应原始来源、实验设置和适用范围。SVG 使用独立 XML、可访问标题和说明；复杂公式使用原生 MathML。小型教学示例不得冒充完整机器人系统或跨算法基准。
 
-## 第二批（06–10）专项审校
+## 主要专题审校
 
-- **06 Dijkstra：** 非负边权、松弛、堆中过期条目、真实最小成本。
-- **07 A*：** 可纳与一致、最小 f 目标弹出、允许更优 g 重开。
-- **08 A* 变体：** Weighted A* 的 ε 次优界；ARA* 与反复重跑 WA* 的区别；双向和分层算法独立假设。
-- **09 D* Lite：** g/rhs 局部一致性、二元 key、km 更新与局部修复；对改变边权的代码断言。
-- **10 JPS：** 直线/对角、forced neighbor、禁止切角版本差异；原型代码仅是直线跳点检测器，不等于完整 JPS。
+### 06–10：图搜索
+- Dijkstra：非负边权、松弛、堆中过期条目与最小成本。
+- A*：启发式可纳性/一致性、最小 f 目标弹出、重新打开节点。
+- A* 变体：Weighted A* 次优界、ARA* 与双向/分层方法的假设。
+- D* Lite：g/rhs 一致性、key、km 更新与局部修复。
+- JPS：邻居剪枝、强制邻居、切角规则；教学代码不冒充完整 JPS。
 
-## 第三批（11–15）专题审校
+### 11–15：采样与路径质量
+- RRT / RRT*：Sample、Nearest、Steer、MotionValid、rewire 与子树代价传播。
+- PRM：路网预处理、局部边验证、PRM 与 PRM* 的区别。
+- 比较实验：种子、预算、成功/失败、路径代价与预处理时间分开记录。
+- 后处理：Shortcut、Douglas–Peucker、样条与碰撞/曲率验证不能混为一谈。
 
-- **11 RRT**：Sample、Nearest、Steer、MotionValid、Voronoi 探索偏置；有限预算失败不等于不可达。
-- **12 RRT***：选择父节点、重连、子树成本传播与理论近邻半径；明确示例参数未证实理论阈值。
-- **13 PRM**：预处理路网、两个独立查询、合法局部边、PRM 与 PRM* 的边界。
-- **14 方法比较**：成功率、预算、解成本和预处理分开报告；五组配对种子测试仅比较 RRT 目标偏置。
-- **15 后处理**：Shortcut、Douglas–Peucker 几何偏差与碰撞反例、B-spline/Bézier、曲率约束及解析线段碰撞测试。
+### 16–22：约束、在线、多机器人与优化
+- DWA：静态速度集、动态可达窗口和安全制动集合分开定义。
+- APF：势能负梯度、局部极小、窄通道与振荡边界。
+- Dubins / Reeds–Shepp：前进、倒车 cusp、曲率和时间参数化。
+- 动态重规划：时空碰撞、相对速度、预测不确定性与滚动时域。
+- 多目标：多站点访问与多目标函数区分，Pareto 支配和归一化权重。
+- MAPF / CBS：顶点冲突、反向边交换、SOC 与 makespan；有限时域示例不宣称通用完备性。
+- MPC：动力学、硬约束、目标代价、打靶法和只执行首个控制输入。
 
-## 第四批（16–20）专题审校
+### 23–25：工程与实验
+- 调试可观测性：地图、搜索、路径和执行分层；结构化日志与 A* 不变量。
+- 基准测试：配对任务、失败样本、首次可行解、路径质量和资源开销分开报告。
+- 仿真到实车：REP-105、TF、时间戳、footprint、限速、安全层和逐级准入。
 
-- **16 DWA：** 静态速度限制、动态可达窗口、安全制动集合、轨迹评分；教学实现明确使用圆盘近似和保守净空代理。
-- **17 APF：** 吸引/斥力势、负梯度、非目标平衡点反例；明确局部极小、窄通道与振荡边界。
-- **18 运动学约束：** Dubins 前进曲线、Reeds–Shepp 倒车 cusp、曲率界与状态格；代码只积分一条 LSR 基元，不冒充最短路径求解器。
-- **19 动态重规划：** 时空碰撞、Velocity Obstacles、相对速度最近接近、滚动时域；区分 D* Lite 增量搜索与未来障碍预测。
-- **20 多目标：** 区分多站点访问和多目标函数；Pareto 支配、归一化加权和、非凸前沿的边界与偏好交互。
-
-## 第五批（21–25）专题审校
-
-- **21 多机器人协调：** 顶点冲突、边交换冲突、目标持续占据和 SOC / makespan；在 3×2 两机器人例题实现有限时域 CBS，明确示例不是无限时域完备求解器。
-- **22 轨迹优化与 MPC：** 状态动力学、硬约束、代价函数、单次/多重打靶和滚动时域；穷举 81 条离散控制序列并在实测扰动后重规划。
-- **23 可视化与调试：** 地图/OPEN-CLOSED/路径/控制分层观察；结构化 A* 扩展事件及路径与一致启发式的数值断言，增加故障诊断交互。
-- **24 性能基准：** 配对地图、成功与失败完整记录、anytime 进度、计时与碰撞公平性；固定十张构造地图实跑 Dijkstra 和 A*，不宣称真实机器人运行时间。
-- **25 仿真到实车：** ROS 2 Nav2、REP-105 TF、时间戳/footprint/限速、独立安全监测与分阶段上线门禁；离线 preflight 只检查构造配置。
+### 26–28：学习、前沿与综合项目
+- **26 学习型路径规划：** BC、DAgger、MDP / Q-learning、VIN、Neural A*；明确策略分布偏移、启发式保证与经典回退边界。标准库 Q-learning 示例展示新障碍导致策略失效及 BFS 回退。
+- **27 前沿趋势与未来：** VLA / VLN、NoMaD 扩散导航、Neural A*、cuRobo GPU 并行规划与运行时安全。区分移动导航、机械臂操作、预印本综述和厂商公告；删除未经证实的行业渗透率与 V2X 效益数字。
+- **28 综合项目：** 静态 A* 全局路径 + 时间扩展局部 A* + 动态障碍预测 + 等待/重规划；示例明确为离散点机器人，不冒充连续 DWA 或实车安全认证。
 
 ## 主要参考
 
-- S. M. LaValle, *Planning Algorithms*：https://msl.cs.uiuc.edu/~lavalle/planning/
-- P. E. Hart, N. J. Nilsson, B. Raphael, *A Formal Basis for the Heuristic Determination of Minimum Cost Paths* (1968)：https://ieeexplore.ieee.org/document/4082128
-- A. Elfes, *Using Occupancy Grids for Mobile Robot Perception and Navigation* (1989)：https://ieeexplore.ieee.org/document/30720/
-- Nav2 Costmap 文档：https://docs.nav2.org/
+- LaValle, *Planning Algorithms*：https://msl.cs.uiuc.edu/~lavalle/planning/
+- Hart, Nilsson & Raphael, *A Formal Basis for the Heuristic Determination of Minimum Cost Paths* (1968)：https://ieeexplore.ieee.org/document/4082128
+- Ross, Gordon & Bagnell, DAgger (AISTATS 2011)：https://proceedings.mlr.press/v15/ross11a.html
+- Tamar et al., Value Iteration Networks (NeurIPS 2016)：https://proceedings.neurips.cc/paper/2016/hash/c21002f464c5fc5bee3b98ced83963b8-Abstract.html
+- Yonetani et al., Neural A* (ICML 2021)：https://proceedings.mlr.press/v139/yonetani21a.html
+- Sridhar et al., NoMaD (ICRA 2024)：https://general-navigation-models.github.io/nomad/
+- RT-2 (CoRL 2023)：https://proceedings.mlr.press/v229/zitkovich23a.html
+- π0.5 (CoRL 2025)：https://proceedings.mlr.press/v305/black25a.html
+- ROS REP-105：https://reps.openrobotics.org/rep-0105/
+- Nav2 Documentation：https://docs.nav2.org/
 
-教学编排受 [Olah-style-posts](https://github.com/1998x-stack/Olah-style-posts) 的叙事与可视化工作流启发，图形和文字均需独立创作。
+教学叙事与可视化方法受 [Olah-style-posts](https://github.com/1998x-stack/Olah-style-posts) 启发；本仓库的文章、示意图与代码均独立编写。
