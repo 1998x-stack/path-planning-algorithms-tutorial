@@ -1,0 +1,30 @@
+{
+  "article": "08",
+  "claims": [
+    {
+      "id": "ara",
+      "claim": "ARA*逐渐降低解的次优界并复用前次搜索信息",
+      "kind": "primary-paper",
+      "source_url": "https://publications.ri.cmu.edu/ara-anytime-a-with-provable-bounds-on-sub-optimality",
+      "locator": "Likhachev, Gordon, Thrun 2003",
+      "status": "verified"
+    },
+    {
+      "id": "bound",
+      "claim": "WA* 在相应假设成立时有 ε 次优界",
+      "kind": "derived",
+      "source_url": "https://publications.ri.cmu.edu/ara-anytime-a-with-provable-bounds-on-sub-optimality",
+      "locator": "Weighted f values and suboptimality bounds",
+      "status": "derived",
+      "notes": "概念示例严格注明适用条件"
+    },
+    {
+      "id": "toy",
+      "claim": "ε为1和3时分别返回成本4和6，是本教程构造的玩具图",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "08-weighted-bound.svg / inline Python",
+      "status": "illustrative"
+    }
+  ]
+}

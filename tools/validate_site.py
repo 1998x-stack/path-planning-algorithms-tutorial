@@ -39,9 +39,9 @@ def check():
         p=Tags()
         try: p.feed(file.read_text(encoding="utf-8"))
         except Exception as e: errors.append(f"{file}: parse {e}"); continue
-        if file == DOCS / "index.html" or (file.parent.name=="chapters" and file.stem in [f"{i:02}" for i in range(1,6)]):
+        if file == DOCS / "index.html" or (file.parent.name=="chapters" and file.stem in [f"{i:02}" for i in range(1,11)]):
             if p.h1!=1: errors.append(f"{file}: expected one h1, got {p.h1}")
-            if file.parent.name=="chapters" and p.figure<2: errors.append(f"{file}: expected >=2 figures, got {p.figure}")
+            if file.parent.name=="chapters" and p.figure<3: errors.append(f"{file}: expected >=3 figures, got {p.figure}")
         errors.extend(f"{file}: {e}" for e in p.errors)
         for tag,link in p.links:
             if link.startswith(("http:","https:","mailto:","javascript:","data:","#","//")): continue
@@ -52,6 +52,9 @@ def check():
                 errors.append(f"{file}: missing asset {link}")
             elif u.fragment and dest.suffix==".html" and dest==file.resolve() and u.fragment not in p.ids:
                 errors.append(f"{file}: unknown anchor {link}")
+    for i in range(1, 11):
+        evidence = DOCS / 'evidence' / f'{i:02}.json'
+        if not evidence.is_file(): errors.append(f'missing evidence ledger: {evidence}')
     for file in DOCS.rglob("*.svg"):
         try:
             xml=ET.parse(file).getroot()

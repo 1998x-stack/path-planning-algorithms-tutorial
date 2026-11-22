@@ -15,7 +15,7 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 OUTPUT = ROOT / "reports" / "browser"
-PAGES = ["index.html"] + [f"chapters/{n:02}.html" for n in range(1, 6)]
+PAGES = ["index.html"] + [f"chapters/{n:02}.html" for n in range(1, 11)]
 VIEWS = [("desktop", 1440, 900), ("tablet", 768, 1024),
          ("mobile390", 390, 844), ("mobile360", 360, 800)]
 
@@ -80,6 +80,13 @@ def main():
                             after = page.locator(".demo-status").inner_text()
                             if before == after or page.locator(".demo-cell.frontier").count() == 0:
                                 failures.append("03: BFS next step produced no meaningful state change")
+                        if key == "desktop" and path.endswith("/08.html"):
+                            status = page.locator("[data-weighted-demo] .demo-status")
+                            before = status.inner_text()
+                            page.locator("[data-weight='3']").click()
+                            after = status.inner_text()
+                            if (before == after or "S→B→G" not in after):
+                                failures.append("08: weighted A* epsilon change did not update computed path")
                         name=path.replace("/", "-").replace(".html", "")
                         page.screenshot(path=str(OUTPUT / f"{name}-{key}.png"), full_page=True)
                         results.append({"page": path, "viewport": key, "http": response.status if response else None,

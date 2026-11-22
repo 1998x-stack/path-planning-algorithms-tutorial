@@ -1,0 +1,37 @@
+{
+  "article": "07",
+  "claims": [
+    {
+      "id": "astar-original",
+      "claim": "A* 排序结合起点已付代价与终点剩余启发估计",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1109/TSSC.1968.300136",
+      "locator": "Hart, Nilsson, Raphael 1968",
+      "status": "verified"
+    },
+    {
+      "id": "astar-conditions",
+      "claim": "一致性支持图搜索节点定稿，不一致的可纳启发需允许必要的重开",
+      "kind": "textbook",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/",
+      "locator": "Discrete Planning",
+      "status": "verified"
+    },
+    {
+      "id": "correction",
+      "claim": "1968论文后有1972勘误",
+      "kind": "primary-paper",
+      "source_url": "https://cse.sc.edu/~MGV/csce580f11/astarHNR1972.pdf",
+      "locator": "Correction",
+      "status": "verified"
+    },
+    {
+      "id": "counterexample",
+      "claim": "B→A的0.5边与h(B)=2构成可纳但不一致的教学反例",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "07-reopen-counterexample SVG / runnable assertion",
+      "status": "derived"
+    }
+  ]
+}

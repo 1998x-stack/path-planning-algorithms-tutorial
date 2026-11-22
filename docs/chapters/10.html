@@ -1,197 +1,49 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第10章 JPS跳点搜索</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html" class="active">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html">第20章 多目标路径规划</a></li>
-            <li><a href="21.html">第21章 多机器人协调</a></li>
-            <li><a href="22.html">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="JPS如何消除均匀代价网格中的路径对称，详解强制邻居、跳点、斜向规则与宏边成本。"><title>10 · JPS 跳点搜索 — 路径规划算法</title><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="11.html">下一章</a></nav></div></header><div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#redundancy">为什么空旷地图仍有重复搜索</a><a href="#pruning">自然邻居与强制邻居</a><a href="#jump">何时可以沿方向连续跳跃</a><a href="#diagonal">斜向跳跃与 corner-cutting</a><a href="#cost">宏边的成本不能算成一步</a><a href="#implementation">可运行的直线跳点检测器</a><a href="#limits">何时不应使用 JPS</a><a href="#references">论文与算法边界</a></nav></details></aside><main class="article-main" id="content"><article><header class="article-header"><p class="article-meta">GRAPH SEARCH / 10 OF 28</p><h1>JPS：为什么跳过节点仍能寻找最短路径？</h1><p class="dek">利用均匀成本网格的路径对称性，理解自然邻居、强制邻居、直线与对角跳跃，以及这种优化什么时候会失效。</p></header><section id="redundancy" aria-labelledby="redundancy-title"><h2 id="redundancy-title">空旷地图里，A* 为什么也会浪费搜索</h2><p>考虑二维整数网格，从 (0,0) 走到 (3,2)，只允许上下左右各移动一格且每步成本相同。最短路必然包含三次水平移动与两次竖直移动，但它们的先后排列有 <code>C(5,2)=10</code> 种。十条路线长度完全相同，搜索器却可能重复考察多个对称组合。</p><p>Jump Point Search（JPS，Harabor 与 Grastien，2011）的核心是：对于满足特定网格和移动模型的 A*，<strong>只保留影响最优路径选择的关键转向/跳点</strong>。如果在一条开阔走廊里每个中间格子的继续方向毫无差别，就沿方向跳过中间格，而不是把每格都单独加入 OPEN。</p><figure><p class="figure-kicker">GRID SYMMETRY · 10</p><img src="../assets/figures/10-path-symmetry.svg" loading="lazy" alt="在六乘四网格中，从左下到右上有多条等长折线路径，示出三条典型排列，所有移动成本相同。"><figcaption>图中多条路线的总步数都是 5，说明搜索的对称冗余。JPS 的具体最优性定理针对特定的八邻域网格成本与剪枝规则，不应直接用四邻域组合数证明该定理。</figcaption></figure></section><section id="pruning" aria-labelledby="pruning-title"><h2 id="pruning-title">自然邻居和强制邻居从哪里来</h2><p>设 A* 当前到达 x，父节点为 p(x)。当上一段是向右的直线移动时，在均匀成本的开阔区域中，很多绕行方向都有一条不比“先经过 x 再绕行”更贵的等价路径，因此可以把它们从 x 的后继中剪掉，保留更自然的向右方向。</p><p>障碍物会打破这种对称性：如果上一格上方堵住，而当前格上方重新可走，试图从父节点先走侧方就会撞墙。于是当前格成为一个必须考虑转向的<strong>跳点</strong>；其侧向可走位置是被强制保留的候选邻居。</p><figure><p class="figure-kicker">GRID SYMMETRY · 10</p><img src="../assets/figures/10-forced-neighbor.svg" loading="lazy" alt="机器人由左向右移动，父节点P在x左侧，P上方是障碍，x上方是自由F，显示必须从x才能转上方的强制邻居。"><figcaption>障碍物让“先从父节点横向改道”的对称路线不可行，所以不能剪掉 x 的上方方向。示图解释一条直线扫描时的局部强制邻居判定。</figcaption></figure><p>这种剪枝不只是“看到墙就往另一边走”，而是基于从父节点出发的替代最优路径是否存在的<strong>支配关系</strong>。原始 JPS 同时定义直线与对角运动的自然/强制邻居，两个方向规则并不相同。</p></section><section id="jump" aria-labelledby="jump-title"><h2 id="jump-title">直线 Jump：何时继续、何时停下</h2><p>沿某个允许方向连续扫描：如果下一格是障碍或地图边界，则这个方向不能继续；如果到达目标，就返回目标；如果当前位置有强制邻居，就返回它作为跳点；否则继续。完整的八邻域 JPS 在沿对角方向跳跃时还会触发两个直线方向的递归扫描，避免错过被障碍打破的对称。</p><figure><p class="figure-kicker">GRID SYMMETRY · 10</p><img src="../assets/figures/10-jump-process.svg" loading="lazy" alt="五个连续网格点，沿向右方向从父节点进入中间空格，在发现上方障碍结束所产生的强制邻居时停止跳跃。"><figcaption>直线扫描并不是“跳越障碍”；沿途每个相邻格必须可以通行。跳点被返回给 A* 的 OPEN 后，仍然需要使用累计的边成本。</figcaption></figure><p>跳点之间的宏边表示经过中间多个真实网格格子。宏边本身不是机器人可以瞬移的操作，最后输出路径时仍要展开每一段，做碰撞、足迹与转向可行性检查。</p></section><section id="diagonal" aria-labelledby="diagonal-title"><h2 id="diagonal-title">斜向跳跃与不允许切角的区别</h2><p>经典 JPS 常用于<strong>均匀地形成本的八邻域网格</strong>，轴向移动成本 1、对角移动成本 √2。这里“uniform-cost grid”并不是说所有八个方向必须同为 1，而是指相同类型动作在整个地图上不受地形加权影响。</p><p>尤其需要区分<strong>允许斜向切过障碍角点</strong>与<strong>不允许切角</strong>两套邻居可行性规则。斜走到 (r+1,c+1) 时，如果邻近的 (r+1,c) 或 (r,c+1) 被墙占据，某些几何足迹模型会认为斜线穿角不可行；不同版本 JPS 的剪枝/forced-neighbor 规则也随这一规定而变化，不能将一套实现直接套到另一套地图上。</p><div class="note caution"><p><strong>工程提醒：</strong>原始论文中的网格搜索是在特定邻接与碰撞规则上证明的。机器人有真实半径、非完整约束或非均匀代价时，不应未经修改就宣称 JPS 保持最优与安全。</p></div></section><section id="cost" aria-labelledby="cost-title"><h2 id="cost-title">跳过 10 格，不等于只支付 1 格代价</h2><p>假设一条跳跃从 (2,1) 沿水平方向走到 (2,7)，跨过 6 次轴向移动，其宏边成本必须是 6，而不是“有一条边所以权重等于 1”。对于对角步，成本按 √2 累积，通常采用 <em>octile distance</em> 作为相容的启发式下界。若用“跳跃边数”冒充几何路径成本，搜索结果就可能偏向跨度大的边，从而破坏原本的最短路含义。</p><figure><p class="figure-kicker">GRID SYMMETRY · 10</p><img src="../assets/figures/10-macro-edge.svg" loading="lazy" alt="上排显示六个轴向单位网格步，每步成本1；下排把它们收缩为一条宏边，标注边代价6，而非1。"><figcaption>JPS 减少需要存入 OPEN 的中间节点，不是修改机器人实际走过的空间长度。终点路径还原时必须恢复跳过的中间格。</figcaption></figure><p>这里优化的是搜索的表示和剪枝顺序，时间上仍有扫描代价。在障碍密集或没有长直通道的地图上，连续扫描可能带来额外开销，JPS 未必优于经过良好实现的 A*。</p></section><section id="implementation" aria-labelledby="implementation-title"><h2 id="implementation-title">先实现一个可检验的直线跳点原语</h2><p>为了避免把不完整算法伪装成真正的 JPS，下面的 Python 3.10+ 示例<strong>只实现四个轴向方向的直线 Jump 停止规则</strong>，并以已知的强制邻居小图做断言。它没有实现八邻域的对角递归、完整后继剪枝、优先队列主循环以及宏边路径恢复，因此不能直接声称是完整 JPS。</p><pre><code>def jump_straight(grid, start, direction, goal):
+    """只演示“直线跳跃的停止条件”，不是完整 JPS 规划器。
 
-        <p>大家好！上一章我们学习了 D* Lite，它通过增量更新来应对环境变化。但如果你面对的是一个<strong>完全已知的静态栅格地图</strong>，而你需要极致的搜索速度——有没有比 A* 快十倍甚至百倍的方法？答案是肯定的，这就是 JPS（Jump Point Search，跳点搜索）。</p>
+    grid: 0 可行、1 障碍；方向只能是四个单位轴向向量。
+    返回 (落点, 原因, 行进格数) 或 (None, 'blocked', 格数)。
+    """
+    rows, cols = len(grid), len(grid[0])
+    dr, dc = direction
+    if (dr, dc) not in ((0,1), (0,-1), (1,0), (-1,0)):
+        raise ValueError("Only cardinal directions are supported")
 
-        <p>JPS 由 Daniel Harabor 和 Alban Grastien 在 2011 年提出，是过去十五年来栅格搜索领域最具影响力的改进之一。它不改变 A* 的搜索框架，而是通过一种优雅的"剪枝"策略，让 A* 需要展开的节点数从指数级降到近乎线性。</p>
+    def free(pos):
+        r, c = pos
+        return (0 &lt;= r &lt; rows and 0 &lt;= c &lt; cols
+                and grid[r][c] == 0)
 
-        <h2>栅格搜索的性能瓶颈</h2>
+    def has_forced_neighbor(pos):
+        r, c = pos
+        # 与当前运动方向垂直的两个侧向邻居
+        for side_r, side_c in ((dc, -dr), (-dc, dr)):
+            beside = (r+side_r, c+side_c)
+            behind_side = (r-dr+side_r, c-dc+side_c)
+            if free(beside) and not free(behind_side):
+                return True
+        return False
 
-        <p>让我们先理解一个核心问题：为什么在栅格地图上，A* 的效率远低于理论预期？</p>
-
-        <p>答案在于<strong>对称性</strong>。看一个简单例子：在一个空旷的栅格中从 (0,0) 走到 (10,10)，有无数条等长的最短路径——你可以先走 10 步右再走 10 步上，也可以先 10 步上再 10 步右，还可以交替走，甚至可以走出锯齿形。所有这些路径的欧几里得距离和曼哈顿距离都相等。标准 A* 的 open set 会被这些"对称等距路径"上的节点淹没——它们在优先级队列里打得不可开交，而实际上选哪个都一样。</p>
-
-        <p>极端情况下，A* 在空旷栅格中展开的节点数可以用 <code>O(n²)</code> 来描述——你明明只需要一条直线路径，A* 却把整个正方形区域都展开了。这就是对称性带来的灾难。</p>
-
-        <p>JPS 的核心洞察：在这些对称路径中，绝大多数中间节点是<strong>冗余的</strong>。在一个无障碍的开放区域中，从 A 到 B 只需要沿着直线方向走——你不需要检查中间的每一个格子。</p>
-
-        <h2>跳点的核心思想</h2>
-
-        <p>JPS 定义了两个关键概念：</p>
-
-        <h3>剪枝规则（Pruning Rules）</h3>
-        <p>当从一个父节点扩展时，JPS 会判断哪些邻域是"自然的"（必须检查的），哪些是"可剪枝的"（不需要检查的）。规则如下：</p>
-        <ul>
-            <li>如果当前节点是沿着直线方向到达的（上/下/左/右），则只检查前方的节点——左右邻域被剪枝，因为它们不会产生比直接走更优的路径</li>
-            <li>只有"被迫邻居"（forced neighbors）才会打破这种剪枝——当障碍物导致某一侧的路径被阻塞，必须检查另一侧时，才需要展开那个方向</li>
-        </ul>
-
-        <h3>跳点（Jump Point）</h3>
-        <p>一个"跳点"是满足以下条件之一的节点：</p>
-        <ul>
-            <li>它是目标点</li>
-            <li>它有一个被迫邻居</li>
-            <li>它在对角线方向上能"跳"到另一个跳点</li>
-        </ul>
-        <p>JPS 不逐个节点地扩展，而是沿着一个方向"跳跃"，直到遇到一个跳点或障碍物。这样一来，A* 的 open set 中只有跳点，而不是所有中间节点。</p>
-
-        <h2>JPS 算法流程</h2>
-
-        <p>下面是一个简洁的 JPS 实现，核心在于 <code>jump</code> 函数：</p>
-
-        <pre><code>import heapq
-
-def jump(grid, x, y, dx, dy, goal):
-    """从 (x,y) 沿 (dx,dy) 方向跳跃"""
-    nx, ny = x + dx, y + dy
-    if not in_bounds(grid, nx, ny) or is_obstacle(grid, nx, ny):
-        return None  # 被障碍物阻挡
-    if (nx, ny) == goal:
-        return (nx, ny)  # 到达目标
-    # 检查是否有被迫邻居（对角线移动时检查水平和垂直方向）
-    if dx != 0 and dy != 0:  # 对角线移动
-        if (is_obstacle(grid, nx - dx, ny) and not is_obstacle(grid, nx - dx, ny + dy)) or \
-           (is_obstacle(grid, nx, ny - dy) and not is_obstacle(grid, nx + dx, ny - dy)):
-            return (nx, ny)  # 被迫邻居 → 标记为跳点
-    else:  # 水平或垂直移动
-        if dx != 0:  # 水平移动
-            if (is_obstacle(grid, nx, ny - 1) and not is_obstacle(grid, nx + dx, ny - 1)) or \
-               (is_obstacle(grid, nx, ny + 1) and not is_obstacle(grid, nx + dx, ny + 1)):
-                return (nx, ny)
-        if dy != 0:  # 垂直移动
-            if (is_obstacle(grid, nx - 1, ny) and not is_obstacle(grid, nx - 1, ny + dy)) or \
-               (is_obstacle(grid, nx + 1, ny) and not is_obstacle(grid, nx + 1, ny + dy)):
-                return (nx, ny)
-    # 对角线移动时，继续递归检查水平和垂直分支
-    if dx != 0 and dy != 0:
-        if jump(grid, nx, ny, dx, 0, goal) or jump(grid, nx, ny, 0, dy, goal):
-            return (nx, ny)
-    return jump(grid, nx, ny, dx, dy, goal)
-
-def jps_search(grid, start, goal):
-    open_set = [(0, start)]
-    g_score = {start: 0}
-    came_from = {}
-
-    while open_set:
-        _, current = heapq.heappop(open_set)
+    current = start
+    steps = 0
+    while True:
+        next_cell = (current[0]+dr, current[1]+dc)
+        if not free(next_cell):
+            return None, "blocked", steps
+        current = next_cell
+        steps += 1
         if current == goal:
-            return reconstruct_path(came_from, current)
+            return current, "goal", steps
+        if has_forced_neighbor(current):
+            return current, "forced", steps
 
-        for direction in [(1,0), (-1,0), (0,1), (0,-1), (1,1), (1,-1), (-1,1), (-1,-1)]:
-            jp = jump(grid, current[0], current[1],
-                      direction[0], direction[1], goal)
-            if jp:
-                # 计算从 current 到 jp 的实际代价
-                dist = abs(jp[0] - current[0]) + abs(jp[1] - current[1])
-                tent_g = g_score[current] + dist
-                if tent_g &lt; g_score.get(jp, float('inf')):
-                    came_from[jp] = current
-                    g_score[jp] = tent_g
-                    f = tent_g + heuristic(jp, goal)
-                    heapq.heappush(open_set, (f, jp))
-
-    return None</code></pre>
-
-        <p>注意看 <code>jump</code> 函数是如何递归地跳过大量中间节点的——它只在遇到被迫邻居、对角线方向有岔路、或到达目标时才停下。</p>
-
-        <h2>JPS vs A* 性能对比</h2>
-
-        <p>不同地图类型下，JPS 的加速效果差异显著：</p>
-
-        <table>
-            <tr>
-                <th>地图类型</th>
-                <th>A* 展开节点数</th>
-                <th>JPS 展开节点数</th>
-                <th>加速比</th>
-            </tr>
-            <tr>
-                <td>空旷地图（开放区域 90%）</td>
-                <td>12,847</td>
-                <td>42</td>
-                <td><strong>~306x</strong></td>
-            </tr>
-            <tr>
-                <td>随机障碍物地图（密度 30%）</td>
-                <td>8,231</td>
-                <td>156</td>
-                <td>~53x</td>
-            </tr>
-            <tr>
-                <td>迷宫型地图（窄走廊）</td>
-                <td>2,104</td>
-                <td>894</td>
-                <td>~2.4x</td>
-            </tr>
-            <tr>
-                <td>城市道路网格</td>
-                <td>5,643</td>
-                <td>187</td>
-                <td>~30x</td>
-            </tr>
-        </table>
-
-        <p>数据会说话：在开放地图中，JPS 的加速效果极度惊人（两个数量级）。但在迷宫这类充满狭窄走廊的地图中，优势就不明显了——因为走廊迫使 JPS 在每一个拐弯处都要停下来检查，跳点的密度接近普通节点。</p>
-
-        <div class="warning">
-            <strong>重要限制：</strong>JPS 只能用于<strong>均匀代价栅格地图</strong>。每个格子的移动代价必须相同，边代价必须是 1（或者对角线为 sqrt(2)）。如果你的地图有地形代价差异（比如沼泽地走起来比草地慢），JPS 就无法使用了——因为不同代价破坏了"对称性剪枝"的理论基础。很多初学者在这里踩坑，试图把 JPS 用在基于概率的代价地图上，结果要么路径错误，要么搜索退化到比 A* 还慢。
-        </div>
-
-        <p>这也是为什么 JPS 在游戏 AI 领域极其流行（游戏地图通常是均匀栅格），但在自动驾驶或户外机器人中较少见（户外地图往往有地形代价差异）的原因。</p>
-
-        <p>从 D* Lite 的增量更新到 JPS 的对称剪枝，我们一直在 A* 的框架内寻找效率突破。而下一章，我们将彻底跳出图搜索的框架——<strong>RRT（Rapidly-exploring Random Tree）快速随机树</strong>。当维度升高到栅格搜索无法承受的程度（比如七轴机械臂的规划），我们只能依靠随机采样来探索空间。采样方法的世界，就此打开。</p>
-
-        <div class="footer-nav">
-            <a href="09.html">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="11.html">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+grid = [[0]*9 for _ in range(5)]
+grid[1][2] = 1  # 走廊上方的一处障碍
+assert jump_straight(grid, (2,1), (0,1), (2,8)) == (
+    (2,3), "forced", 2)
+assert jump_straight(grid, (2,1), (0,1), (2,2)) == (
+    (2,2), "goal", 1)
+grid[2][3] = 1
+assert jump_straight(grid, (2,1), (0,1), (2,8)) == (
+    None, "blocked", 1)
+print("straight jump stop conditions passed")</code></pre><p>单元断言分别覆盖：走廊上方障碍结束时出现 forced-neighbor，目标在前方时优先返回 goal，以及被实墙阻断时返回 None。将它升级为完整 JPS 需要先锁定斜角规则，构建 A* 主队列，正确累积宏边成本，并用大量已知最短成本与标准 A* 做交叉对照。</p></section><section id="limits" aria-labelledby="limits-title"><h2 id="limits-title">JPS 的能力边界与下一步测试</h2><div class="table-wrap"><table><thead><tr><th>前提/条件</th><th>影响</th><th>不能做的假设</th></tr></thead><tbody><tr><td>均匀移动代价</td><td>支撑对称剪枝</td><td>危险区代价随格变化时仍原样安全</td></tr><tr><td>八邻域动作</td><td>直线/对角规则相互协作</td><td>只有直线扫描就等于完整 JPS</td></tr><tr><td>斜角穿越约定固定</td><td>决定对角边是否合法</td><td>不同实现可以互换 forced-neighbor 规则</td></tr><tr><td>正确宏边代价</td><td>保留与原网格相同目标函数</td><td>跨多少格都按一条边计 1</td></tr><tr><td>静态地图</td><td>可按当前障碍布局做对称剪枝</td><td>变动地图无需重新检验跳点</td></tr></tbody></table></div><p>若要用于机器人，应先为障碍施加与足迹相容的碰撞规则，再定义合法邻居，最后检查 JPS 的剪枝证明是否适用。不仅测加速，更要对每组地图报告可达性一致、路径成本一致以及没有 corner-cutting。</p></section><section id="references" aria-labelledby="references-title"><h2 id="references-title">原始论文、规则演化与扩展</h2><ul><li><a href="https://ojs.aaai.org/index.php/AAAI/article/view/7994">Daniel Harabor &amp; Alban Grastien, Online Graph Pruning for Pathfinding On Grid Maps (AAAI 2011)</a></li><li><a href="https://research.monash.edu/en/publications/online-graph-pruning-for-pathfinding-on-grid-maps/">Monash University, 2011 论文条目</a></li><li><a href="https://ijcai.org/proceedings/2016/103">Canonical Orderings on Grids (IJCAI 2016)</a></li><li><a href="https://www.redblobgames.com/pathfinding/grids/algorithms.html">Red Blob Games, Grid Pathfinding Optimizations</a></li></ul></section><nav class="article-footer" aria-label="章节翻页"><a href="09.html">← 09 · D* Lite</a><a href="11.html">11 · RRT →</a></nav></article></main></div></body></html>
