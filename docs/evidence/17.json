@@ -1,0 +1,37 @@
+{
+  "article": "17",
+  "claims": [
+    {
+      "id": "khatib",
+      "claim": "人工势场用于机械臂和移动机器人实时避障，并可扩展到时变势场",
+      "kind": "primary-paper",
+      "source_url": "https://journals.sagepub.com/doi/10.1177/027836498600500106",
+      "locator": "Khatib, The International Journal of Robotics Research 5(1), 1986, pp.90–98",
+      "status": "verified"
+    },
+    {
+      "id": "koren",
+      "claim": "势场法存在局部极小、窄通道和振荡等固有限制",
+      "kind": "primary-paper",
+      "source_url": "https://www.cs.cmu.edu/~motionplanning/papers/sbp_papers/integrated1/borenstein_potential_field_limitations.pdf",
+      "locator": "Koren & Borenstein, ICRA 1991, Potential Field Methods and Their Inherent Limitations",
+      "status": "verified"
+    },
+    {
+      "id": "review",
+      "claim": "近期综述讨论APF的局限与混合方案",
+      "kind": "review",
+      "source_url": "https://doi.org/10.1088/2631-8695/ae73e7",
+      "locator": "Szczepanski, Engineering Research Express, 2026",
+      "status": "verified"
+    },
+    {
+      "id": "toy",
+      "claim": "代码构造一个非目标点使吸引和斥力恰好抵消",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "17.html Python example",
+      "status": "illustrative"
+    }
+  ]
+}

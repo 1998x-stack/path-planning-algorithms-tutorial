@@ -1,0 +1,37 @@
+{
+  "article": "19",
+  "claims": [
+    {
+      "id": "vo",
+      "claim": "Velocity Obstacles在速度空间表示会导致未来碰撞的速度，并与动力学可达速度集合相交",
+      "kind": "primary-paper",
+      "source_url": "https://journals.sagepub.com/doi/10.1177/027836499801700706",
+      "locator": "Fiorini & Shiller, The International Journal of Robotics Research 17(7), 1998",
+      "status": "verified"
+    },
+    {
+      "id": "vo-pdf",
+      "claim": "动态障碍论文原文包含速度障碍和恒定速度预测推导",
+      "kind": "primary-paper",
+      "source_url": "https://www.ariel.ac.il/sites/shiller/papers/fiorini98motion.pdf",
+      "locator": "Fiorini & Shiller 1998 full text",
+      "status": "verified"
+    },
+    {
+      "id": "dstar",
+      "claim": "D* Lite复用相似图搜索任务的既有信息以增量修复搜索",
+      "kind": "primary-paper",
+      "source_url": "https://idm-lab.org/bib/abstracts/Koen02e.html",
+      "locator": "Koenig & Likhachev, AAAI 2002",
+      "status": "verified"
+    },
+    {
+      "id": "toy",
+      "claim": "代码计算恒速圆盘的有限时域最近接近时间，不是完整动态规划器",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "19.html Python example",
+      "status": "illustrative"
+    }
+  ]
+}

@@ -71,3 +71,49 @@ document.addEventListener("DOMContentLoaded",()=>{
    for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));
  });
 });
+
+// DWA: score only the already collision- and braking-filtered candidate set.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-dwa-demo]");if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-dwa-mode]")];
+ const candidates=[
+  {label:"slow-straight",v:.1,w:0,heading:.972,velocity:.1,clearance:.791},
+  {label:"medium-straight",v:.3,w:0,heading:.965,velocity:.3,clearance:.471},
+  {label:"fast-left",v:.6,w:.6,heading:.882,velocity:.6,clearance:.235}
+ ];
+ const weights={balanced:[.50,.25,.25],progress:[.35,.45,.20]};
+ function render(mode){
+  const [wh,wv,wc]=weights[mode];
+  const best=candidates.map(c=>({...c,score:wh*c.heading+wv*c.velocity+wc*Math.min(c.clearance,1)}))
+    .sort((a,b)=>b.score-a.score)[0];
+  status.textContent=(mode==="balanced"?"均衡净空":"偏向前进")+ "：选中 "+best.label+
+    "，v="+best.v.toFixed(1)+" m/s，ω="+best.w.toFixed(1)+" rad/s；候选均通过演示安全筛选。";
+  for(const b of buttons)b.setAttribute("aria-pressed",String(b.dataset.dwaMode===mode));
+ }
+ for(const b of buttons)b.addEventListener("click",()=>render(b.dataset.dwaMode));
+ render("balanced");
+});
+// Pareto example: discard dominated routes, then re-rank the non-dominated set by normalized weights.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-pareto-demo]");if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-pareto-mode]")];
+ const routes={
+  "A-short":[8,9,5],
+  "B-balanced":[10,5,6],
+  "C-safe":[12,3,4]
+ };
+ const scales=[14,10,8];
+ const weights={length:[.8,.1,.1],risk:[.1,.8,.1]};
+ function render(mode){
+  const w=weights[mode];
+  const ranked=Object.entries(routes).map(([name,cost])=>({
+    name,score:cost.reduce((sum,value,i)=>sum+w[i]*value/scales[i],0)
+  })).sort((a,b)=>a.score-b.score);
+  const best=ranked[0];
+  status.textContent=(mode==="length"?"长度优先":"风险优先")+ "：选择 "+best.name+
+    "，归一化加权成本 "+best.score.toFixed(3)+"；非支配候选 "+ranked.length+" 条。";
+  for(const b of buttons)b.setAttribute("aria-pressed",String(b.dataset.paretoMode===mode));
+ }
+ for(const b of buttons)b.addEventListener("click",()=>render(b.dataset.paretoMode));
+ render("length");
+});

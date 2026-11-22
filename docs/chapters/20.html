@@ -1,258 +1,38 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第20章 多目标路径规划</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html" class="active">第20章 多目标路径规划</a></li>
-            <li><a href="21.html">第21章 多机器人协调</a></li>
-            <li><a href="22.html">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="多目标路径规划：Pareto支配、长度风险能耗成本向量、加权和归一化、非凸前沿与偏好决策。"><title>20 · 多目标路径规划：Pareto 前沿与权衡</title><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="19.html">上一章</a><a href="../index.html#curriculum">全部章节</a><a href="21.html">下一章</a></nav></div></header><div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#distinction">多目标点与多目标函数不是同一问题</a><a href="#vector">路径成本是一个向量</a><a href="#pareto">Pareto 支配与非支配前沿</a><a href="#scalarize">加权和：简单但有代价</a><a href="#decision">如何把偏好变成可审查决策</a><a href="#demo">交互：改变偏好，观察路线选择</a><a href="#implementation">计算候选路径的 Pareto 集</a><a href="#limits">目标设计与风险治理</a><a href="#references">多目标规划研究与 OMPL</a></nav></details></aside><main class="article-main" id="content"><article><header class="article-header"><p class="article-meta">MULTI-OBJECTIVE PLANNING / 20 OF 28</p><h1>多目标规划：最短、最安全、最省能耗，不能同时都最好</h1><p class="dek">把路线评价从单个分数扩展成成本向量，用 Pareto 支配筛出非劣解，再理解加权和、归一化和决策偏好如何改变最终路线。</p></header><section id="distinction" aria-labelledby="distinction-title"><h2 id="distinction-title">多个必须到达的地点，与多个需要权衡的目标，是两类不同问题</h2><p>“多目标路径规划”常被用来描述两种任务。第一种是<strong>多目标点/多站点访问</strong>：机器人要按某个顺序访问仓库、充电站或客户，重点是决定访问顺序，常与 TSP、VRP、带时间窗的路线规划有关。第二种是<strong>多目标函数优化</strong>：在同一对起终点之间，同时考虑长度、风险、能耗、时间和净空等相互冲突的指标。</p><p>这两类问题可以叠加，但不能混为一谈。本章重点讨论第二种：同一组可行路径在多个成本维度上形成权衡；最后再说明多站点路线排序如何与路径代价模型组合。</p><figure><p class="figure-kicker">ROBOT MOTION PLANNING · 20</p><img src="../assets/figures/20-multigoal-vs-multiobjective.svg" loading="lazy" alt="左侧是一条路线要访问多个目标地点，右侧是同一对起终点的多条候选路线分别有长度、风险和能耗成本。"><figcaption>左图改变要访问的地点集合与顺序；右图改变同一条路线的评价向量。两者可以组合，但对应的决策变量不同。</figcaption></figure></section><section id="vector" aria-labelledby="vector-title"><h2 id="vector-title">路径成本不是一个数，而是一组带单位的指标</h2><p>设可行路径集合为 <code>Π</code>。对路径 π，可以定义长度 <code>L(π)</code>、风险暴露 <code>R(π)</code>、能耗代理 <code>E(π)</code> 和时间 <code>T(π)</code>。多目标规划的输出是成本向量：</p><div class="equation" tabindex="0" role="region" aria-label="(1) 多目标路径的成本向量"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="(1) 多目标路径的成本向量"><mrow><mi>f</mi><mo>(</mo><mi>π</mi><mo>)</mo><mo>=</mo><mo>(</mo><mi>L</mi><mo>(</mo><mi>π</mi><mo>)</mo><mo>,</mo><mi>R</mi><mo>(</mo><mi>π</mi><mo>)</mo><mo>,</mo><mi>E</mi><mo>(</mo><mi>π</mi><mo>)</mo><mo>,</mo><mi>T</mi><mo>(</mo><mi>π</mi><mo>)</mo><mo>)</mo></mrow></math><span class="equation-label">(1) 多目标路径的成本向量</span></div><p>风险暴露可以是沿路径累积的风险场代价，能耗可以是由车辆模型、速度、加速度和转向推导的估计值；这些都不是天然唯一的定义。设计目标前必须写明数据来源、单位、积分方式和约束范围。尤其不能把“概率”与“风险成本”直接等同。</p><figure><p class="figure-kicker">ROBOT MOTION PLANNING · 20</p><img src="../assets/figures/20-objective-vector.svg" loading="lazy" alt="同一候选路线对应长度、风险暴露、能耗三个独立坐标；每个坐标的单位和计算定义都要明确。"><figcaption>坐标轴示意三种不同目标，非实际测量数据。只有先定义目标函数，路线比较才具有可复查的含义。</figcaption></figure></section><section id="pareto" aria-labelledby="pareto-title"><h2 id="pareto-title">Pareto 支配：不必提前把所有偏好压成一个权重</h2><p>对两个待最小化成本向量 A、B，如果 A 的每个分量都不大于 B，且至少一个分量严格更小，就称 A 支配 B。被其它可行解支配的路线没有必要保留；未被支配的路线构成 Pareto 集，其成本向量形成 Pareto 前沿。</p><div class="equation" tabindex="0" role="region" aria-label="(2) 最小化问题中的 Pareto 支配"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="(2) 最小化问题中的 Pareto 支配"><mrow><mi>A</mi><mo>≺</mo><mi>B</mi><mo>⇔</mo><mo>(</mo><mo>∀</mo><mi>i</mi><mo>:</mo><msub><mi>f</mi><mi>i</mi></msub><mo>(</mo><mi>A</mi><mo>)</mo><mo>≤</mo><msub><mi>f</mi><mi>i</mi></msub><mo>(</mo><mi>B</mi><mo>)</mo><mo>)</mo><mo>∧</mo><mo>(</mo><mo>∃</mo><mi>j</mi><mo>:</mo><msub><mi>f</mi><mi>j</mi></msub><mo>(</mo><mi>A</mi><mo>)</mo><mo>&lt;</mo><msub><mi>f</mi><mi>j</mi></msub><mo>(</mo><mi>B</mi><mo>)</mo><mo>)</mo></mrow></math><span class="equation-label">(2) 最小化问题中的 Pareto 支配</span></div><p>沿 Pareto 前沿移动，改善某一目标通常需要牺牲至少另一个目标。前沿不自动告诉决策者选哪条路线；它把“有哪些非支配权衡”显式呈现出来，让安全、时间、能耗等业务偏好可以被审查。</p><figure><p class="figure-kicker">ROBOT MOTION PLANNING · 20</p><img src="../assets/figures/20-pareto-front.svg" loading="lazy" alt="二维长度与风险平面上，非支配路线构成前沿；右上方的路线被更短且风险更低的其它路线支配。"><figcaption>点位是教学构造的示例成本，不是实验结果。三目标时 Pareto 前沿是高维曲面，二维图只能展示其中两个投影。</figcaption></figure></section><section id="scalarize" aria-labelledby="scalarize-title"><h2 id="scalarize-title">加权和简单，但先归一化并理解它看不到什么</h2><p>常见做法是把多个成本压成单个标量：</p><div class="equation" tabindex="0" role="region" aria-label="(3) 归一化加权和标量化"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="(3) 归一化加权和标量化"><mrow><mi>J</mi><mo>(</mo><mi>π</mi><mo>)</mo><mo>=</mo><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>m</mi></munderover><msub><mi>w</mi><mi>i</mi></msub><mfrac><mrow><msub><mi>f</mi><mi>i</mi></msub><mo>(</mo><mi>π</mi><mo>)</mo></mrow><msub><mi>s</mi><mi>i</mi></msub></mfrac><mo>,</mo><mspace width="1em"/><msub><mi>w</mi><mi>i</mi></msub><mo>≥</mo><mn>0</mn><mo>,</mo><mspace width="1em"/><munderover><mo>∑</mo><mrow><mi>i</mi><mo>=</mo><mn>1</mn></mrow><mi>m</mi></munderover><msub><mi>w</mi><mi>i</mi></msub><mo>=</mo><mn>1</mn></mrow></math><span class="equation-label">(3) 归一化加权和标量化</span></div><p><code>s_i</code> 是有意义的尺度（例如参考范围、工程容许值或基准量），用于避免米、焦耳和秒直接相加。<code>w_i</code> 表示偏好，不是算法自动学到的“客观重要性”。更改权重会改变最优路线。</p><p>线性加权和通常只能找到 Pareto 前沿上的受支持解；当可行成本集合的 Pareto 前沿非凸时，部分非支撑 Pareto 点不能通过任何正权重的线性加权和成为最优解。可考虑 ε-constraint、词典序优化或直接近似 Pareto 集的方法。</p></section><section id="decision" aria-labelledby="decision-title"><h2 id="decision-title">工程上如何把偏好变成可审查的路线选择</h2><ol><li><strong>先设硬约束：</strong>碰撞、最小净空、最大坡度、最大曲率、法规速度等不应仅作为可被权重抵消的软惩罚。</li><li><strong>定义可测目标：</strong>长度、风险暴露、能耗估计与时间要有明确单位、来源和统计窗口。</li><li><strong>确定归一化尺度：</strong>写出参考值或可接受范围，避免权重被数值量级暗中决定。</li><li><strong>生成候选前沿：</strong>保留非支配路线，并记录规划器、预算和近似误差。</li><li><strong>由任务偏好选解：</strong>把“安全优先”“时间优先”等权重或阈值明确展示给操作人员。</li><li><strong>验证执行可行：</strong>选中的路线仍需进行运动学、动态障碍、速度规划和控制跟踪验证。</li></ol><p>对于多站点访问问题，可以把每一段站点间的路径规划成本作为 TSP/VRP 边权；若每段本身也是多目标，就需要更复杂的组合优化或在上层先选定偏好策略。</p></section><section id="demo" aria-labelledby="demo-title"><h2 id="demo-title">交互：偏向短路线，还是偏向低风险？</h2><p>下方三条非支配候选路线分别代表短、均衡和低风险偏好。按钮切换归一化权重，页面按加权成本重新选择；被支配的候选不会参与选择。</p><div class="interactive-box" data-pareto-demo><div class="demo-controls" role="group" aria-label="多目标路线偏好"><button type="button" data-pareto-mode="length" aria-pressed="true">长度优先</button><button type="button" data-pareto-mode="risk" aria-pressed="false">风险优先</button></div><p class="demo-status" role="status" aria-live="polite">长度优先：A-short（归一化加权成本最低）。</p><p class="micro">路线成本是本章代码中的教学构造值；交互用于解释偏好变化，不代表真实环境测量。</p></div></section><section id="implementation" aria-labelledby="implementation-title"><h2 id="implementation-title">计算一个小型候选集合的 Pareto 前沿</h2><p>Python 3.10+，仅用标准库。五条候选路线有长度、风险暴露和能耗代理三个待最小化成本。程序先删除被支配解，再按归一化加权和分别选出长度优先与风险优先的路线。</p><pre><code>routes={
+    "A-short": (8.,9.,5.),       # length, risk exposure, energy proxy
+    "B-balanced": (10.,5.,6.),
+    "C-safe": (12.,3.,4.),
+    "D-dominated": (14.,7.,8.),
+    "E-dominated": (11.,6.,7.)
+}
 
-        <p>大家好！上一章我们聊了动态环境中的重规划，学会了如何在变化的世界中持续找到可行路径。但还有一些场景是普通路径规划解决不了的——比如机器人巡检时需要依次查看 20 个仪表盘、无人机需要飞过一片区域的每一个角落进行测绘、快递员需要在一趟行程中配送 50 个包裹。这些问题的共同特征是什么？<strong>不再只有一个终点，而是有多个目标点需要依次访问</strong>。这就是<strong>多目标路径规划（Multi-Goal Path Planning）</strong>。</p>
+def dominates(a,b):
+    return (all(x&lt;=y for x,y in zip(a,b))
+            and any(x&lt;y for x,y in zip(a,b)))
 
-        <p>在深入之前，我先讲一个有趣的亲身经历。2019 年我参与了一个仓库盘点机器人的项目——机器人需要在夜间自动巡视仓库，扫描每个货架上的 RFID 标签来盘点库存。仓库有 200 个货架，分布在 5000 平米的场地上。我们一开始天真地给机器人规划了一条"蛇形走位"路线：从最左边第一排走到头，拐到第二排再走回来，像割草一样。结果机器人的电池只能撑 2 小时，但蛇形路线慢悠悠要走 4 小时。问题在哪？因为我们没有优化<strong>访问顺序</strong>——有些货架明明在附近，我们却让它绕了一大圈才去访问。从那以后我明白了一个道理：<strong>在多目标路径规划中，决定先访问谁、后访问谁，往往比路径怎么走更重要</strong>。</p>
+def pareto_front(candidates):
+    names=list(candidates)
+    return [name for name in names
+            if not any(dominates(candidates[other],candidates[name])
+                       for other in names if other!=name)]
 
-        <h2>多目标问题的本质</h2>
+front=pareto_front(routes)
+assert set(front)=={"A-short","B-balanced","C-safe"}
+assert "D-dominated" not in front and "E-dominated" not in front
 
-        <p>多目标路径规划在最简单的情况下可以被描述为：给定一个起点、一个终点和 N 个需要经过的中间目标点，找到一条经过所有这些点的最短路径。这听起来是不是有点耳熟？没错，这本质上就是<strong>旅行商问题（Traveling Salesman Problem, TSP）</strong>。</p>
+# Normalize heterogeneous units before applying a preference vector.
+scales=(14.,10.,8.)
+def weighted_choice(weights):
+    assert len(weights)==3 and all(w&gt;=0 for w in weights)
+    assert abs(sum(weights)-1.)&lt;1e-9
+    return min(front,key=lambda name:sum(
+        w*value/scale
+        for w,value,scale in zip(weights,routes[name],scales)))
 
-        <p>TSP 的问题是：给定 N 个城市以及两两之间的距离，找到一条经过所有城市且每个城市只经过一次的最短回路。而我们的多目标路径规划稍有不同——它有明确的起点和终点（不一定相同），而且"经过"不一定要求精确到点，只要路径覆盖了目标区域即可。</p>
-
-        <p>但它们的核心挑战是一样的：<strong>确定最优的访问顺序</strong>。如果你有 3 个目标点，那么可能的访问顺序有 3! = 6 种。如果有 10 个点，就有 10! ≈ 362 万种。如果有 20 个点，就有 2.43 × 10¹⁸ 种——即使使用最快的超级计算机暴力枚举也是不可能的。这就是所谓<strong>NP-hard</strong>问题的威力。</p>
-
-        <p>根据不同的场景需求，多目标规划还可以细分为：</p>
-
-        <ul>
-            <li><strong>覆盖路径规划（Coverage Path Planning）</strong>——机器人需要经过区域内每一点（如扫地机器人、植保无人机），目标不是路径最短，而是覆盖率最高、重复率最低。</li>
-            <li><strong>巡检路径规划（Inspection Path Planning）</strong>——需要经过一系列指定的检查点（如电力线巡检、管道检测），目标是最短路径 + 覆盖所有检查点。</li>
-            <li><strong>配送路径规划（Delivery Route Planning）</strong>——在一个城市范围内配送多个包裹，目标是在满足时间窗口约束下的总距离最短。</li>
-        </ul>
-
-        <h2>TSP与路径规划</h2>
-
-        <p>TSP 是一个非常古老且优美的问题，最早可以追溯到 19 世纪 30 年代。经过近两个世纪的研究，人们对它已经有了非常深的理解：</p>
-
-        <ul>
-            <li><strong>精确解法</strong>——分支定界（Branch and Bound）、整数线性规划（ILP）、动态规划（Held-Karp 算法，O(n²·2ⁿ)）。对于 n ≤ 20 的问题，精确解法可以在合理时间内求解。</li>
-            <li><strong>近似算法</strong>——Christofides 算法（保证解不超过最优解的 1.5 倍）、最小生成树法（2 倍近似比）。对大规模问题有用。</li>
-            <li><strong>启发式算法</strong>——最近邻、2-opt、3-opt 局部搜索、模拟退火、遗传算法。在实践中使用最广泛。</li>
-            <li><strong>学习型方法</strong>——基于注意力机制（Attention）的 Pointer Networks、GCN-based 方法。前沿研究热点。</li>
-        </ul>
-
-        <p>在路径规划的语境下，多目标规划通常是一个<strong>双层优化</strong>问题：外层决定访问顺序（这是一个 TSP），内层计算两点之间的最优路径（这是传统的路径规划）。两层耦合起来，使得问题比纯 TSP 更复杂——因为内层的路径代价不是固定的直线距离，而是取决于具体的地形和障碍物分布。</p>
-
-        <p>例如，虽然目标 A 和目标 B 的直线距离只有 10 米，但因为中间有一堵墙，实际路径长度可能是 30 米。这就意味着我们不能简单地用欧几里得距离作为 TSP 的代价矩阵，而必须先对所有目标点对运行一次路径规划，得到精确的距离矩阵。</p>
-
-        <h2>最近邻启发式</h2>
-
-        <p>在所有求解方法中，最近邻启发式（Nearest Neighbor Heuristic）是最简单、最容易实现的方法。它的逻辑非常直白：</p>
-
-        <ol>
-            <li>从起点出发</li>
-            <li>在所有未访问的目标点中，选择离当前位置最近的那个</li>
-            <li>移动到该点，标记为已访问</li>
-            <li>重复步骤 2-3，直到所有目标点都被访问</li>
-            <li>如果终点与起点不同，最后移动到终点</li>
-        </ol>
-
-        <p>这个算法的时间复杂度是 O(n²)，其中的 n 是目标点的数量。对于 50 个目标点，只需要 2500 次距离计算，在毫秒级别就能完成。</p>
-
-        <p>但它的缺点是显而易见的——你永远在"贪心"地选择最近的，但最终的总路径长度可能远非最优。数学上已经证明，最近邻启发式在最坏情况下的解可以劣于最优解约 25%。不过在实践中，对于随机分布的目标点，它的效果通常还不错——只需要最优解的 1.1 到 1.25 倍。</p>
-
-        <h2>遗传算法求解</h2>
-
-        <p>当目标点数超过 20 且你对路径质量有较高要求时，最近邻可能不够用了。这时候<strong>遗传算法（Genetic Algorithm, GA）</strong>是一个很不错的选择。</p>
-
-        <p>遗传算法模拟了自然选择的过程。在我们的多目标路径规划场景中：</p>
-
-        <ul>
-            <li><strong>染色体（Chromosome）</strong>——一个候选的访问顺序，比如 [3, 1, 4, 0, 2] 表示先访问目标点 3，然后 1，然后 4……</li>
-            <li><strong>适应度（Fitness）</strong>——这条路径的总长度（适应度越高 = 路径越短）</li>
-            <li><strong>选择（Selection）</strong>——适应度高的染色体被选中的概率更大</li>
-            <li><strong>交叉（Crossover）</strong>——将两条父染色体的序列片段组合成新的子代</li>
-            <li><strong>变异（Mutation）</strong>——随机交换染色体中的两个位置</li>
-        </ul>
-
-        <p>下面是使用遗传算法求解多目标路径规划的完整 Python 实现：</p>
-
-        <pre><code>import random
-import math
-
-# ---------- 问题设定 ----------
-goal_points = [(2, 3), (7, 5), (1, 8), (9, 2), (4, 6),
-               (6, 9), (3, 1), (8, 4), (5, 7), (0, 5)]
-start = (0, 0)
-end = (10, 10)
-N = len(goal_points)
-
-# 两点间的路径代价（简化为欧几里得距离，实际中应该是路径规划结果）
-def distance(a, b):
-    return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
-
-# 预先计算所有点对之间的距离矩阵
-points = [start] + goal_points + [end]
-dist = [[distance(points[i], points[j])
-         for j in range(N+2)] for i in range(N+2)]
-
-# ---------- 适应度函数 ----------
-def fitness(route):
-    """计算总路径长度：start -> route[0] -> ... -> route[-1] -> end"""
-    total = dist[0][route[0] + 1]  # start到第一个目标
-    for i in range(len(route) - 1):
-        total += dist[route[i] + 1][route[i+1] + 1]
-    total += dist[route[-1] + 1][N + 1]  # 最后一个目标到end
-    return 1.0 / total   # 取倒数，使"越短越好"变成"越大越好"
-
-# ---------- 初始化种群 ----------
-POP_SIZE = 100
-population = [random.sample(range(N), N) for _ in range(POP_SIZE)]
-
-# ---------- 交叉操作：PMX (Partially Mapped Crossover) ----------
-def pmx(parent1, parent2):
-    size = len(parent1)
-    child = [None] * size
-    # 随机选择交叉区间
-    cx1, cx2 = sorted(random.sample(range(size), 2))
-    # 复制区间
-    child[cx1:cx2] = parent1[cx1:cx2]
-    # 映射剩余位置
-    for i in range(cx1, cx2):
-        if parent2[i] not in child:
-            pos = i
-            while cx1 <= pos < cx2:
-                pos = parent2.index(parent1[pos])
-            child[pos] = parent2[i]
-    for i in range(size):
-        if child[i] is None:
-            child[i] = parent2[i]
-    return child
-
-# ---------- 变异操作：随机交换两个位置 ----------
-def mutate(route, rate=0.1):
-    if random.random() < rate:
-        i, j = random.sample(range(len(route)), 2)
-        route[i], route[j] = route[j], route[i]
-    return route
-
-# ---------- 主循环 ----------
-GENERATIONS = 500
-ELITE_SIZE = 5
-
-for gen in range(GENERATIONS):
-    # 计算适应度
-    scored = [(fitness(route), route) for route in population]
-    scored.sort(key=lambda x: x[0], reverse=True)
-
-    # 精英保留
-    new_pop = [route for _, route in scored[:ELITE_SIZE]]
-
-    # 轮盘赌选择 + 生成子代
-    weights = [s[0] for s in scored]
-    while len(new_pop) < POP_SIZE:
-        p1 = random.choices(population, weights=weights, k=1)[0]
-        p2 = random.choices(population, weights=weights, k=1)[0]
-        child = pmx(p1, p2)
-        child = mutate(child)
-        new_pop.append(child)
-
-    population = new_pop
-
-# ---------- 结果 ----------
-best_route = max(population, key=fitness)
-best_fitness = fitness(best_route)
-total_distance = 1.0 / best_fitness
-
-print(f"最优访问顺序: {best_route}")
-print(f"总路径长度: {total_distance:.2f}")
-print(f"访问路线: start -> ", end="")
-for idx in best_route:
-    print(f"g{idx}({goal_points[idx]}) -> ", end="")
-print("end")</code></pre>
-
-        <p>这段代码的核心在于 PMX 交叉操作——它保证了子代继承了父代中一段完整的访问序列，同时通过映射关系避免了重复目标。经过 500 代进化后，GA 通常能找到非常接近最优解的方案。</p>
-
-        <p>下表给出了不同方法在 10 个目标点和 20 个目标点情况下的对比：</p>
-
-        <table>
-            <tr>
-                <th>方法</th>
-                <th>时间复杂度</th>
-                <th>解质量（10 目标）</th>
-                <th>解质量（20 目标）</th>
-                <th>适用场景</th>
-            </tr>
-            <tr>
-                <td>最近邻启发式</td>
-                <td>O(n²)</td>
-                <td>最优的 110-120%</td>
-                <td>最优的 115-125%</td>
-                <td>实时性要求极高、目标数少</td>
-            </tr>
-            <tr>
-                <td>遗传算法</td>
-                <td>O(pop·gen·n)</td>
-                <td>最优的 100-105%</td>
-                <td>最优的 102-108%</td>
-                <td>中等规模、需要较高质量</td>
-            </tr>
-            <tr>
-                <td>分支定界（精确解）</td>
-                <td>O(n!)，n≤15 可用</td>
-                <td>100%（精确最优）</td>
-                <td>100%（但需数分钟）</td>
-                <td>小规模、需要证明最优</td>
-            </tr>
-        </table>
-
-        <div class="tip">
-            <strong>真实案例：亚马逊配送无人机的路径规划</strong>——亚马逊的 Prime Air 无人机一次起飞需要配送 50 多个包裹，覆盖一个社区的数十个投递点。如果按"先到先得"的顺序投递，一趟行程可能要飞 30 公里。而使用遗传算法优化访问顺序后，距离可以压缩到 15 公里以内——直接让单次配送的能耗减少一半，电池刚刚够用。据亚马逊公开的信息，GA 的适应度计算中还嵌入了风场模型、禁飞区规避和电池余量约束，比我们这里的简化版本复杂得多，但核心思想完全一致：<strong>顺序决定一切</strong>。
-        </div>
-
-        <p>多目标路径规划把 TSP 和传统路径规划结合在了一起，是一个非常实用却又充满挑战的领域。当然，在真实世界中，机器人往往不是单独工作的——当多个机器人在同一空间内同时规划路径时，问题会变得更加复杂。下一章我们就来讨论<strong>多机器人协调</strong>问题，看看如何在共享空间中让多个机器人在不撞上彼此的情况下高效完成任务。</p>
-
-        <div class="footer-nav">
-            <a href="19.html">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="21.html">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+length_first=weighted_choice((.8,.1,.1))
+risk_first=weighted_choice((.1,.8,.1))
+assert length_first=="A-short"
+assert risk_first=="C-safe"
+print("Pareto routes:",front)
+print("length preference:",length_first,routes[length_first])
+print("risk preference:",risk_first,routes[risk_first])</code></pre><p>断言确认 A、B、C 均为非支配解，D、E 被其它解支配；权重变化会从 A-short 切换到 C-safe。该小集合只用于演示 Pareto 运算，不是实际机器人路线生成算法，也不提供真实风险或能耗估计。</p></section><section id="limits" aria-labelledby="limits-title"><h2 id="limits-title">多目标结果的难点是定义目标和治理偏好</h2><ul><li><strong>目标相关性：</strong>长度、时间和能耗可能高度相关；重复计入相似成本会放大某种偏好。</li><li><strong>风险建模：</strong>概率、暴露、严重程度和安全约束需要分开定义，不能只用一个模糊风险分数。</li><li><strong>权重敏感性：</strong>小幅改变权重可能让解在前沿上跳变，应做敏感性分析。</li><li><strong>前沿近似：</strong>有限采样和有限预算得到的是近似非支配集，不等于完整 Pareto 前沿。</li><li><strong>决策责任：</strong>权重和阈值反映任务偏好与组织约束，应可追踪、可解释、可复核。</li></ul><p>在 OMPL 中，<code>MultiOptimizationObjective</code> 可以把路径长度、净空等优化目标按权重组合；这是工程接口，不代表加权和能恢复所有非凸 Pareto 区域。多目标规划的算法设计和最终路线偏好选择应当分开记录。</p></section><section id="references" aria-labelledby="references-title"><h2 id="references-title">多目标规划研究与 OMPL 实现</h2><ul><li><a href="https://ompl.kavrakilab.org/optimizationObjectivesTutorial.html">OMPL Optimization Objectives Tutorial：MultiOptimizationObjective</a></li><li><a href="https://repository.tudelft.nl/record/uuid%3Ac7ed4b2f-2942-4142-81c2-d7bc6d9c5a82">Regret-based Sampling of Pareto Fronts for Multi-Objective Robot Planning Problems</a> — IEEE Transactions on Robotics, 2024</li><li><a href="https://autonomousrobots.nl/assets/files/publications/24-wilde-RAL.pdf">Scalarizing Multi-Objective Robot Planning Problems Using Weighted Maximization</a> — IEEE RA-L, 2024</li></ul></section><nav class="article-footer" aria-label="章节翻页"><a href="19.html">← 19 · 动态环境重规划</a><a href="21.html">21 · 多机器人协调 →</a></nav></article></main></div></body></html>

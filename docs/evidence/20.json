@@ -1,0 +1,37 @@
+{
+  "article": "20",
+  "claims": [
+    {
+      "id": "ompl-multi",
+      "claim": "OMPL MultiOptimizationObjective以加权组合多个优化目标",
+      "kind": "official-documentation",
+      "source_url": "https://ompl.kavrakilab.org/optimizationObjectivesTutorial.html",
+      "locator": "OMPL Optimization Objectives Tutorial, Multiobjective optimal planning",
+      "status": "verified"
+    },
+    {
+      "id": "pareto",
+      "claim": "多目标机器人规划中加权和并不能覆盖非凸Pareto前沿的所有权衡点",
+      "kind": "primary-paper",
+      "source_url": "https://autonomousrobots.nl/assets/files/publications/24-wilde-RAL.pdf",
+      "locator": "Wilde et al., Scalarizing Multi-Objective Robot Planning Problems Using Weighted Maximization, IEEE RA-L 2024",
+      "status": "verified"
+    },
+    {
+      "id": "regret",
+      "claim": "Pareto前沿的有限近似可以通过regret-based权重采样构造",
+      "kind": "primary-paper",
+      "source_url": "https://repository.tudelft.nl/record/uuid%3Ac7ed4b2f-2942-4142-81c2-d7bc6d9c5a82",
+      "locator": "Regret-based Sampling of Pareto Fronts for Multi-Objective Robot Planning Problems, IEEE T-RO 2024",
+      "status": "verified"
+    },
+    {
+      "id": "toy",
+      "claim": "代码在固定候选成本向量中筛除被支配解并比较两种权重",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "20.html Python example",
+      "status": "illustrative"
+    }
+  ]
+}
