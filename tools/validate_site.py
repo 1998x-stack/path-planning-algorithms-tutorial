@@ -39,7 +39,7 @@ def check():
         p=Tags()
         try: p.feed(file.read_text(encoding="utf-8"))
         except Exception as e: errors.append(f"{file}: parse {e}"); continue
-        if file.name=="index.html" or (file.parent.name=="chapters" and file.stem in [f"{i:02}" for i in range(1,6)]):
+        if file == DOCS / "index.html" or (file.parent.name=="chapters" and file.stem in [f"{i:02}" for i in range(1,6)]):
             if p.h1!=1: errors.append(f"{file}: expected one h1, got {p.h1}")
             if file.parent.name=="chapters" and p.figure<2: errors.append(f"{file}: expected >=2 figures, got {p.figure}")
         errors.extend(f"{file}: {e}" for e in p.errors)
