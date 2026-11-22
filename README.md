@@ -1,67 +1,63 @@
-# 🤖 路径规划算法 from scratch
+# 路径规划算法 · Path Planning Algorithms Tutorial
 
-> 🤖 28章 实战体系
+28 篇中文路径规划课程。从状态 / 构型空间、图搜索、采样法、约束与动态规划，到工程验证。
 
-一套完整的 **路径规划算法 from scratch** 全中文实战课程体系，共 **28 章**。本课程以 HTML 可视化的形式呈现，从基础原理到工程实践循序渐进，适合系统性学习与复习。
+**[阅读网页版](https://1998x-stack.github.io/path-planning-algorithms-tutorial/)** · [从第一章开始](https://1998x-stack.github.io/path-planning-algorithms-tutorial/chapters/01.html)
 
-## 🚀 快速开始
+> 2026-11 首批精修：01–05 已重新设计，其余 06–28 保留原版内容待逐章审校。页面内标示状态，不能将保留旧版等同于完成质量复审。
 
-无需安装任何依赖，直接用浏览器打开 `index.html` 即可在线阅读全部章节：
+## 内容结构
 
-```bash
-open index.html   # macOS
-# 或在浏览器中直接打开 index.html
-```
+| 部分 | 章节 | 主要问题 |
+| --- | --- | --- |
+| 基础建模 | 01–05 | 地图如何变成规划问题？启发式怎样帮助搜索？ |
+| 图搜索算法 | 06–10 | 如何在离散状态图上寻找低代价路径？ |
+| 采样与路径质量 | 11–15 | 高维空间如何探索、连接与后处理？ |
+| 约束与在线规划 | 16–22 | 如何将运动约束、动态障碍和优化结合？ |
+| 工程与实验 | 23–28 | 如何调试、评估、部署和复现算法？ |
 
-## 📖 章节目录
-
-| # | 章节 | 核心主题 |
-|---|------|----------|
-| 01 | 什么是路径规划 | 路径规划定义、算法分类全景、应用场景概览、课程学习路线 |
-| 02 | 状态空间与构型空间 | C-Space概念、障碍物映射、完整与非完整约束、维度灾难 |
-| 03 | 图论基础 | 节点边权重、邻接表与矩阵、BFS/DFS遍历、图在规划中的应用 |
-| 04 | 栅格地图与代价地图 | 占据栅格地图、代价地图分层、分辨率权衡、真实地图加载 |
-| 05 | 启发式搜索入门 | 贪心最佳优先、启发函数设计、可纳性与一致性、4种距离函数 |
-| 06 | Dijkstra算法 | 最优子结构、优先队列展开、手写Python实现、复杂度分析 |
-| 07 | A*算法 | f=g+h融合、最优性保证、启发函数影响、完整Python实现 |
-| 08 | A*改进与变体 | 加权A*、双向A*、Anytime A*、分层A* |
-| 09 | D* Lite增量搜索 | 动态环境、增量重规划、g/rhs值、D* vs D* Lite |
-| 10 | JPS跳点搜索 | 对称性消除、强制邻居、跳点规则、JPS vs A*对比 |
-| 11 | RRT快速随机树 | 随机采样、kd-tree近邻、碰撞检测、概率完备性 |
-| 12 | RRT*渐进最优 | Rewire重连、代价优化、渐进最优性、Informed RRT* |
-| 13 | PRM概率路线图 | 学习与查询阶段、采样策略、多查询优势、窄通道问题 |
-| 14 | 采样方法大对比 | 统一评价框架、算法对比实验、选型决策树、混合策略 |
-| 15 | 路径平滑与后处理 | Douglas-Peucker、B样条平滑、曲率约束、可行驶性检查 |
-| 16 | 动态窗口法DWA | 速度空间、动态窗口、轨迹评分、手写Python实现 |
-| 17 | 人工势场法 | 引力斥力场、局部极小问题、改进方法、APF vs DWA |
-| 18 | 运动学约束与曲线 | Dubins曲线、Reeds-Shepp曲线、阿克曼转向、运动基元 |
-| 19 | 动态环境重规划 | 时间维度建模、滚动窗口规划、终身规划A*、预测与反应 |
-| 20 | 多目标路径规划 | TSP变体、最近邻启发式、遗传算法求解、巡检与配送 |
-| 21 | 多机器人协调 | 冲突类型、优先级规划、交通规则法、ORCA去中心化 |
-| 22 | 优化模型方法 | MPC模型预测控制、梯度优化、约束建模、ROS2 Nav2实战 |
-| 23 | 可视化与调试 | Matplotlib动画、搜索树绘制、代价热力图、常见Bug模式 |
-| 24 | 算法性能基准测试 | 评价指标体系、测试场景设计、公平对比原则、基准测试脚本 |
-| 25 | 仿真到实车部署 | Gazebo仿真、传感器噪声、Sim-to-Real Gap、域随机化 |
-| 26 | 学习型路径规划 | 模仿学习、强化学习PPO、DRL与传统融合、局限与风险 |
-| 27 | 前沿趋势与未来 | 基础模型规划器、V2X协同、量子优化、安全认证 |
-| 28 | 综合项目 | 完整导航栈、算法选型决策、性能调优、课程总结 |
-
-## 📂 项目结构
+## 仓库结构
 
 ```text
-path-planning-algorithms-tutorial/
-├── index.html      # 课程主入口（在线阅读全部章节）
-├── 01.html ~ 28.html   # 各章节正文
-├── courses.json    # 课程元数据（标题/章节/主题）
-└── theme.css       # 统一主题样式
+.
+├── docs/                     # 唯一的 Web 站点源码，同时是 Pages 发布源
+│   ├── index.html            # 课程主页
+│   ├── chapters/01.html…28.html
+│   ├── assets/css/site.css   # 新设计系统
+│   ├── assets/js/site.js     # 轻量无依赖交互
+│   ├── assets/figures/       # 可单独查看的原创 SVG
+│   ├── evidence/             # 01–05 的主要事实来源登记
+│   └── data/chapters.json    # 章节状态与导航元数据
+├── archive/2026-before-redesign/ # 第一批原始篇章存档
+├── tools/build_site.py      # 离线复制构建
+├── tools/validate_site.py   # 静态结构、链接、SVG 检查
+├── .github/workflows/pages.yml
+├── AGENTS.md                # 写作/插图/验证/发布约定
+├── 01.html…28.html          # 旧链接跳转存根
+└── index.html               # 旧站入口跳转存根
 ```
 
-## ✨ 课程特色
+## 开发与发布
 
-- **全中文实战体系**：面向中文读者，由浅入深，覆盖原理与工程实践
-- **28 章完整内容**：系统化章节编排，形成完整知识闭环
-- **可视化呈现**：HTML 图文并茂，适合快速浏览与重点回顾
-- **即开即用**：无需构建、无需服务器，纯静态页面随开随看
+Python 3.10+，不需要 Node、第三方字体、在线数学脚本。
 
----
-*本课程由 `path-planning-algorithms-tutorial/` 项目维护。*
+```bash
+python3 tools/validate_site.py
+python3 tools/build_site.py
+python3 -m http.server 8000 -d docs
+```
+
+在浏览器访问 http://localhost:8000。 `build_site.py` 会把 `docs/` 复制到 `_site/`，不会修改源文件。GitHub Actions 会先静态校验，再从 `_site/` 上传部署。**仓库 Settings → Pages → Source 必须选择 GitHub Actions**；仅提交工作流不代表 Pages 已完成启用或部署。
+
+## 编辑规范
+
+先读 [AGENTS.md](AGENTS.md)。文章要独立解释问题，不写“上一章介绍了”，每个关键结论应可由图、推导、代码或参考文献追溯；所有教学示例标注假设及适用范围。新 SVG 使用可访问标题和说明，复杂 MathML 离线可读。严禁捏造基准数值和部署验收结果。
+
+## 主要参考
+
+- S. M. LaValle, *Planning Algorithms*：https://msl.cs.uiuc.edu/~lavalle/planning/
+- P. E. Hart, N. J. Nilsson, B. Raphael, *A Formal Basis for the Heuristic Determination of Minimum Cost Paths* (1968)：https://ieeexplore.ieee.org/document/4082128
+- A. Elfes, *Using Occupancy Grids for Mobile Robot Perception and Navigation* (1989)：https://ieeexplore.ieee.org/document/30720/
+- Nav2 Costmap 文档：https://docs.nav2.org/
+
+教学编排受 [Olah-style-posts](https://github.com/1998x-stack/Olah-style-posts) 的叙事与可视化工作流启发，图形和文字均需独立创作。

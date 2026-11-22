@@ -1,0 +1,30 @@
+{
+  "article": "01",
+  "claims": [
+    {
+      "id": "planning-model",
+      "claim": "路径问题需定义配置空间、无碰撞区域和起终点",
+      "kind": "textbook",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/",
+      "locator": "Chapters 2, 4, 5",
+      "status": "verified",
+      "notes": "article simplifies to geometric paths and distinguishes trajectory constraints"
+    },
+    {
+      "id": "algorithm-families",
+      "claim": "图搜索、采样规划、运动约束规划可按不同表示与机制分类",
+      "kind": "textbook",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/",
+      "locator": "Chapters 2, 5, 7, 13, 14",
+      "status": "verified"
+    },
+    {
+      "id": "toy-route",
+      "claim": "10m versus 13m routes used solely for illustrating cost choices",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "Article example",
+      "status": "illustrative"
+    }
+  ]
+}

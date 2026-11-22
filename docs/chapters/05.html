@@ -1,0 +1,44 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="从曼哈顿、欧氏和 Octile 距离理解启发式搜索，逐边验证可纳性和一致性并运行 A*。"><title>05 · 启发式搜索入门 — 路径规划算法</title><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="06.html">下一章</a></nav></div></header><div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#problem">为什么只看终点方向不够</a><a href="#scores">贪心搜索与 A* 的区别</a><a href="#geometry">距离函数必须匹配运动模型</a><a href="#bounds">可纳性与一致性</a><a href="#graph">在图上看清两个条件</a><a href="#code">可执行 A* 与断言</a><a href="#pitfalls">常见误解与失败模式</a><a href="#references">参考资料</a></nav></details></aside><main class="article-main" id="content"><article><header class="article-header"><p class="article-meta">FOUNDATIONS / 05 OF 28</p><h1>启发式搜索：距离与最优性的边界</h1><p class="dek">启发函数不仅是“朝目标前进”的提示。它必须与动作和边代价相容，才能使搜索既高效又保有可验证的最优性。</p></header><section id="problem" aria-labelledby="problem-title"><h2 id="problem-title">为什么只看终点方向不够</h2><p>在障碍物密集的仓库中，离终点最近的格子可能位于一条死胡同里。如果每次只选择“看起来离目标最近”的节点，搜索会反复朝墙靠近；如果完全不知道目标方向，搜索又会像水波一样向四周扩张。</p><p>启发函数 h(n) 用来估计<strong>从当前状态 n 到目标的剩余代价</strong>。它不是障碍检测器，也不自动保证搜索加速。真正需要思考的是：它与机器人可移动的边及其代价之间，具有什么数学关系？</p></section><section id="scores" aria-labelledby="scores-title"><h2 id="scores-title">贪心最佳优先搜索与 A* 的选择</h2><p>贪心最佳优先搜索（Greedy Best-First Search）只根据 h(n) 排序；A* 使用已经走过的代价 g(n) 与估计的剩余代价 h(n) 之和 f(n) 作为排序键：</p><div class="equation" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>f</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo><mi>g</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>+</mo><mi>h</mi><mo>(</mo><mi>n</mi><mo>)</mo></mrow></math><span class="equation-label">(1) A* 排序键</span></div><figure><p class="figure-kicker">HEURISTIC SEARCH · 05</p><img src="../assets/figures/05-scoring-frontier.svg" alt="两张候选节点卡片。P 的已付成本6估计剩余1，Q 的已付成本2估计剩余3；贪心选P，A星按 f=g+h 选Q。" loading="lazy"><figcaption>这个数值例子说明两个排序键可能选择不同的待探索节点；它不宣称此一步决策一定对应最终路径最优。</figcaption></figure><p>例如 P 的 h=1、g=6，而 Q 的 h=3、g=2。贪心会先扩展 P（h 小），A* 会先扩展 Q（f=5 小于 7）。A* 因此同时权衡“已经付出多少”和“剩下可能还要付出多少”。但要把这一策略升级成最优路径的保证，还需满足启发式与搜索实现的条件。</p></section><section id="geometry" aria-labelledby="geometry-title"><h2 id="geometry-title">距离函数必须匹配运动模型</h2><p>设目标相对当前位置的行列差分别是 Δx、Δy（按格计算），且每走一格的基础代价为 1。不同的邻接规则有不同的无障碍最短代价，因此也有不同的自然启发式。</p><div class="table-wrap"><table><thead><tr><th>允许动作</th><th>合适的下界</th><th>例：Δx=4, Δy=3</th></tr></thead><tbody><tr><td>4 邻域，轴向成本 1</td><td>曼哈顿 |Δx|+|Δy|</td><td>7</td></tr><tr><td>任意方向连续平移，按距离计价</td><td>欧氏距离 √(Δx²+Δy²)</td><td>5</td></tr><tr><td>8 邻域，轴向 1、对角 √2</td><td>Octile: max(dx,dy)+(√2−1)min(dx,dy)</td><td>4+3(√2−1) ≈ 5.243</td></tr><tr><td>8 邻域，所有一步成本 1</td><td>切比雪夫 max(dx,dy)</td><td>4</td></tr></tbody></table></div><figure><p class="figure-kicker">HEURISTIC SEARCH · 05</p><img src="../assets/figures/05-heuristic-geometry.svg" alt="四个象限分别展示曼哈顿折线、欧氏直线、八邻域对角与轴向组合、等价代价八邻域步数。横向四格纵向三格。" loading="lazy"><figcaption>同样的位移 (4,3)，只改变允许动作和单步成本，最短无障碍距离就不同；有障碍时这些距离仍可作为对应运动模型的下界。</figcaption></figure><p>对四邻域、单位边代价，<strong>欧氏距离仍是可纳且一致的</strong>，并不是错误的启发式；它通常没有曼哈顿距离“信息量大”，因为欧氏估计更低。不要把算法实际效率归因于没有测量的固定“加速倍数”。如果网格每格是 r 米且边权按米计价，这些距离都需要乘以 r。</p></section><section id="bounds" aria-labelledby="bounds-title"><h2 id="bounds-title">可纳性与一致性：最优性的边界</h2><p>设 h*(n) 表示从 n 到目标的真实最小剩余代价。<strong>可纳性（admissibility）</strong>要求 h 不高估 h*；若所有边代价非负，通常也取 h(n)≥0 和 h(G)=0。</p><div class="equation" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mn>0</mn><mo>≤</mo><mi>h</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>≤</mo><msup><mi>h</mi><mo>*</mo></msup><mo>(</mo><mi>n</mi><mo>)</mo><mo>,</mo><mspace width="1em"/><mi>h</mi><mo>(</mo><mi>G</mi><mo>)</mo><mo>=</mo><mn>0</mn></mrow></math><span class="equation-label">(2) 对可达目标、非负代价的常见可纳性定义</span></div><p><strong>一致性（consistency）</strong>进一步要求沿每一条合法边 (u,v)，剩余估计最多下降一条边的真实代价。这等价于启发式满足与边代价相容的三角不等式。</p><div class="equation" tabindex="0"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><mi>h</mi><mo>(</mo><mi>u</mi><mo>)</mo><mo>≤</mo><mi>c</mi><mo>(</mo><mi>u</mi><mo>,</mo><mi>v</mi><mo>)</mo><mo>+</mo><mi>h</mi><mo>(</mo><mi>v</mi><mo>)</mo></mrow></math><span class="equation-label">(3) 每条合法边 (u,v) 必须满足的单调性条件</span></div><p>一致启发式必然可纳（假定目标估值为零，并可沿一条通向目标的最优路径反复应用不等式）。反过来，可纳不必一致。对于常见非负边权图搜索，使用一致 h 时，A* 首次从优先队列弹出目标即可确定最优解，且已确定最优 g 的节点无需重开。若 h 只是可纳但可能不一致，则实现一般需要允许更优路径重开节点，不能简单永久冻结 visited 集合。</p><div class="note"><p><strong>证明范围：</strong>这里讨论有有限代价最优路径、非负权重、明确终点且按最小 f 展开的经典 A* 图搜索。无限图、负权边、近似求解或不可靠的碰撞检测，需要单独检查。</p></div></section><section id="graph" aria-labelledby="graph-title"><h2 id="graph-title">在一张三节点图上验证条件</h2><p>考虑 S→A 代价 2，A→G 代价 3，S→G 代价 7。真实最优代价 h*(S)=5、h*(A)=3、h*(G)=0。取 h(S)=5、h(A)=3、h(G)=0，恰好在 S→A 和 A→G 两条边上满足一致性等号。</p><figure><p class="figure-kicker">HEURISTIC SEARCH · 05</p><img src="../assets/figures/05-admissibility-graph.svg" alt="图中 S 经 A 到 G 代价 2+3，直接 S 到 G 代价 7，标出 h(S)=5、h(A)=3、h(G)=0 与一致性不等式。" loading="lazy"><figcaption>如果改设 h(S)=4、h(A)=1，则仍分别不高估真实剩余代价，但 4>2+1 违反一致性。由此看出可纳性不推出一致性。</figcaption></figure><p>这不是“画出来接近目标”的直觉，而是逐边检查的正式约束。工程上，如果启发式被人为乘以大于 1 的权重，可能得到 Weighted A* 之类的近似搜索，但不能继续宣称它在经典可纳条件下保证最优。</p></section><section id="code" aria-labelledby="code-title"><h2 id="code-title">用 A* 运行并断言最优路径成本</h2><p>下面的程序针对<strong>非负单位边代价、四邻域、不允许斜向</strong>的网格。优先队列使用 <code>(f,g,node)</code>，当发现更低 g 时重新入队，并跳过过期条目。这种做法可以正确处理重复入队，避免简单的 visited 锁死更优路径。</p><pre><code>from heapq import heappush, heappop
+
+def h(a, b):  # 仅对四邻域、单位边代价成立的紧下界
+    return abs(a[0]-b[0]) + abs(a[1]-b[1])
+
+def astar(grid, start, goal):
+    rows, cols = len(grid), len(grid[0])
+    assert grid[start[0]][start[1]] == 0
+    assert grid[goal[0]][goal[1]] == 0
+    best = {start: 0}
+    parent = {start: None}
+    pq = [(h(start, goal), 0, start)]
+    while pq:
+        f, g, u = heappop(pq)
+        if g != best.get(u):  # 丢弃过期优先队列条目
+            continue
+        if u == goal:
+            path = []
+            while u is not None:
+                path.append(u)
+                u = parent[u]
+            return path[::-1], g
+        r, c = u
+        for dr, dc in ((-1,0),(0,1),(1,0),(0,-1)):
+            v = (r+dr, c+dc)
+            vr, vc = v
+            if not (0 &lt;= vr &lt; rows and 0 &lt;= vc &lt; cols):
+                continue
+            if grid[vr][vc] != 0:
+                continue
+            tentative = g + 1
+            if tentative &lt; best.get(v, float("inf")):
+                best[v] = tentative
+                parent[v] = u
+                heappush(pq, (tentative+h(v,goal), tentative, v))
+    return None
+
+grid = [[0,0,0,0], [0,1,1,0], [0,0,0,0]]
+result = astar(grid, (0,0), (2,3))
+assert result is not None
+path, cost = result
+assert path[0] == (0,0) and path[-1] == (2,3)
+assert cost == 5 == len(path)-1
+print(path, cost)</code></pre><p>运行环境 Python 3.10+，标准库足够。该样例的最短路线需要 5 步，因为起终点曼哈顿距离是 5 且存在一条可行的 5 步路线；断言检查了路径端点、长度和成本一致性。真实系统还需处理地图安全余量、动态障碍、连续碰撞和性能基准测试。</p></section><section id="pitfalls" aria-labelledby="pitfalls-title"><h2 id="pitfalls-title">最容易误以为正确的四件事</h2><ol><li>“更接近目标”不意味着“总成本更低”：贪心搜索可能绕很远。</li><li>“启发式低估了”不意味着“可以永远关闭节点”：不一致时要允许更优 g 的重新传播。</li><li>“欧氏距离不是曼哈顿”不意味着在四邻域中错误：它仍是合法下界，只是可能较弱。</li><li>“A* 一定比 Dijkstra 快”是过度概括：h=0 时 A* 退化为一致代价搜索；效率受到启发式质量、障碍、数据结构与平局规则影响。</li></ol><p>最终应同时报告：相同地图、邻接规则、边代价、起终点和硬件条件下的扩展节点数、运行时间、路径成本和是否达到最优，而不是使用不可复现的单一“快几倍”。</p></section><section id="references" aria-labelledby="references-title"><h2 id="references-title">参考资料</h2><ul><li><a href="https://ieeexplore.ieee.org/document/4082128">P. E. Hart, N. J. Nilsson, B. Raphael, A Formal Basis for the Heuristic Determination of Minimum Cost Paths (1968)</a></li><li><a href="https://cse.sc.edu/~MGV/csce580f11/astarHNR1972.pdf">Hart et al., Correction to the 1968 paper (1972)</a></li><li><a href="https://www.redblobgames.com/pathfinding/a-star/implementation.html">Amit Patel, Implementation of A*</a></li><li><a href="https://msl.cs.uiuc.edu/~lavalle/planning/book.html">LaValle, Planning Algorithms, Chapter 2: Discrete Planning</a></li></ul></section><nav class="article-footer" aria-label="章节翻页"><a href="04.html">← 04 · 栅格与代价地图</a><a href="06.html">06 · Dijkstra 算法 →</a></nav></article></main></div></body></html>

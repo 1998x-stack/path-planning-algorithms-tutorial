@@ -1,0 +1,38 @@
+{
+  "article": "02",
+  "claims": [
+    {
+      "id": "c-space",
+      "claim": "configuration space obstacles defined by collision and translating robot via Minkowski sum",
+      "kind": "textbook",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/book.html",
+      "locator": "Chapter 4.3",
+      "status": "verified"
+    },
+    {
+      "id": "minkowski-source",
+      "claim": "translation-only C-obstacle O⊕(-A)",
+      "kind": "textbook",
+      "source_url": "https://motion.cs.illinois.edu/RoboticSystems/GeometricMotionPlanning.html",
+      "locator": "Configuration-space obstacles",
+      "status": "verified"
+    },
+    {
+      "id": "fixed-square-demo",
+      "claim": "rectangular C-obstacle expands by 0.5 in each coordinate for centered axis-aligned square footprint",
+      "kind": "derived",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/book.html",
+      "locator": "Special case of Minkowski sum",
+      "status": "derived",
+      "notes": "Numeric pedagogical construction, not measured result"
+    },
+    {
+      "id": "kinematics",
+      "claim": "ideal unicycle nonholonomic constraints and distinction from carlike minimum turning radius",
+      "kind": "textbook",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/book.html",
+      "locator": "Chapter 13, differential constraints",
+      "status": "verified"
+    }
+  ]
+}

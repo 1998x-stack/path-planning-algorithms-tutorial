@@ -1,0 +1,45 @@
+{
+  "article": "04",
+  "claims": [
+    {
+      "id": "occupancy-prob",
+      "claim": "occupancy grids are a probabilistic cell-based representation",
+      "kind": "paper",
+      "source_url": "https://ieeexplore.ieee.org/document/30720/",
+      "locator": "Elfes 1989",
+      "status": "verified"
+    },
+    {
+      "id": "ros-msg",
+      "claim": "OccupancyGrid 0 and 1 occupancy statements and -1 unknown; 0..100 commonly used",
+      "kind": "official",
+      "source_url": "https://github.com/ros2/common_interfaces/blob/rolling/nav_msgs/msg/OccupancyGrid.msg",
+      "locator": "message comments",
+      "status": "verified"
+    },
+    {
+      "id": "nav2-costs",
+      "claim": "costmap internal conventions 0, 253, 254, 255 differ from ROS occupancy encoding",
+      "kind": "official",
+      "source_url": "https://github.com/ros-navigation/navigation2/blob/main/nav2_util/src/costmap.cpp",
+      "locator": "cost values",
+      "status": "verified"
+    },
+    {
+      "id": "inflation",
+      "claim": "Nav2 inflation radius and cost scaling factor control obstacle cost propagation",
+      "kind": "official",
+      "source_url": "https://docs.nav2.org/configuration/packages/costmap-plugins/inflation.html",
+      "locator": "Parameters",
+      "status": "verified"
+    },
+    {
+      "id": "grid-scaling",
+      "claim": "fixed-area cell count grows quadratically with inverse resolution",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "20x20m example",
+      "status": "derived"
+    }
+  ]
+}

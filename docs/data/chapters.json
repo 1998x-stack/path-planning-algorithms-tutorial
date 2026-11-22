@@ -1,0 +1,198 @@
+[
+  {
+    "num": "01",
+    "title": "什么是路径规划",
+    "href": "chapters/01.html",
+    "status": "redesigned",
+    "part": 1
+  },
+  {
+    "num": "02",
+    "title": "状态空间与构型空间",
+    "href": "chapters/02.html",
+    "status": "redesigned",
+    "part": 1
+  },
+  {
+    "num": "03",
+    "title": "图论基础",
+    "href": "chapters/03.html",
+    "status": "redesigned",
+    "part": 1
+  },
+  {
+    "num": "04",
+    "title": "栅格地图与代价地图",
+    "href": "chapters/04.html",
+    "status": "redesigned",
+    "part": 1
+  },
+  {
+    "num": "05",
+    "title": "启发式搜索入门",
+    "href": "chapters/05.html",
+    "status": "redesigned",
+    "part": 1
+  },
+  {
+    "num": "06",
+    "title": "Dijkstra 算法",
+    "href": "chapters/06.html",
+    "status": "legacy",
+    "part": 2
+  },
+  {
+    "num": "07",
+    "title": "A* 算法",
+    "href": "chapters/07.html",
+    "status": "legacy",
+    "part": 2
+  },
+  {
+    "num": "08",
+    "title": "A* 改进与变体",
+    "href": "chapters/08.html",
+    "status": "legacy",
+    "part": 2
+  },
+  {
+    "num": "09",
+    "title": "D* Lite 增量搜索",
+    "href": "chapters/09.html",
+    "status": "legacy",
+    "part": 2
+  },
+  {
+    "num": "10",
+    "title": "JPS 跳点搜索",
+    "href": "chapters/10.html",
+    "status": "legacy",
+    "part": 2
+  },
+  {
+    "num": "11",
+    "title": "RRT 快速随机树",
+    "href": "chapters/11.html",
+    "status": "legacy",
+    "part": 3
+  },
+  {
+    "num": "12",
+    "title": "RRT* 渐进最优",
+    "href": "chapters/12.html",
+    "status": "legacy",
+    "part": 3
+  },
+  {
+    "num": "13",
+    "title": "PRM 概率路线图",
+    "href": "chapters/13.html",
+    "status": "legacy",
+    "part": 3
+  },
+  {
+    "num": "14",
+    "title": "采样方法大对比",
+    "href": "chapters/14.html",
+    "status": "legacy",
+    "part": 3
+  },
+  {
+    "num": "15",
+    "title": "路径平滑与后处理",
+    "href": "chapters/15.html",
+    "status": "legacy",
+    "part": 3
+  },
+  {
+    "num": "16",
+    "title": "动态窗口法 DWA",
+    "href": "chapters/16.html",
+    "status": "legacy",
+    "part": 4
+  },
+  {
+    "num": "17",
+    "title": "人工势场法",
+    "href": "chapters/17.html",
+    "status": "legacy",
+    "part": 4
+  },
+  {
+    "num": "18",
+    "title": "运动学约束与曲线",
+    "href": "chapters/18.html",
+    "status": "legacy",
+    "part": 4
+  },
+  {
+    "num": "19",
+    "title": "动态环境重规划",
+    "href": "chapters/19.html",
+    "status": "legacy",
+    "part": 4
+  },
+  {
+    "num": "20",
+    "title": "多目标路径规划",
+    "href": "chapters/20.html",
+    "status": "legacy",
+    "part": 4
+  },
+  {
+    "num": "21",
+    "title": "多机器人协调",
+    "href": "chapters/21.html",
+    "status": "legacy",
+    "part": 4
+  },
+  {
+    "num": "22",
+    "title": "优化模型方法",
+    "href": "chapters/22.html",
+    "status": "legacy",
+    "part": 4
+  },
+  {
+    "num": "23",
+    "title": "可视化与调试",
+    "href": "chapters/23.html",
+    "status": "legacy",
+    "part": 5
+  },
+  {
+    "num": "24",
+    "title": "算法性能基准测试",
+    "href": "chapters/24.html",
+    "status": "legacy",
+    "part": 5
+  },
+  {
+    "num": "25",
+    "title": "仿真到实车部署",
+    "href": "chapters/25.html",
+    "status": "legacy",
+    "part": 5
+  },
+  {
+    "num": "26",
+    "title": "学习型路径规划",
+    "href": "chapters/26.html",
+    "status": "legacy",
+    "part": 5
+  },
+  {
+    "num": "27",
+    "title": "前沿趋势与未来",
+    "href": "chapters/27.html",
+    "status": "legacy",
+    "part": 5
+  },
+  {
+    "num": "28",
+    "title": "综合项目",
+    "href": "chapters/28.html",
+    "status": "legacy",
+    "part": 5
+  }
+]
