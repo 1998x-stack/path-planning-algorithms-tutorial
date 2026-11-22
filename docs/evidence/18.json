@@ -1,0 +1,37 @@
+{
+  "article": "18",
+  "claims": [
+    {
+      "id": "dubins",
+      "claim": "Dubins 证明只前进、曲率有上界的车辆最短路径由最多三段 L/R/S 组成，仅 6 种路径词（CSC 与 CCC）",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.2307/2372560",
+      "locator": "Dubins 1957, American Journal of Mathematics 79(3):497-516",
+      "status": "verified"
+    },
+    {
+      "id": "reeds-shepp",
+      "claim": "Reeds-Shepp 曲线允许前进与倒车，最短路径共 48 种词、9 个族",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.2140/pjm.1990.145.367",
+      "locator": "Reeds & Shepp 1990, Pacific J. Math. 145(2):367-393",
+      "status": "verified"
+    },
+    {
+      "id": "bicycle-curvature",
+      "claim": "自行车模型中曲率 κ=tanδ/L，转弯半径 R=L/tanδ，因此 |κ| ≤ 1/R_min",
+      "kind": "textbook",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/",
+      "locator": "LaValle, Planning Algorithms, 非完整约束章节",
+      "status": "derived"
+    },
+    {
+      "id": "example",
+      "claim": "页面 Python 示例为确定性教学示意：恒定转向角圆弧半径符合 L/tanδ，直角拐角曲率 1.41 超过 1/R_min=1.00",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "18.html Python 代码块与断言",
+      "status": "derived"
+    }
+  ]
+}

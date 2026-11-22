@@ -105,3 +105,20 @@ document.addEventListener("DOMContentLoaded",()=>{
    for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));
  });
 });
+
+// Interactive Dubins word comparison used by chapter 18.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-dubins-demo]");if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-dubins-word]")],paths=[...demo.querySelectorAll("[data-dubins-path]")];
+ const notes={
+   LSL:"LSL：左转弧 → 直线 → 左转弧，属于弧–直线–弧（CSC）结构。",
+   RSR:"RSR：右转弧 → 直线 → 右转弧，与 LSL 互为镜像的 CSC 结构。",
+   LRL:"LRL：三段圆弧、无直线，属于 CCC 结构；某些位姿下它可能比 CSC 更短。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{
+   const sel=b.dataset.dubinsWord;
+   for(const p of paths)p.setAttribute("opacity",p.dataset.dubinsPath===sel?"1":"0.18");
+   status.textContent=notes[sel];
+   for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));
+ });
+});
