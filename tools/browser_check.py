@@ -178,9 +178,16 @@ def main():
                             if status.inner_text()==before or "等待" not in status.inner_text():
                                 failures.append("28: capstone dynamic simulation interaction did not update")
                         name=path.replace("/", "-").replace(".html", "")
-                        page.screenshot(path=str(OUTPUT / f"{name}-{key}.jpg"), full_page=True, type="jpeg", quality=78)
-                        results.append({"page": path, "viewport": key, "http": response.status if response else None,
-                                        **stats, "consoleErrors": errors})
+                        screenshot = None
+                        # Keep every viewport in the QA matrix, but retain representative full-page
+                        # screenshots only for desktop and the narrow mobile layout.
+                        if key in ("desktop", "mobile390"):
+                            screenshot = f"{name}-{key}.jpg"
+                            page.screenshot(path=str(OUTPUT / screenshot), full_page=True,
+                                            type="jpeg", quality=72)
+                        results.append({"page": path, "viewport": key,
+                                        "http": response.status if response else None,
+                                        "screenshot": screenshot, **stats, "consoleErrors": errors})
                     except Exception as exc:
                         failures.append(f"{path} {key}: browser failure {exc}")
                     finally:
@@ -188,10 +195,13 @@ def main():
             browser.close()
     finally:
         httpd.shutdown()
-    report = {"servedFrom": str(SERVE_ROOT.relative_to(ROOT)), "pages": len(PAGES), "viewports": len(VIEWS), "cases": len(results),
+    report = {"servedFrom": str(SERVE_ROOT.relative_to(ROOT)), "pages": len(PAGES),
+              "viewports": len(VIEWS), "cases": len(results),
+              "screenshots": sum(bool(item["screenshot"]) for item in results),
               "failures": failures, "results": results}
     (OUTPUT / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Browser QA: {len(results)} cases, {len(failures)} failures")
+    print(f"Browser QA ({report['servedFrom']}): {len(results)} cases, "
+          f"{report['screenshots']} screenshots, {len(failures)} failures")
     for issue in failures: print("FAIL", issue, file=sys.stderr)
     return int(bool(failures))
 
