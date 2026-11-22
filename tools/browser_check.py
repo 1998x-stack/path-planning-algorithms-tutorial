@@ -14,8 +14,10 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
+SITE = ROOT / "_site"
+SERVE_ROOT = SITE if SITE.is_dir() else DOCS
 OUTPUT = ROOT / "reports" / "browser"
-PAGES = ["index.html"] + [f"chapters/{n:02}.html" for n in range(1, 26)]
+PAGES = ["index.html"] + [f"chapters/{n:02}.html" for n in range(1, 29)]
 VIEWS = [("desktop", 1440, 900), ("tablet", 768, 1024),
          ("mobile390", 390, 844), ("mobile360", 360, 800)]
 
@@ -24,7 +26,7 @@ class Handler(SimpleHTTPRequestHandler):
 
 def main():
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    httpd = ThreadingHTTPServer(("127.0.0.1", 0), partial(Handler, directory=str(DOCS)))
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), partial(Handler, directory=str(SERVE_ROOT)))
     Thread(target=httpd.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{httpd.server_address[1]}/"
     failures, results = [], []
@@ -157,10 +159,35 @@ def main():
                             page.locator("[data-deploy-mode='robot']").click()
                             if status.inner_text()==original or "实车" not in status.inner_text():
                                 failures.append("25: deployment safety gates interaction did not update")
+                        if key == "desktop" and path.endswith("/26.html"):
+                            status = page.locator("[data-learning-demo] .demo-status")
+                            before = status.inner_text()
+                            page.locator("[data-learning-mode='hybrid']").click()
+                            if status.inner_text()==before or "回退" not in status.inner_text():
+                                failures.append("26: learned/classical hybrid interaction did not update")
+                        if key == "desktop" and path.endswith("/27.html"):
+                            status = page.locator("[data-frontier-demo] .demo-status")
+                            before = status.inner_text()
+                            page.locator("[data-frontier-layer='verify']").click()
+                            if status.inner_text()==before or "碰撞" not in status.inner_text():
+                                failures.append("27: frontier layer verification interaction did not update")
+                        if key == "desktop" and path.endswith("/28.html"):
+                            status = page.locator("[data-capstone-demo] .demo-status")
+                            before = status.inner_text()
+                            page.locator("[data-capstone-mode='dynamic']").click()
+                            if status.inner_text()==before or "等待" not in status.inner_text():
+                                failures.append("28: capstone dynamic simulation interaction did not update")
                         name=path.replace("/", "-").replace(".html", "")
-                        page.screenshot(path=str(OUTPUT / f"{name}-{key}.png"), full_page=True)
-                        results.append({"page": path, "viewport": key, "http": response.status if response else None,
-                                        **stats, "consoleErrors": errors})
+                        screenshot = None
+                        # Keep every viewport in the QA matrix, but retain representative full-page
+                        # screenshots only for desktop and the narrow mobile layout.
+                        if key in ("desktop", "mobile390"):
+                            screenshot = f"{name}-{key}.jpg"
+                            page.screenshot(path=str(OUTPUT / screenshot), full_page=True,
+                                            type="jpeg", quality=72)
+                        results.append({"page": path, "viewport": key,
+                                        "http": response.status if response else None,
+                                        "screenshot": screenshot, **stats, "consoleErrors": errors})
                     except Exception as exc:
                         failures.append(f"{path} {key}: browser failure {exc}")
                     finally:
@@ -168,10 +195,13 @@ def main():
             browser.close()
     finally:
         httpd.shutdown()
-    report = {"pages": len(PAGES), "viewports": len(VIEWS), "cases": len(results),
+    report = {"servedFrom": str(SERVE_ROOT.relative_to(ROOT)), "pages": len(PAGES),
+              "viewports": len(VIEWS), "cases": len(results),
+              "screenshots": sum(bool(item["screenshot"]) for item in results),
               "failures": failures, "results": results}
     (OUTPUT / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Browser QA: {len(results)} cases, {len(failures)} failures")
+    print(f"Browser QA ({report['servedFrom']}): {len(results)} cases, "
+          f"{report['screenshots']} screenshots, {len(failures)} failures")
     for issue in failures: print("FAIL", issue, file=sys.stderr)
     return int(bool(failures))
 

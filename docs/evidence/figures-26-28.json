@@ -1,0 +1,102 @@
+{
+  "batch": "26-28",
+  "totalFigures": 12,
+  "figures": [
+    {
+      "chapter": "26",
+      "file": "26-learning-interfaces.svg",
+      "concept": "学习接口层级",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "26",
+      "file": "26-bc-distribution-shift.svg",
+      "concept": "行为克隆分布偏移",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "26",
+      "file": "26-neural-search.svg",
+      "concept": "可微分搜索架构",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "26",
+      "file": "26-hybrid-runtime-shield.svg",
+      "concept": "学习与安全回退",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "27",
+      "file": "27-semantic-navigation-stack.svg",
+      "concept": "语义导航系统层级",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "27",
+      "file": "27-diffusion-candidates.svg",
+      "concept": "扩散候选轨迹验证",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "27",
+      "file": "27-parallel-motion-optimization.svg",
+      "concept": "GPU并行轨迹优化",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "27",
+      "file": "27-evidence-boundaries.svg",
+      "concept": "研究证据边界",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "28",
+      "file": "28-navigation-architecture.svg",
+      "concept": "全局与局部闭环",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "28",
+      "file": "28-static-grid.svg",
+      "concept": "静态地图与动态障碍",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "28",
+      "file": "28-space-time-replanning.svg",
+      "concept": "时间扩展等待与重规划",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "28",
+      "file": "28-release-gates.svg",
+      "concept": "项目验收门禁",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    }
+  ]
+}

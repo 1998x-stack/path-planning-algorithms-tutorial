@@ -1,213 +1,34 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第27章 前沿趋势与未来</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html">第20章 多目标路径规划</a></li>
-            <li><a href="21.html">第21章 多机器人协调</a></li>
-            <li><a href="22.html">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html" class="active">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="2026机器人路径规划前沿：VLA、视觉语言导航、NoMaD扩散策略、Neural A*、cuRobo GPU并行优化及安全验证。"><title>27 · 路径规划前沿：VLA、扩散策略与安全验证</title><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="28.html">下一章</a></nav></div></header><div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#question">一个模型能理解“去蓝色椅子旁边”，就等于会规划路径吗？</a><a href="#vla">VLM / VLA：从语义指令到机器人动作</a><a href="#vln">视觉语言导航：语义地图与长期空间记忆</a><a href="#diffusion">Diffusion Policy：从单一路径转向候选轨迹分布</a><a href="#differentiable">可微分规划：学习表示，不必放弃搜索结构</a><a href="#parallel">GPU 并行轨迹优化：把计算预算花在更多候选上</a><a href="#assurance">安全、泛化与评估：模型越强，验证越不能省略</a><a href="#snapshot">截至 2026 年 11 月：研究进展应如何解读</a><a href="#interactive">交互：选择前沿模块，查看它负责什么</a><a href="#example">可执行示例：模型给候选评分，碰撞检查决定能否执行</a><a href="#sources">论文、综述与官方研究页面</a></nav></details></aside><main class="article-main" id="content"><article><header class="article-header"><p class="article-meta">FRONTIERS / 27 OF 28 · SNAPSHOT 2026-11-23</p><h1>路径规划的前沿：基础模型会理解世界，但谁来保证机器人走得过去？</h1><p class="dek">从 VLA 与视觉语言导航，到扩散轨迹、可微分搜索和 GPU 并行优化。把最新研究放回正确的系统层级，区分语义能力、候选生成、几何可行性和真实部署证据。</p></header><section id="question" aria-labelledby="question-title"><h2 id="question-title">一个模型能理解“去蓝色椅子旁边”，就等于会规划路径吗？</h2><p>不等于。机器人导航至少包含三个不同层次：理解任务要去哪里、把目标落到可度量的空间位置、再找到满足机器人几何与运动约束的轨迹。视觉语言模型可以帮助解释指令或识别场景语义，但“看懂椅子”并不会自动给出经过定位、地图、足迹和碰撞检查的可执行路径。</p><p>研究前沿正在把语义理解、环境建模、候选动作生成和经典运动规划接得更紧。理解这条系统链，比简单地问“LLM 会不会替代 A*”更有用。</p><figure><p class="figure-kicker">RESEARCH FRONTIER / 27</p><img src="../assets/figures/27-semantic-navigation-stack.svg" alt="语言指令经视觉语义定位成地图中的度量目标，再进入几何规划、轨迹控制和独立安全监测。" loading="lazy"><figcaption>语义层回答目标是什么、在哪里；几何规划回答机器人如何到达；控制与安全层还要检查能否执行。</figcaption></figure></section><section id="vla" aria-labelledby="vla-title"><h2 id="vla-title">VLM / VLA：从语义指令到机器人动作</h2><p>视觉语言模型（VLM）把图像与语言放进统一表示；视觉语言动作模型（VLA）进一步把机器人动作作为输出。RT-2 将视觉语言预训练与机器人轨迹数据共同微调，并把动作编码为模型可输出的 token。π<sub>0.5</sub> 则通过多机器人、多任务和多模态数据训练，研究模型在新环境中的泛化。它们展示了语义知识如何进入物理动作决策，但相关论文的主要任务包含机器人操作，不能直接把它们称为通用的移动机器人几何路径规划器。</p><p>截至 2026-11-23，Google DeepMind 于 2026-11-10 发布 Gemini Robotics 2.5 的产品/研究公告，强调更广泛的机器人技能和灵巧操作。它说明 VLA 研究仍在快速发展；但厂商公告不是独立的路径规划基准，也不能据此推断模型已替代 Nav2 或经安全认证。</p><p>对移动导航，语义模型更合理的接口通常是：从“去蓝色椅子旁边”识别候选对象，结合相机标定和定位把对象落到地图坐标，输出带不确定度的子目标，再交给几何规划器验证路径。</p></section><section id="vln" aria-labelledby="vln-title"><h2 id="vln-title">视觉语言导航：语义地图与长期空间记忆</h2><p>视觉语言导航（Vision-and-Language Navigation, VLN）研究智能体如何根据自然语言指令和视觉观察，在部分可观测环境中连续行动。它不仅要识别物体，还要理解相对关系、保存过去观察到的空间线索，并在走廊、房间和地标之间选择子目标。</p><p>2026 年的组件化综述把 VLN 拆成指令理解、环境表示、智能体动作生成及它们之间的耦合，并讨论开放词汇地图、长时记忆和 sim-to-real。一个关键工程问题是语义地图中的对象位置并非绝对准确：遮挡、移动物体和视角变化会让目标估计带有不确定度。应将这种不确定性传递到目标区域或风险约束，而不是把一个语言模型输出的坐标当作精确真值。</p></section><section id="diffusion" aria-labelledby="diffusion-title"><h2 id="diffusion-title">Diffusion Policy：从单一路径转向候选轨迹分布</h2><p>当一个场景存在多个合理动作（从障碍左侧或右侧绕行、在窄门前等待、先探索再接近目标）时，单一回归输出容易把多种模式平均成一条实际上不合适的轨迹。扩散策略通过逐步去噪，从条件分布中生成候选动作序列或轨迹。</p><div class="equation" tabindex="0" role="region" aria-label="(1) 条件于当前观测与目标的候选轨迹分布"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="(1) 条件于当前观测与目标的候选轨迹分布"><mrow><mi>τ</mi><mo>∼</mo><msub><mi>p</mi><mi>θ</mi></msub><mo>(</mo><mi>τ</mi><mo>|</mo><msub><mi>o</mi><mi>t</mi></msub><mo>,</mo><mi>g</mi><mo>)</mo></mrow></math><span class="equation-label">(1) 条件于当前观测与目标的候选轨迹分布</span></div><p>NoMaD 是与移动机器人导航直接相关的例子：它用 Transformer 表示多机器人数据，并以扩散解码器统一建模目标导向导航和无目标探索。论文报告了真实移动机器人平台上的实验。重要边界是：扩散模型给出的是候选动作/轨迹分布，不等于每条采样轨迹都满足碰撞、曲率、制动和动态障碍约束；部署系统仍需要几何验证、执行监测和失败回退。</p><figure><p class="figure-kicker">RESEARCH FRONTIER / 27</p><img src="../assets/figures/27-diffusion-candidates.svg" alt="从带噪轨迹序列逐步去噪生成多个不同绕行候选，随后逐条通过碰撞与运动学验证，只有通过者可进入控制层。" loading="lazy"><figcaption>生成模型提供多模态候选；可行性由独立的地图、足迹、时序和动力学检查决定。</figcaption></figure></section><section id="differentiable" aria-labelledby="differentiable-title"><h2 id="differentiable-title">可微分规划：学习表示，不必放弃搜索结构</h2><p>VIN 与 Neural A* 表明，学习模块可以嵌入显式规划计算，而不必直接输出不可解释的最终路线。网络可以从图像或地图学习引导图、代价或价值表示，搜索模块再根据状态转移和目标条件计算路径。这样的架构把“从数据中学习偏好”和“在图上进行组合搜索”分开。</p><p>它也带来新的验证问题：学习到的代价是否与真实风险相关？训练时的路径标签是否偏好某一种风格？如果用学习分数改变 A* 的启发式，经典可纳性和最优性是否仍成立？这些问题都需要具体算法和具体假设，不能笼统地说“神经 A* 仍然最优”。</p></section><section id="parallel" aria-labelledby="parallel-title"><h2 id="parallel-title">GPU 并行轨迹优化：把计算预算花在更多候选上</h2><p>高维机械臂规划往往需要反复做逆运动学、碰撞距离查询和轨迹优化。GPU 并行可以同时评估多个初始化或候选轨迹，从而提高搜索吞吐量。NVIDIA 的 cuRobo 论文展示了面向机械臂的并行无碰撞运动生成、优化和碰撞检测组件。</p><figure><p class="figure-kicker">RESEARCH FRONTIER / 27</p><img src="../assets/figures/27-parallel-motion-optimization.svg" alt="多个初始轨迹并行进入优化器和碰撞检查，候选经约束过滤后选择代价较低的可行解。" loading="lazy"><figcaption>cuRobo 的研究对象是机械臂运动生成；GPU 并行的工程思想可借鉴，但其论文结果不能直接移植为移动机器人导航性能。</figcaption></figure><p>并行计算改变的是计算组织方式，不会自动修正错误的环境模型或碰撞几何。还要测量数据传输、预处理、同步和最坏延迟，不能只报告 GPU 核心计算时间。</p></section><section id="assurance" aria-labelledby="assurance-title"><h2 id="assurance-title">安全、泛化与评估：模型越强，验证越不能省略</h2><p>学习型系统面临的核心问题仍然是分布外场景、置信度失准、传感器偏差、数据覆盖不足和执行时延。一个模型可能在熟悉的室内走廊表现良好，却在玻璃、反光地面、拥挤人群或未见过的机器人底盘上失败。安全层需要独立地检查地图、机器人足迹、速度、制动距离、轨迹时序和命令有效期。</p><p>评估时要分开统计语义目标定位误差、导航成功率、碰撞率、路径长度、任务时间、重规划次数、模型推理时延和人工介入。仿真、受控实机和开放环境结果必须分列。对于人机共处或工业设备，还要按适用法规和风险评估设计独立的硬件安全链；模型的“安全回答”不是认证。</p></section><section id="snapshot" aria-labelledby="snapshot-title"><h2 id="snapshot-title">截至 2026 年 11 月：研究进展应如何解读</h2><div class="table-wrap"><table><thead><tr><th>方向 / 代表工作</th><th>已经展示的内容</th><th>不能据此推断</th></tr></thead><tbody><tr><td>Neural A* / VIN</td><td>学习引导表示并嵌入可微分搜索</td><td>对所有地图、代价和运动学约束都保持传统 A* 保证</td></tr><tr><td>NoMaD（ICRA 2024）</td><td>目标导航与探索的扩散策略；真实移动机器人实验</td><td>任意采样轨迹天然无碰撞或可直接安全部署</td></tr><tr><td>RT-2 / π<sub>0.5</sub></td><td>视觉语言知识迁移到机器人动作；开放环境任务泛化</td><td>它们是通用的移动机器人路径规划器</td></tr><tr><td>cuRobo（ICRA 2024）</td><td>GPU 并行机械臂运动生成与优化</td><td>机械臂论文的速度数字可直接套用到移动导航</td></tr><tr><td>2026 VLA 生命周期综述</td><td>arXiv 预印本梳理截至 2026-10 的 88 项工作</td><td>预印本等同于同行评审的统一排行榜</td></tr><tr><td>Gemini Robotics 2.5 公告</td><td>2026-11-10 厂商公布新一代 VLA 能力</td><td>厂商公告是独立导航评测或安全认证</td></tr></tbody></table></div><p>2026 年 8 月发表的 VLN 综述覆盖到 2026 年 6 月，重点讨论指令、环境表示、动作生成与真实部署。2026 年 11 月 13 日的 VLA 生命周期综述是 arXiv 预印本，覆盖 2022 年底至 2026 年 10 月的工作。它们适合做研究地图，但不应被误读成统一的路径规划性能排名。</p><figure><p class="figure-kicker">RESEARCH FRONTIER / 27</p><img src="../assets/figures/27-evidence-boundaries.svg" alt="不同研究代表不同问题层级：可微分搜索、真实移动导航、语义动作模型、机械臂运动生成和最新预印本综述，证据不能互相替代。" loading="lazy"><figcaption>比较前沿工作时先确认任务对象、机器人平台和验证环境；相近的“机器人 AI”标签不意味着研究问题相同。</figcaption></figure></section><section id="interactive" aria-labelledby="interactive-title"><h2 id="interactive-title">交互：选择前沿模块，查看它负责什么</h2><p>点击系统中的一个层级，查看它产生的输出和下一层必须接手的检查。静态图已经展示完整链路，交互只是帮助聚焦。</p><div class="interactive-box" data-frontier-demo><div class="demo-controls" role="group" aria-label="前沿规划系统层级"><button type="button" data-frontier-layer="semantic" aria-pressed="true">语义理解</button><button type="button" data-frontier-layer="diffusion" aria-pressed="false">生成轨迹</button><button type="button" data-frontier-layer="verify" aria-pressed="false">几何验证</button><button type="button" data-frontier-layer="gpu" aria-pressed="false">并行优化</button></div><p class="demo-status" role="status" aria-live="polite">语义理解：把自然语言和图像落到地图中的目标区域；输出应包含坐标系与不确定度。</p><p class="micro">选择器只解释接口，不会调用在线模型或执行机器人动作。</p></div></section><section id="example" aria-labelledby="example-title"><h2 id="example-title">可执行示例：模型给候选评分，碰撞检查决定能否执行</h2><p>Python 3.10+，只使用标准库。三条候选路径有一个“模型分数”，但这个分数只用于给通过验证的候选排序；验证器检查起终点、边界、障碍和四邻域连通性。穿过墙体的直线路径会被拒绝，剩余路径中再选择分数较低的一条。</p><pre><code>WIDTH, HEIGHT = 7, 5
+START, GOAL = (0,2), (6,2)
+WALLS = {(3,1),(3,2),(3,3)}
+# Candidate scores are illustrative proposal scores, not learned probabilities.
+candidates = [
+    ("direct", 0.05, [(0,2),(1,2),(2,2),(3,2),(4,2),(5,2),(6,2)]),
+    ("upper", 0.20, [(0,2),(1,2),(1,1),(1,0),(2,0),(3,0),
+                     (4,0),(5,0),(5,1),(5,2),(6,2)]),
+    ("lower", 0.35, [(0,2),(0,3),(0,4),(1,4),(2,4),(3,4),
+                     (4,4),(5,4),(5,3),(5,2),(6,2)])
+]
 
-        <p>大家好，欢迎来到第27章。走到这里，你已经不再是初学者了。你已经掌握了从经典的图搜索到采样方法，从局部规划器到学习型方法的完整知识体系。这一章我们将站到一个更高的位置，看看路径规划领域的"大趋势"——未来5到10年，这个行业会怎么变，你应该关注什么，以及哪些方向可能改变游戏规则。</p>
+def valid_path(path):
+    if not path or path[0] != START or path[-1] != GOAL:
+        return False
+    for cell in path:
+        x,y = cell
+        if not (0 &lt;= x &lt; WIDTH and 0 &lt;= y &lt; HEIGHT) or cell in WALLS:
+            return False
+    for a,b in zip(path,path[1:]):
+        if abs(a[0]-b[0]) + abs(a[1]-b[1]) != 1:
+            return False
+    return True
 
-        <p>先说一个让我印象深刻的观察。2020年我在参加一个行业会议时，听一位来自丰田研究院的工程师分享：他们用经典 MPC 做泊车规划已经做到了亚厘米级精度，但花了三年都没解决一个看似"简单"的问题——如何在超市停车场准确识别一个被购物车遮挡的路沿。到了2024年，同样是丰田研究院，他们的泊车系统已经用上了视觉 foundation model 来做场景理解，经典 MPC 做轨迹优化，问题迎刃而解。这个转变本身就说明了一切：<strong>路径规划的未来不是用新方法替代旧方法，而是让不同方法协同工作</strong>。</p>
-
-        <h2>2025-2026技术趋势</h2>
-
-        <p>让我们从当下正在发生的变化开始。以下几个趋势正在重新定义路径规划工程：</p>
-
-        <p><strong>趋势一：Hybrid AI-Classical 成为工业标准。</strong>到了2025年，几乎所有一线自动驾驶公司和机器人公司都在采用某种"经典+学习"的混合架构。纯经典方法的上限已经被充分挖掘，纯端到端学习尚未通过安全验证。混合架构不是一个"学术猜想"——它是工程现实。NVIDIA 的 cuMotion 库、Waymo 的 ChauffeurNet 迭代版本、以及百度 Apollo 的规划栈，都在不同层次上融合了学习和优化方法。</p>
-
-        <p><strong>趋势二：Foundation Model 进入规划决策层。</strong>RT-2、PaLM-E 等视觉-语言-动作基础模型的出现，让规划的"语义理解"能力大幅提升。以前规划器只能理解"从坐标 A 到坐标 B"，现在它可以理解"绕过那个咖啡桌，从蓝色椅子旁边走过去"。这种高层语义规划能力正在改变人机交互的方式。</p>
-
-        <p><strong>趋势三：V2X 协同从实验走向试点。</strong>车路协同（Vehicle-to-Everything）不再是概念验证。中国多个城市已经部署了 C-V2X 路侧单元，支持协同感知和协同规划。这意味着路径规划不再是个体任务——多辆车可以共享意图，协同决策。</p>
-
-        <p><strong>趋势四：安全认证成为刚需。</strong>ISO 21448（SOTIF）和 ISO 26262 的合规要求在自动驾驶领域越来越严格。路径规划算法不能只是"效果好"——它必须能够证明自己的安全性。这推动了可达性分析（reachability analysis）、形式化验证等方法在规划器中的应用。</p>
-
-        <div class="highlight">
-            <strong>核心判断：</strong>未来5年最重要的变化不是某个新算法，而是"经典+学习"混合架构成为工业标准。如果你还在问"到底该学 A* 还是该学 RL"，你问错了问题——你应该问的是"如何让它们一起工作"。
-        </div>
-
-        <h2>基础模型规划器</h2>
-
-        <p>2022-2023年，Google 先后推出了 RT-1、RT-2、PaLM-E 三个里程碑式的工作。这些模型的特点是：它们不是专门为路径规划设计的，但它们学会了路径规划。</p>
-
-        <p>RT-2 的核心思路是：用互联网规模的文本和图像数据预训练一个视觉-语言模型，然后用机器人操作数据微调，最终输出机器人的控制动作。在路径规划场景中，这个模型能够理解真实世界中的语义约束——比如"把杯子放在盘子旁边"这个任务，它不需要显式的路径规划就能生成一系列满足约束的操作。</p>
-
-        <p><strong>PaLM-E（Embodied Multimodal Language Model）</strong>更进一步，它把传感器观测、机器人状态、语言指令统一编码，然后通过自回归方式生成规划序列。在测试中，PaLM-E 能够在没有预先地图的情况下完成"去厨房拿一罐可乐"这样的任务——如果你告诉它"冰箱在左边的房间"，它就能据此推理出大致的导航路径。</p>
-
-        <p>这些 foundation model 规划器的突出优势是<strong>语义理解和常识推理</strong>。经典规划器需要你告诉它"餐桌在 (3.2, 5.8)"，但 foundation model 可以自己从图像中识别餐桌的位置——甚至知道餐桌通常被椅子包围，所以规划路径时要留出额外余量。</p>
-
-        <p>但它们也有明显的短板：<strong>计算开销巨大</strong>。一个 RT-2 模型的推理可能需要数秒时间，而大多数实时系统要求规划周期在 50ms 以内。此外，这些模型仍然面临分布外泛化的问题——你很难预测模型在你没见过的场景中会做什么。</p>
-
-        <h2>V2X协同规划</h2>
-
-        <p>传统的路径规划是"个体视角"的：每个机器人或车辆只关心自己的路径，然后通过某种交通管制或避碰规则来协调。V2X（Vehicle-to-Everything）改变了这个范式——它让多个智能体之间共享感知信息、意图和规划，实现真正的<strong>协同规划（Cooperative Planning）</strong>。</p>
-
-        <p>在V2X场景中，最典型的三个应用是：</p>
-
-        <p><strong>协同合流（Cooperative Merging）</strong>——高速公路入口处，主路车辆和匝道车辆通过 V2V 通信交换速度和位置信息，联合规划一个"穿插"动作，避免不必要的减速或停车。2024年中国在沪宁高速的实测试验表明，协同合流可以将匝道通行效率提升约32%。</p>
-
-        <p><strong>队列行驶（Platooning）</strong>——多辆卡车组成紧密队列，通过 V2V 通信实现近乎同步的加/减速，前车制动后车在 100ms 内响应（人需要 1.2秒）。这不仅提高了道路利用率，还因空气阻力减少而降低了 10-15% 的油耗。</p>
-
-        <p><strong>交叉路口协商（Intersection Negotiation）</strong>——没有红绿灯的路口，多辆车通过 V2I（基础设施）交换意图，协商一个安全的通过顺序。这种机制可以将路口通行效率提升 40% 以上，同时消除因误判对方意图导致的碰撞风险。</p>
-
-        <p>V2X 协同规划对算法提出了新的挑战：规划问题从单智能体的 POMDP 变成了多智能体联合 POMDP。状态空间是指数增长的。实用的方法通常采用"分布式共识"策略——每个智能体独立规划自己的路径，然后通过通信协议达成一致。这本质上是第21章多机器人协调思想的延伸，但在 V2X 场景中，通信延迟、信息安全、异构智能体兼容性等问题更加突出。</p>
-
-        <p>下面是一个简化的 V2V 协同合流消息交换示例：</p>
-
-        <pre><code># 车辆 A（匝道）向车辆 B（主路）发送协同合流请求
-class CooperativeMergingMessage:
-    def __init__(self, vehicle_id, position, velocity, intent):
-        self.vehicle_id = vehicle_id      # "vehicle_A"
-        self.position = position          # (x, y) 全局坐标
-        self.velocity = velocity          # 当前速度 m/s
-        self.intent = intent              # "merge", "yield", "pass"
-
-# 车辆 B 收到消息后，计算最优协同策略
-def compute_cooperative_response(msg_a, ego_state):
-    # 预测 A 和 B 的未来轨迹（假设恒定速度）
-    traj_a = predict_trajectory(msg_a.position, msg_a.velocity, horizon=5.0)
-    traj_b = predict_trajectory(ego_state.pos, ego_state.vel, horizon=5.0)
-
-    # 检查默认行为是否安全
-    if check_collision(traj_a, traj_b):
-        # 不安全——需要协同调整
-        # 选项1：B 减速，让 A 先汇入
-        # 选项2：B 加速，在 A 前方通过
-        # 选项3：A 等待，让 B 先通过
-        best_action = optimize_cooperative_action(traj_a, traj_b)
-        return CooperativeMergingMessage(
-            vehicle_id="vehicle_B",
-            position=ego_state.pos,
-            velocity=ego_state.vel + best_action.delta_v,
-            intent=best_action.intent
-        )
-    else:
-        # 安全——保持当前状态
-        return CooperativeMergingMessage(
-            vehicle_id="vehicle_B",
-            position=ego_state.pos,
-            velocity=ego_state.vel,
-            intent="pass"
-        )</code></pre>
-
-        <h2>安全认证与可解释性</h2>
-
-        <p>如果你做的是一个学术 demo，没人关心你的规划器是否"可证明安全"。但在实际部署中——特别是自动驾驶 L3+ 和手术机器人领域——安全性认证是一个绕不过去的大山。</p>
-
-        <p><strong>形式化验证（Formal Verification）</strong>——对于经典规划器，我们可以用模型检测（model checking）或可达性分析来证明：在给定的假设条件下，规划器永远不会产生碰撞路径。但是当你引入神经网络（哪怕是混合架构中的一个局部控制器）时，这种形式化保证就被打破了。2023-2025年，研究人员提出了多种神经网络验证方法（如 α-β-CROWN、NNV），但它们能处理的网络规模仍然有限——一个 5 层的 MLP 可能还行，一个 ResNet-50 就几乎不可能做完整的形式化验证。</p>
-
-        <p><strong>可解释AI（XAI）在路径规划中的应用</strong>——当规划器做出一个反直觉的决策时（比如自动驾驶汽车突然靠边停车），你需要知道为什么。对于经典规划器，答案很明确：因为某个障碍物扩展阻塞了最优路径，或因为启发式函数估计偏差。但对于学习型规划器，解释变得困难。目前的 XAI 方法在规划场景中主要做四件事：特征归因（哪些输入特征对决策影响最大）、反事实解释（如果改变某个障碍物的位置，决策会变吗）、策略蒸馏（用可解释的决策树逼近学习型策略）、以及不确定性估计（LEARNING IS UNCERTAIN — 模型说"我不知道"比说一个错答案要好）。</p>
-
-        <p><strong>监管环境</strong>——欧盟的 AI Act 将自动驾驶规划器归类为"高风险 AI 系统"，要求其具备可追溯性和人工监督能力。中国的《自动驾驶汽车运输安全服务指南（试行）》也明确要求规划决策系统需要"可解释、可验证、可审计"。这已经不是学术问题——它是法律要求。</p>
-
-        <div class="warning">
-            <strong>务必注意：</strong>如果你未来要做一个面向真实部署的路径规划系统，请从一开始就考虑可解释性和安全验证。不要等到送审时才发现你的黑箱规划器无法通过安全认证——到那时重构的代价是毁灭性的。我亲眼见过一个创业公司因为规划模块无法通过 SOTIF 审核，产品上市推迟了一年半。
-        </div>
-
-        <h2>量子计算的可能性</h2>
-
-        <p>最后，让我们聊一个听起来很科幻但值得关注的方向：<strong>量子计算在路径规划中的应用</strong>。</p>
-
-        <p>2019年，Google 宣布"量子优越性"后，量子计算在各个领域的应用探索就被点燃了。路径规划中的组合优化问题——特别是多机器人调度、大规模 TSP（旅行商问题）变体——被证明是量子计算最有前景的应用场景之一。</p>
-
-        <p>目前的尝试集中在两个方向：</p>
-
-        <p><strong>量子退火（Quantum Annealing）</strong>——D-Wave 系统已经能够处理多达 5000 个 qubit 的优化问题。2023年，一组研究人员用量子退火求解了一个包含 100 个机器人的仓储调度问题，在理想条件下比经典求解器快了两个数量级。但限制是：你必须把路径规划问题编码为 QUBO（Quadratic Unconstrained Binary Optimization）形式，这个编码过程本身就是一个难题。</p>
-
-        <p><strong>变分量子算法（VQE/QAOA）</strong>——这些方法更适合近期的含噪量子设备。2024年的一项研究用 QAOA 求解了 15 节点的 TSP 问题，结果精度达到了经典启发式算法的水平——重要的是，他们是在真实的量子硬件上运行的（IBM 的 127-qubit 芯片）。</p>
-
-        <p>坦白说，量子路径规划目前还处于非常早期的阶段。短期内（5年内），我不建议你把精力投入这个方向——除非你的工作是专门做量子算法的。但从长远来看（10-15年），如果量子硬件持续改进，大规模组合优化问题可能会迎来真正的革命。在那之前，经典算法仍然是你的好伙伴。</p>
-
-        <table>
-            <tr>
-                <th>技术方向</th>
-                <th>当前状态（2025-2026）</th>
-                <th>2-3年预测</th>
-                <th>5年以上展望</th>
-            </tr>
-            <tr>
-                <td>混合经典+学习架构</td>
-                <td>工业标准，广泛部署</td>
-                <td>工具链成熟，自动化调参</td>
-                <td>自适应混合（场景感知切换）</td>
-            </tr>
-            <tr>
-                <td>Foundation Model 规划器</td>
-                <td>学术研究，demo 阶段</td>
-                <td>受限场景试点（仓储、家庭）</td>
-                <td>通用语义规划能力</td>
-            </tr>
-            <tr>
-                <td>V2X 协同规划</td>
-                <td>中国/欧洲试点部署</td>
-                <td>主要高速公路覆盖</td>
-                <td>全域协同（城市级）</td>
-            </tr>
-            <tr>
-                <td>形式化安全验证</td>
-                <td>中小型网络可验证</td>
-                <td>工程化验证工具</td>
-                <td>完整规划栈可认证</td>
-            </tr>
-            <tr>
-                <td>量子路径规划</td>
-                <td>小规模学术验证</td>
-                <td>中等规模演示</td>
-                <td>特定场景实用化</td>
-            </tr>
-        </table>
-
-        <div class="tip">
-            <strong>给2026年的路径规划工程师的建议：</strong>（1）打好经典算法基础——它不会过时，它是所有新技术的参照系；（2）学会至少一种深度学习框架（PyTorch 或 JAX）——哪怕你主要做经典方法，你迟早需要和学习型组件打交道；（3）关注 V2X 和仿真模拟——这两个方向的人才缺口很大；（4）不要把全部精力押注在单一方法上——能同时理解 A* 和 RL 的人比只懂其中一种的人值钱十倍。
-        </div>
-
-        <p>下一章是这门课程的最后一章——综合项目。你将把前面27章学到的所有知识整合起来，搭建一个完整的导航栈。这是一次真正的"毕业设计"，希望你能认真对待。我们第28章见。</p>
-
-        <div class="footer-nav">
-            <a href="26.html">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="28.html">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+accepted = [(score,name,path) for name,score,path in candidates
+            if valid_path(path)]
+rejected = [name for name,_,path in candidates if not valid_path(path)]
+assert rejected == ["direct"]
+assert len(accepted) == 2
+selected = min(accepted, key=lambda item:item[0])
+assert selected[1] == "upper"
+print("rejected:", rejected)
+print("selected:", selected[1], "length:", len(selected[2])-1)
+print("proposal score ranks candidates; collision checks decide feasibility.")</code></pre><p>这段代码没有运行扩散模型或 VLA；候选及分数是人为构造的教学输入。它展示的是生成式规划系统中不可省略的接口：<strong>候选生成和可行性验证是两件事</strong>。真实系统还要检查连续轨迹、机器人足迹、速度/加速度约束、动态障碍的同一时间戳碰撞，以及模型输出是否过期。</p></section><section id="sources" aria-labelledby="sources-title"><h2 id="sources-title">论文、综述与官方研究页面</h2><ul><li><a href="https://proceedings.mlr.press/v139/yonetani21a.html">Yonetani et al. (2021), Path Planning using Neural A*, ICML</a></li><li><a href="https://proceedings.neurips.cc/paper/2016/hash/c21002f464c5fc5bee3b98ced83963b8-Abstract.html">Tamar et al. (2016), Value Iteration Networks, NeurIPS</a></li><li><a href="https://general-navigation-models.github.io/nomad/">Sridhar et al. (2024), NoMaD: Goal Masked Diffusion Policies for Navigation and Exploration, ICRA</a></li><li><a href="https://proceedings.mlr.press/v229/zitkovich23a.html">Zitkovich et al. (2023), RT-2, CoRL</a></li><li><a href="https://proceedings.mlr.press/v305/black25a.html">Black et al. (2025), π<sub>0.5</sub>, CoRL</a></li><li><a href="https://www.mdpi.com/2076-3417/16/16/8050">Wu et al. (2026), Vision-and-Language Navigation: A Component-Centric Survey of Interactions, Coupling, and Deployment</a></li><li><a href="https://arxiv.org/abs/2611.18372">Kadam &amp; Parsa (2026), Vision-Language-Action Models: A Life-Cycle Survey of Design, Training and Deployment（arXiv preprint）</a></li><li><a href="https://deepmind.google/blog/gemini-robotics-2-5-accelerates-real-world-physical-intelligence/">Google DeepMind (2026-11-10), Gemini Robotics 2.5 announcement</a></li><li><a href="https://research.nvidia.com/publication/2023-05_curobo-parallelized-collision-free-robot-motion-generation">Sundaralingam et al. (2024), cuRobo, ICRA</a></li></ul></section><nav class="article-footer" aria-label="章节翻页"><a href="26.html">← 26 · 学习型路径规划</a><a href="28.html">28 · 综合项目 →</a></nav></article></main></div></body></html>

@@ -1,0 +1,45 @@
+{
+  "chapter": "26",
+  "claims": [
+    {
+      "id": "dagger",
+      "claim": "Canonical DAgger iteratively samples trajectories from an expert/learner mixture policy, queries expert labels on visited states, and aggregates the data to address sequential covariate shift.",
+      "kind": "primary-paper",
+      "source_url": "https://proceedings.mlr.press/v15/ross11a.html",
+      "locator": "Ross, Gordon & Bagnell, AISTATS 2011, abstract and algorithm",
+      "status": "verified"
+    },
+    {
+      "id": "vin",
+      "claim": "Value Iteration Networks embed a differentiable approximate value-iteration planning module",
+      "kind": "primary-paper",
+      "source_url": "https://proceedings.neurips.cc/paper/2016/hash/c21002f464c5fc5bee3b98ced83963b8-Abstract.html",
+      "locator": "Tamar et al., NeurIPS 2016, abstract",
+      "status": "verified"
+    },
+    {
+      "id": "neural-astar",
+      "claim": "Neural A* learns a guidance map coupled to differentiable A* search",
+      "kind": "primary-paper",
+      "source_url": "https://proceedings.mlr.press/v139/yonetani21a.html",
+      "locator": "Yonetani et al., ICML 2021, abstract",
+      "status": "verified"
+    },
+    {
+      "id": "prmrl",
+      "claim": "PRM-RL combines a PRM roadmap with learned short-range navigation policies",
+      "kind": "primary-paper",
+      "source_url": "https://research.google/pubs/prm-rl-long-range-robotic-navigation-tasks-by-combining-reinforcement-learning-and-sampling-based-planning/",
+      "locator": "Faust et al., ICRA 2018, abstract",
+      "status": "verified"
+    },
+    {
+      "id": "qlearning-demo",
+      "claim": "Fixed 6x6 Q-learning example reaches the training goal in 10 steps; a shifted obstacle blocks policy-only rollout and BFS fallback succeeds",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "26.html standard-library example, seed 7 and 8000 episodes",
+      "status": "illustrative"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "chapter": "28",
+  "claims": [
+    {
+      "id": "astar",
+      "claim": "Four-neighbor unit-cost grid uses Manhattan distance as an admissible heuristic for A*",
+      "kind": "derived",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/",
+      "locator": "LaValle, Planning Algorithms, heuristic search discussion",
+      "status": "derived"
+    },
+    {
+      "id": "rep105",
+      "claim": "ROS REP-105 documents naming conventions and semantic meanings for map, odom and base_link frames, including their typical parent-child relationship.",
+      "kind": "ros-rep",
+      "source_url": "https://reps.openrobotics.org/rep-0105/",
+      "locator": "ROS REP-105",
+      "status": "verified"
+    },
+    {
+      "id": "nav2",
+      "claim": "Nav2 separates planner, controller, behavior tree, costmap and safety-monitor components",
+      "kind": "official-documentation",
+      "source_url": "https://docs.nav2.org/",
+      "locator": "Nav2 documentation and configuration guide",
+      "status": "verified"
+    },
+    {
+      "id": "collision-monitor",
+      "claim": "Nav2 Collision Monitor provides an additional sensor-based collision-monitoring layer outside the costmap and trajectory planner",
+      "kind": "official-documentation",
+      "source_url": "https://docs.nav2.org/rolling/configuration_and_development/configuration_guide/core_servers/collision_monitor/configuring_collision_monitor_node/",
+      "locator": "Nav2 Collision Monitor configuration guide",
+      "status": "verified"
+    },
+    {
+      "id": "ompl",
+      "claim": "OMPL documents reproducible benchmarking and planner run properties",
+      "kind": "official-documentation",
+      "source_url": "https://ompl.kavrakilab.org/benchmark.html",
+      "locator": "OMPL benchmark documentation",
+      "status": "verified"
+    },
+    {
+      "id": "toy",
+      "claim": "Fixed 10x7 point-robot example finds 9-edge static route, waits one tick for a moving obstacle and reaches goal after 10 local replans",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "28.html standard-library space-time A* example",
+      "status": "illustrative"
+    }
+  ]
+}

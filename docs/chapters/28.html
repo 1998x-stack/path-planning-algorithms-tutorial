@@ -1,297 +1,146 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第28章 综合项目</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html">第20章 多目标路径规划</a></li>
-            <li><a href="21.html">第21章 多机器人协调</a></li>
-            <li><a href="22.html">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html" class="active">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="综合路径规划项目：静态地图A*、时间扩展局部搜索、动态障碍预测、顶点与边交换冲突检查、滚动时域重规划和Nav2工程验收。"><title>28 · 综合项目：从全局路线到动态安全导航</title><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="27.html">上一章</a></nav></div></header><div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#problem">一条全局路径为什么还不是完整的导航系统？</a><a href="#scope">先定义一个能被完整验证的最小项目</a><a href="#global">模块一：全局 A* 在静态地图上建立路线</a><a href="#local">模块二：局部规划把时间加入状态</a><a href="#integration">把全局、局部与碰撞检查串成一个闭环</a><a href="#validation">测试矩阵：从函数断言到整套系统验收</a><a href="#ros">从教学栅格项目映射到 ROS 2 / Nav2</a><a href="#interactive">交互：选择系统测试阶段</a><a href="#extension">进阶扩展：不要把离散示例冒充连续导航</a><a href="#sources">ROS REP、算法与工程文档</a></nav></details></aside><main class="article-main" id="content"><article><header class="article-header"><p class="article-meta">CAPSTONE / 28 OF 28</p><h1>综合项目：把一条静态路径变成可验证的导航闭环</h1><p class="dek">从静态 A*、时空局部规划和动态障碍预测出发，构建一个能等待、能重规划、能记录失败的最小导航系统，再明确它升级到 ROS 2 与真实机器人还缺少哪些条件。</p></header><section id="problem" aria-labelledby="problem-title"><h2 id="problem-title">一条全局路径为什么还不是完整的导航系统？</h2><p>全局规划器通常在已知地图上输出一串空间位置。真实机器人却必须在某个时刻、以某个速度和姿态到达这些位置；障碍物可能移动，传感器可能延迟，控制器也可能无法精确跟踪折线。把 A* 的输出直接当作电机命令，会把“几何路径存在”误当成“机器人能够安全执行”。</p><p>一个完整项目应把任务拆成：地图与状态输入、全局路线、局部时空决策、碰撞与约束验证、执行反馈、失败恢复和实验记录。每一层都要定义清楚输入输出以及失败时的行为。</p><figure><p class="figure-kicker">INTEGRATED NAVIGATION PROJECT / 28</p><img src="../assets/figures/28-navigation-architecture.svg" alt="从静态地图上的全局A*到局部时空规划、碰撞监测、执行反馈和事件触发重规划的完整闭环。" loading="lazy"><figcaption>全局规划给出方向，局部规划处理当前时刻的障碍与等待，安全检查拒绝不可执行动作，执行反馈触发下一轮规划。</figcaption></figure></section><section id="scope" aria-labelledby="scope-title"><h2 id="scope-title">先定义一个能被完整验证的最小项目</h2><p>本项目采用一个明确的教学模型：二维 10×7 栅格、四邻域单位步长、点机器人、静态墙体以及一个按离散时间移动的动态障碍物。全局 A* 只考虑静态墙体；局部规划在有限时间窗内搜索空间—时间状态，并允许等待。每一轮只执行局部计划的第一步，下一轮根据新的时间索引重新计算。</p><p>这个范围刻意不假装成真实连续机器人：它没有角速度、加速度、机器人多边形足迹、传感器噪声或不确定运动预测。要升级为实体底盘，必须加入足迹膨胀/扫掠碰撞、运动学、制动距离、TF 和真实时钟检查。项目先把离散模型做正确，再逐层增加复杂性。</p><div class="table-wrap"><table><thead><tr><th>对象</th><th>本项目定义</th><th>扩展到实车时还缺什么</th></tr></thead><tbody><tr><td>地图</td><td>边界内的整数格点；静态墙体集合</td><td>地图分辨率、原点、未知区、代价层</td></tr><tr><td>机器人</td><td>占据一个格点的点模型</td><td>多边形 footprint、姿态和扫掠体</td></tr><tr><td>动态障碍</td><td>已知的离散时间位置表</td><td>感知、速度估计、预测不确定性</td></tr><tr><td>动作</td><td>四方向移动或等待一个 tick</td><td>速度/加速度、控制周期和制动</td></tr><tr><td>安全检查</td><td>顶点占用与反向边交换</td><td>连续时间碰撞和安全认证</td></tr></tbody></table></div></section><section id="global" aria-labelledby="global-title"><h2 id="global-title">模块一：全局 A* 在静态地图上建立路线</h2><p>状态是格点 <math xmlns="http://www.w3.org/1998/Math/MathML" aria-label="状态 s 等于坐标 x、y"><mrow><mi>s</mi><mo>=</mo><mo>(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>)</mo></mrow></math>，每条四邻域边的代价为 1。启发式使用曼哈顿距离：</p><div class="equation" tabindex="0" role="region" aria-label="(1) 四邻域单位代价下的可采纳启发式"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="(1) 四邻域单位代价下的可采纳启发式"><mrow><mi>h</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>)</mo><mo>=</mo><mo>|</mo><mi>x</mi><mo>−</mo><msub><mi>x</mi><mi>g</mi></msub><mo>|</mo><mo>+</mo><mo>|</mo><mi>y</mi><mo>−</mo><msub><mi>y</mi><mi>g</mi></msub><mo>|</mo></mrow></math><span class="equation-label">(1) 四邻域单位代价下的可采纳启发式</span></div><p>因为每一步只能水平或垂直移动，曼哈顿距离不会高估剩余步数。A* 的优先级是 <code>f = g + h</code>。静态规划结果穿过墙体以外的格点；动态障碍不直接写入静态墙体，否则路线会在每个时刻变化时反复丢失整体结构。</p><figure><p class="figure-kicker">INTEGRATED NAVIGATION PROJECT / 28</p><img src="../assets/figures/28-static-grid.svg" alt="10×7栅格中竖直墙体只在y=3留出通道，静态A*路线沿唯一开口到达目标，动态障碍按时间进入通道。" loading="lazy"><figcaption>全局路径先忽略动态障碍，只表达静态地图上的可达路线；动态障碍由局部时间规划处理。</figcaption></figure></section><section id="local" aria-labelledby="local-title"><h2 id="local-title">模块二：局部规划把时间加入状态</h2><p>动态障碍让“同一格子”在不同时间具有不同含义。局部搜索状态扩展为 <math xmlns="http://www.w3.org/1998/Math/MathML" aria-label="状态包含坐标 x、y 和时间偏移 delta t"><mrow><mo>(</mo><mi>x</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>Δt</mi><mo>)</mo></mrow></math>，动作集合包括四方向移动和等待。每个候选动作都要检查下一时刻的障碍位置。只检查两个机器人是否在同一时刻占据同一格还不够；还要拒绝两个运动体在一个 tick 内沿同一条边反向交换位置。</p><div class="equation" tabindex="0" role="region" aria-label="(2) 顶点冲突：机器人和障碍物不能在同一时刻占同一格"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="(2) 顶点冲突：机器人和障碍物不能在同一时刻占同一格"><mrow><mo>∀</mo><mi>t</mi><mo>,</mo><msub><mi>p</mi><mi>r</mi></msub><mo>(</mo><mi>t</mi><mo>)</mo><mo>≠</mo><msub><mi>p</mi><mi>o</mi></msub><mo>(</mo><mi>t</mi><mo>)</mo></mrow></math><span class="equation-label">(2) 顶点冲突：机器人和障碍物不能在同一时刻占同一格</span></div> <div class="equation" tabindex="0" role="region" aria-label="(3) 反向边交换：两个运动体不能在同一 tick 内互换端点"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="(3) 反向边交换：两个运动体不能在同一 tick 内互换端点"><mrow><mo>∀</mo><mi>t</mi><mo>,</mo><mo>¬</mo><mo>(</mo><msub><mi>p</mi><mi>r</mi></msub><mo>(</mo><mi>t</mi><mo>)</mo><mo>=</mo><msub><mi>p</mi><mi>o</mi></msub><mo>(</mo><mi>t</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>∧</mo><msub><mi>p</mi><mi>r</mi></msub><mo>(</mo><mi>t</mi><mo>+</mo><mn>1</mn><mo>)</mo><mo>=</mo><msub><mi>p</mi><mi>o</mi></msub><mo>(</mo><mi>t</mi><mo>)</mo><mo>)</mo></mrow></math><span class="equation-label">(3) 反向边交换：两个运动体不能在同一 tick 内互换端点</span></div><p>局部规划只看有限时间窗，找到前方一个局部子目标后返回一条短时计划。控制循环只执行第一步，再读取新的时刻和障碍预测重新规划。这是滚动时域的离散教学模型，不是连续速度空间的 DWA，也不保证在任意动态环境中都有解。</p><figure><p class="figure-kicker">INTEGRATED NAVIGATION PROJECT / 28</p><img src="../assets/figures/28-space-time-replanning.svg" alt="局部时间窗先检测通道被占据，选择等待动作，障碍物移开后再继续前进；每个时间步只执行下一动作并重新规划。" loading="lazy"><figcaption>等待是合法动作而非算法失败；有限时域的局部计划需要在下一控制周期重新求解。</figcaption></figure></section><section id="integration" aria-labelledby="integration-title"><h2 id="integration-title">把全局、局部与碰撞检查串成一个闭环</h2><p>全局 A* 先给出静态路线。局部规划器沿该路线向前选择三个格点作为短时目标，在时间扩展图中搜索未来六个 tick。搜索得到完整短计划后，系统只执行第一个格点移动；若局部规划无解，系统先检查当前状态与等待动作是否安全：安全时等待一个 tick 并记录回退；若等待也会造成冲突，则停止本次仿真并报告失败，不把“原地不动”误当成必然安全。示例中动态障碍先进入唯一通道，机器人等待一个 tick，随后安全通过。</p><p>注意示例中的动态障碍轨迹是已知的确定性时间表。真实机器人需要从传感器估计障碍状态，并把预测误差纳入安全距离或概率约束。若预测只给出一个点估计，代码通过也不意味着现实安全。</p><pre><code>from heapq import heappush, heappop
+from itertools import count
 
-        <p>大家好，欢迎来到第28章——本课程的最后一章。</p>
+WIDTH, HEIGHT = 10, 7
+START, GOAL = (0,3), (9,3)
+STATIC_WALLS = {(4,y) for y in range(HEIGHT) if y != 3}
+DYNAMIC = {1:(1,3), 2:(2,3), 3:(3,3), 4:(3,2), 5:(3,1)}
+MOVES = ((1,0),(-1,0),(0,1),(0,-1),(0,0))  # Last action is wait.
 
-        <p>如果你是从第一章一路读过来的——你已经学习了构型空间、图搜索、A* 及其变体、采样方法、局部规划、运动学约束、动态环境、多机器人协调，甚至学习型方法和前沿趋势。现在，是时候把所有这些知识放在一起，真正搭建一个完整的导航系统了。这不是一个"玩具项目"——它是一个你需要认真花时间完成的毕业设计。</p>
+def collision_free_transition(state, nxt, obstacle_now, obstacle_next):
+    # Reject an existing overlap, a next-tick vertex conflict, and an edge swap.
+    if state == obstacle_now or nxt == obstacle_next:
+        return False
+    return not (state == obstacle_next and nxt == obstacle_now)
 
-        <p>我先说一个真实的故事。我在2019年带过一个实习生，他花了整整三周时间从零搭建了一套导航栈：A* 全局规划 + DWA 局部规划 + 三次样条平滑。他的代码在仿真环境里跑得很漂亮。但在最后的评测中，我们把机器人放到一个布满碎纸屑的地板上——DWA 的评价函数瞬间被摩擦系数变化搞乱了，机器人在原地打转了整整两分钟。他当时非常沮丧，但这个经历教会了他一件事：<strong>仿真和真实世界之间永远有一道你意想不到的鸿沟</strong>。也正因为这道鸿沟，你的能力才能真正得到锻炼。</p>
+def transition_is_safe(state, nxt, now):
+    return collision_free_transition(
+        state, nxt, DYNAMIC.get(now), DYNAMIC.get(now+1))
 
-        <h2>项目目标</h2>
+# Regression tests: waiting into an occupied cell and opposite-edge swaps are unsafe.
+assert not collision_free_transition((0,0),(0,0),None,(0,0))
+assert not collision_free_transition((0,0),(1,0),(1,0),(0,0))
+assert not collision_free_transition((0,0),(1,0),(0,0),None)
 
-        <p>这个综合项目的目标是：<strong>搭建一个完整的自主导航栈，使其能够在包含静态和动态障碍物的环境中，从起点安全、高效地导航到终点</strong>。</p>
+def inside(cell):
+    x,y = cell
+    return 0 &lt;= x &lt; WIDTH and 0 &lt;= y &lt; HEIGHT
 
-        <p>具体来说，你的系统需要包含以下三个核心模块：</p>
+def manhattan(a,b):
+    return abs(a[0]-b[0]) + abs(a[1]-b[1])
 
-        <ul>
-            <li><strong>全局规划器（Global Planner）</strong>——在已知的栅格地图上，计算一条从起点到终点的无碰撞粗略路径。推荐实现：A*（追求最优性）或 RRT*（追求高维适应性和渐进最优性）。</li>
-            <li><strong>局部规划器（Local Planner）</strong>——沿全局路径前进，同时利用局部传感器信息避开未在全局地图中标记的动态障碍物。推荐实现：DWA（动态窗口法）。</li>
-            <li><strong>路径平滑模块（Path Smoothing）</strong>——对生成的路径做后处理，消除不必要的急转弯和抖动。推荐实现：三次样条插值或梯度下降平滑。</li>
-        </ul>
+def global_astar(start, goal):
+    if (not inside(start) or not inside(goal) or
+            start in STATIC_WALLS or goal in STATIC_WALLS):
+        return None
+    serial = count()
+    frontier = [(manhattan(start,goal),0,next(serial),start)]
+    best, parent = {start:0}, {start:None}
+    while frontier:
+        _,cost,_,state = heappop(frontier)
+        if cost != best[state]:
+            continue
+        if state == goal:
+            path=[]
+            while state is not None:
+                path.append(state)
+                state=parent[state]
+            return path[::-1]
+        for dx,dy in MOVES[:4]:
+            nxt=(state[0]+dx,state[1]+dy)
+            if not inside(nxt) or nxt in STATIC_WALLS:
+                continue
+            new_cost=cost+1
+            if new_cost &lt; best.get(nxt,float("inf")):
+                best[nxt]=new_cost
+                parent[nxt]=state
+                heappush(frontier,(new_cost+manhattan(nxt,goal),
+                                   new_cost,next(serial),nxt))
+    return None
 
-        <h2>环境搭建</h2>
+def space_time_local_plan(start, target, now, horizon=6):
+    if (not inside(start) or start in STATIC_WALLS or
+            start == DYNAMIC.get(now) or not inside(target) or
+            target in STATIC_WALLS):
+        return None
+    serial=count()
+    frontier=[(manhattan(start,target),0,next(serial),start,0)]
+    best={(start,0):0}
+    parent={(start,0):None}
+    while frontier:
+        _,cost,_,state,dt=heappop(frontier)
+        key=(state,dt)
+        if cost != best[key]:
+            continue
+        if state == target:
+            route=[]
+            while key is not None:
+                route.append(key[0])
+                key=parent[key]
+            return route[::-1]
+        if dt == horizon:
+            continue
+        obstacle_now=DYNAMIC.get(now+dt)
+        obstacle_next=DYNAMIC.get(now+dt+1)
+        for dx,dy in MOVES:
+            nxt=(state[0]+dx,state[1]+dy)
+            if not inside(nxt) or nxt in STATIC_WALLS:
+                continue
+            if not collision_free_transition(state,nxt,obstacle_now,obstacle_next):
+                continue
+            next_key=(nxt,dt+1)
+            new_cost=cost+1
+            if new_cost &lt; best.get(next_key,float("inf")):
+                best[next_key]=new_cost
+                parent[next_key]=key
+                priority=new_cost+manhattan(nxt,target)
+                heappush(frontier,(priority,new_cost,next(serial),nxt,dt+1))
+    return None
 
-        <p>我推荐你从最简单的环境开始，快速验证系统的可行性，然后逐步增加复杂度。</p>
+global_path=global_astar(START,GOAL)
+assert global_path is not None and global_path[0]==START and global_path[-1]==GOAL
+assert all(p not in STATIC_WALLS for p in global_path)
 
-        <p><strong>最低配置（纯 Python）：</strong></p>
-        <ul>
-            <li>Python 3.9+</li>
-            <li>NumPy（矩阵运算和路径表示）</li>
-            <li>Matplotlib（可视化调试——你一定会需要它）</li>
-            <li>可选：SciPy（用于样条插值和优化）</li>
-        </ul>
+position=START
+trace=[position]
+time=0
+waits=0
+fallback_waits=0
+replans=0
+waypoint_index=0
+while position != GOAL and time &lt; 40:
+    local_goal_index=min(waypoint_index+3,len(global_path)-1)
+    local_goal=global_path[local_goal_index]
+    if position == local_goal:
+        waypoint_index=local_goal_index
+        continue  # Advance the global waypoint without consuming a time tick.
+    local_plan=space_time_local_plan(position,local_goal,time,horizon=6)
+    replans += 1
+    if local_plan is None:
+        # Waiting is only a fallback when the current cell remains safe next tick.
+        if not transition_is_safe(position,position,time):
+            raise RuntimeError(
+                f"No local path and waiting is unsafe at t={time}; stop and request intervention")
+        next_position=position
+        fallback_waits += 1
+    else:
+        next_position=local_plan[1] if len(local_plan)&gt;1 else position
+    if not transition_is_safe(position,next_position,time):
+        raise RuntimeError(f"Unsafe transition rejected at t={time}")
+    if next_position == position:
+        waits += 1
+    position=next_position
+    time += 1
+    assert position != DYNAMIC.get(time)
+    trace.append(position)
+    if position == local_goal:
+        waypoint_index=local_goal_index
 
-        <p><strong>进阶配置（加入仿真）：</strong></p>
-        <ul>
-            <li>ROS2 Humble 或 newer（机器人操作系统）</li>
-            <li>Gazebo Fortress（仿真环境）</li>
-            <li>Nav2（对比参考——看看工业级导航栈是怎么做的）</li>
-        </ul>
-
-        <p>如果你是第一次搭建导航栈，我强烈建议先从纯 Python 环境开始。ROS2 的学习曲线已经够陡了，不要让环境问题分散你对核心算法实现的注意力。</p>
-
-        <p>下面是我的推荐项目结构：</p>
-
-        <pre><code>navigation_stack/
-├── maps/                # 测试地图（栅格图 PGM + YAML）
-│   ├── simple_room.yaml
-│   ├── warehouse.yaml
-│   └── urban.yaml
-├── planners/
-│   ├── global_planner.py   # A* 或 RRT* 实现
-│   └── local_planner.py    # DWA 实现
-├── smoothing/
-│   └── path_smoother.py    # 样条/梯度平滑
-├── utils/
-│   ├── collision_checker.py
-│   └── visualization.py
-├── main.py                 # 集成入口
-├── config.yaml             # 参数配置
-└── README.md</code></pre>
-
-        <h2>全局规划器实现</h2>
-
-        <p>你的全局规划器应当接收一个代价地图（costmap）和起点终点坐标，输出一系列离散路径点。</p>
-
-        <p>如果你选择 <strong>A*</strong> 作为全局规划器，你已经在前面的章节中掌握了它的实现。关键设计决策是：</p>
-        <ul>
-            <li><strong>启发式函数</strong>——对于栅格地图，Euclidean distance 通常是最安全的选择。如果你的地图有特殊结构（如大量直线走廊），可以考虑对角线距离。</li>
-            <li><strong>邻域扩展</strong>——4 邻域足够吗？8 邻域？还是应该支持任意角度的扩展（Any-angle A* / Theta*）？我建议从 8 邻域开始。</li>
-            <li><strong>代价定义</strong>——最简单的做法是基于距离。但如果地图包含不同地形（如碎石路 vs 柏油路），可以用加权代价。</li>
-        </ul>
-
-        <p>如果你选择 <strong>RRT*</strong>，你需要在连续空间中采样，并且支持运动学约束（如车辆的最小转弯半径）。对于教学目的，我建议先做 A*，再用 RRT* 作为进阶挑战。</p>
-
-        <h2>局部规划器实现</h2>
-
-        <p>DWA（Dynamic Window Approach）是局部规划器的首选，原因有二：它直观、容易实现，而且效果好。</p>
-
-        <p>DWA 的核心逻辑是：在速度空间 (v, ω) 中采样，用运动学模型前向仿真一小段轨迹，然后用评价函数选择最优轨迹。评价函数通常包含三个分量：</p>
-
-        <ul>
-            <li><strong>方位角代价（heading cost）</strong>——轨迹终点与目标方向的偏差角。鼓励朝向目标。</li>
-            <li><strong>间隙代价（clearance cost）</strong>——轨迹与最近障碍物的距离。鼓励远离障碍物。</li>
-            <li><strong>速度代价（velocity cost）</strong>——鼓励高速而不是低速爬行。</li>
-        </ul>
-
-        <p>你需要在 config.yaml 中暴露关键参数，以便后续调优：速度采样范围、加速度限制、前向仿真时间、评价函数权重。</p>
-
-        <h2>系统集成与测试</h2>
-
-        <p>这是整个项目最关键的部分——如何把全局路径的输出变成局部规划器的输入。</p>
-
-        <p>全局规划器输出的是一条<strong>稀疏路径</strong>（比如在 100x100 的栅格地图上每 10 个像素一个路径点）。局部规划器需要一个<strong>局部目标点</strong>——不是全局终点，而是全局路径上的"前方某点"。这个"前瞻距离"（lookahead distance）是一个非常关键的参数。太短：机器人会频繁重新选向，路径不平滑；太长：局部规划器可能"看到"远处的转角，做出不合理的加速决策。</p>
-
-        <p>下面是一个集成的伪代码骨架——这是你整个导航栈的核心循环：</p>
-
-        <pre><code>import numpy as np
-from planners.global_planner import AStarPlanner
-from planners.local_planner import DWAPlanner
-from smoothing.path_smoother import spline_smooth
-
-class NavigationStack:
-    def __init__(self, costmap, config):
-        self.costmap = costmap
-        self.global_planner = AStarPlanner(costmap)
-        self.local_planner = DWAPlanner(config)
-        self.lookahead_dist = config["lookahead_distance"]
-        self.goal_tolerance = config["goal_tolerance"]
-
-    def set_goal(self, start, goal):
-        # Step 1: 全局规划
-        raw_path = self.global_planner.plan(start, goal)
-        if raw_path is None:
-            raise RuntimeError("Global planner failed: no path found")
-        # Step 2: 路径平滑
-        self.global_path = spline_smooth(raw_path)
-        self.path_index = 0
-
-    def compute_command(self, robot_pose, laser_scan):
-        # Step 1: 在全局路径上找到前瞻点
-        lookahead_pt = self._get_lookahead_point(robot_pose)
-        if lookahead_pt is None:
-            return (0.0, 0.0)  # 到达终点
-
-        # Step 2: 局部规划——以前瞻点为目标
-        cmd_vel = self.local_planner.plan(
-            pose=robot_pose,
-            goal=lookahead_pt,
-            scan=laser_scan,
-            costmap=self.costmap
-        )
-        return cmd_vel  # (linear_vel, angular_vel)
-
-    def _get_lookahead_point(self, robot_pose):
-        """在全局路径上找到距离机器人最近的前瞻点"""
-        min_dist = float("inf")
-        nearest_idx = 0
-        for i, pt in enumerate(self.global_path):
-            d = np.linalg.norm(robot_pose[:2] - pt)
-            if d < min_dist:
-                min_dist = d
-                nearest_idx = i
-        # 向前偏移 lookahead_dist 距离
-        accumulated = 0.0
-        for j in range(nearest_idx, len(self.global_path) - 1):
-            seg_len = np.linalg.norm(
-                self.global_path[j+1] - self.global_path[j])
-            accumulated += seg_len
-            if accumulated >= self.lookahead_dist:
-                return self.global_path[j+1]
-        return self.global_path[-1]
-
-    def is_goal_reached(self, robot_pose):
-        return (np.linalg.norm(robot_pose[:2] -
-                self.global_path[-1]) < self.goal_tolerance)</code></pre>
-
-        <p>你需要至少准备 3 个测试场景：</p>
-        <ul>
-            <li><strong>简单房间</strong>——没有障碍物，验证基本功能是否正常。</li>
-            <li><strong>迷宫</strong>——验证全局规划器能否正确绕障。</li>
-            <li><strong>动态障碍物</strong>——在路径中间放置一个突然出现的障碍物，验证局部规划器的避障能力。</li>
-        </ul>
-
-        <div class="tip">
-            <strong>调试建议：</strong>从一开始就实现可视化。把全局路径、DWA 采样轨迹、前瞻点、以及评价函数的热力图全部画在 Matplotlib 上。你会发现 80% 的 bug 在可视化后会一目了然——比如"为什么机器人撞上了障碍物？"可能只是因为你的碰撞检测用了世界坐标而不是机器人坐标系。
-        </div>
-
-        <h2>算法选型决策</h2>
-
-        <p>完成项目后，请认真写下你的选型理由。这是一个很好的面试题——比你想象中更常被问到。</p>
-
-        <p>下面是一些你应该能回答的问题：</p>
-
-        <ul>
-            <li><strong>为什么选择 A* 而不是 Dijkstra？</strong>——因为你的地图是已知的、静态的，A* 的启发式搜索可以显著减少扩展节点数。但如果地图非常大（比如 2000x2000），你可能会考虑用 Jump Point Search 来进一步加速。</li>
-            <li><strong>为什么选择 DWA 而不是 TEB 或 MPC？</strong>——因为 DWA 的计算开销低、实现简单、且对于差速驱动底盘效果足够好。TEB 和 MPC 在高速车辆场景中更受青睐，但它们的参数调优成本也更高。</li>
-            <li><strong>前瞻距离多大？为什么？</strong>——这个值取决于机器人的速度和转弯能力。一个经验法则是：前瞻距离至少是机器人长度的 2-3 倍。你可以在 config.yaml 中暴露这个参数，然后通过实验来确定最优值。</li>
-            <li><strong>你的系统在大规模场景中能实时运行吗？</strong>——如果不能，瓶颈在哪里？是 A* 的搜索耗时？还是 DWA 的采样数量太多？你做了哪些优化？（比如 A* 的二叉堆、DWA 的并行轨迹评估）</li>
-        </ul>
-
-        <p>这些问题的质量直接决定了你的项目从"能跑"到"优秀"之间的距离。</p>
-
-        <h2>扩展方向</h2>
-
-        <p>在你完成了基础版本之后——如果你还有精力——这里有一些有意义的扩展方向：</p>
-
-        <ul>
-            <li><strong>动态障碍物</strong>——在 DWA 的基础上加入运动障碍物的速度预测（恒定速度模型或更复杂的 Social LSTM 预测器）。</li>
-            <li><strong>多机器人</strong>——扩展你的导航栈，支持多台机器人在地图中同时运行。你需要实现第21章讨论的优先级调度或死锁检测。</li>
-            <li><strong>学习型组件</strong>——在局部规划器的评价函数中引入一个学习型权重调整模块。比如用 PPO 训练一个策略，根据环境密度动态调整 heading/clearance/velocity 的权重。</li>
-            <li><strong>ROS2 集成</strong>——把你的导航栈封装为 ROS2 节点，接入 Nav2 的 lifecycle 管理。这会让你的项目看起来像一个"真正的"产品级代码。</li>
-            <li><strong>语义导航</strong>——加入视觉 foundation model，让机器人能够理解"去那个蓝色椅子旁边"这样的高级指令。</li>
-        </ul>
-
-        <h2>课程总结</h2>
-
-        <p>恭喜你——你完成了这门课程的所有 28 章。</p>
-
-        <p>让我们回顾一下你走过的路。下表列出了每章对应的核心能力——你应该能用它来自检：</p>
-
-        <table>
-            <tr>
-                <th>章节</th>
-                <th>掌握后你应该能够</th>
-            </tr>
-            <tr><td>第1章 什么是路径规划</td><td>用大白话解释路径规划的三要素</td></tr>
-            <tr><td>第2章 状态空间与构型空间</td><td>将机器人导航问题转化为 C-space 中的搜索问题</td></tr>
-            <tr><td>第3章 图论基础</td><td>构建和遍历环境图结构</td></tr>
-            <tr><td>第4章 栅格地图与代价地图</td><td>将传感器数据转化为规划器可用的地图表示</td></tr>
-            <tr><td>第5章 启发式搜索入门</td><td>理解启发式函数如何加速搜索</td></tr>
-            <tr><td>第6章 Dijkstra算法</td><td>从头实现 Dijkstra 并理解其最优性保证</td></tr>
-            <tr><td>第7章 A*算法</td><td>用 A* 求解栅格地图最短路径问题</td></tr>
-            <tr><td>第8章 A*改进与变体</td><td>根据场景选择 Weighted A*、ARA* 或 Theta*</td></tr>
-            <tr><td>第9章 D* Lite增量搜索</td><td>在动态变化的地图中高效重规划</td></tr>
-            <tr><td>第10章 JPS跳点搜索</td><td>在均匀代价网格上大幅加速 A*</td></tr>
-            <tr><td>第11章 RRT快速随机树</td><td>用 RRT 在高维空间中找到可行路径</td></tr>
-            <tr><td>第12章 RRT*渐进最优</td><td>通过重新连接优化 RRT 路径</td></tr>
-            <tr><td>第13章 PRM概率路线图</td><td>构建路线图支持多次查询</td></tr>
-            <tr><td>第14章 采样方法大对比</td><td>根据场景选择正确的采样策略</td></tr>
-            <tr><td>第15章 路径平滑与后处理</td><td>用样条插值或优化方法平滑锯齿路径</td></tr>
-            <tr><td>第16章 动态窗口法DWA</td><td>在速度空间中搜索安全的局部运动</td></tr>
-            <tr><td>第17章 人工势场法</td><td>用势场引导机器人避障（并避免局部极小值）</td></tr>
-            <tr><td>第18章 运动学约束与曲线</td><td>用 Reeds-Shepp 曲线或 Dubins 曲线处理非完整约束</td></tr>
-            <tr><td>第19章 动态环境重规划</td><td>在环境变化时快速调整规划</td></tr>
-            <tr><td>第20章 多目标路径规划</td><td>在多个目标点间规划最优访问顺序</td></tr>
-            <tr><td>第21章 多机器人协调</td><td>设计多机器人系统的交通管制和死锁避免</td></tr>
-            <tr><td>第22章 优化模型方法</td><td>将路径规划表达为优化问题并用求解器求解</td></tr>
-            <tr><td>第23章 可视化与调试</td><td>搭建调试工具链高效定位规划问题</td></tr>
-            <tr><td>第24章 算法性能基准测试</td><td>设计指标体系量化评估规划器性能</td></tr>
-            <tr><td>第25章 仿真到实车部署</td><td>完成从仿真环境到真实机器人的迁移</td></tr>
-            <tr><td>第26章 学习型路径规划</td><td>理解经典方法与学习型方法的适用边界</td></tr>
-            <tr><td>第27章 前沿趋势与未来</td><td>把握行业技术方向，做出合理的技术选型</td></tr>
-            <tr><td>第28章 综合项目</td><td>将所学知识整合为完整的导航系统</td></tr>
-        </table>
-
-        <p>你刚开始读第一章时，可能觉得"路径规划"只是一个简单的问题——找条路走过去嘛。而现在你应该已经明白，这背后是一门融合了图论、几何、优化、机器学习的交叉学科。路径规划不只是"找路"——它是机器人在物理世界中理解和行动的核心能力。</p>
-
-        <p>我想用一句话结束这门课程：<strong>路径规划是一门关于"选择"的艺术</strong>——在每一步，你都在选择：是探索未知还是利用已知？是追求最优还是保证安全？是相信经验还是适应变化？这些选择的权衡，不仅存在于算法中，也存在于你的工程师生涯里。</p>
-
-        <div class="highlight">
-            <strong>恭喜你完成全部 28 章的学习！</strong> 你已经在理论知识上投入了大量精力，但请记住——路径规划是一项动手技能。读完所有章节只是一个开始。真正的掌握来自一次又一次的实现、调试、失败、再调试。现在打开你的 IDE，把这一章的项目做出来。遇到问题时，回头翻翻前面某章的内容。等技术成熟了，把你的代码分享到 GitHub 上，写在简历上，或者——用它做些酷的事情。<br><br>
-            感谢你跟着这门课程走完了这段旅程。如果你是从第一章一路读过来的，你值得为自己鼓掌。再见，未来的路径规划专家。我们江湖再见！
-        </div>
-
-        <div class="footer-nav">
-            <a href="27.html">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="javascript:void(0)">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+assert position == GOAL
+assert waits == 1
+assert all(p not in STATIC_WALLS for p in trace)
+print("global A* edges:",len(global_path)-1)
+print("executed steps:",len(trace)-1,"waits:",waits,"fallback waits:",fallback_waits,
+      "local replans:",replans)
+print("collision guards: unsafe wait, current overlap and edge swap rejected")
+print("goal reached:",trace[-1],"static and predicted dynamic checks passed")</code></pre><p>固定样例输出：全局路线 9 条边，实际执行 10 个 tick，其中 1 次等待，局部重规划 10 次。这里的步数只用于核对这个教学场景，不是不同规划器的性能基准。</p></section><section id="validation" aria-labelledby="validation-title"><h2 id="validation-title">测试矩阵：从函数断言到整套系统验收</h2><ol><li><strong>地图单测：</strong>起点、终点和静态墙体边界合法；A* 返回的相邻格点距离为 1。</li><li><strong>路径单测：</strong>每个输出格点不在静态墙体中；无路时明确返回失败。</li><li><strong>动态冲突单测：</strong>测试顶点冲突和反向边交换；等待动作不会误判为穿越障碍。</li><li><strong>闭环集成测试：</strong>每轮只执行第一步；障碍时间变化后重新求解；达到目标或超时都要终止。</li><li><strong>回归与基准：</strong>固定地图、种子、障碍预测、时间预算，完整记录成功、失败、等待、重规划和路径代价。</li><li><strong>安全验收：</strong>真实系统还要验证足迹、制动、传感器时效、TF、命令限幅、硬件急停和故障注入。</li></ol><figure><p class="figure-kicker">INTEGRATED NAVIGATION PROJECT / 28</p><img src="../assets/figures/28-release-gates.svg" alt="从单元测试、时空冲突测试、闭环仿真、基准复现到硬件在环和现场安全评审逐级验收。" loading="lazy"><figcaption>每个阶段都要保存证据；仿真成功不能自动批准下一阶段的实车测试。</figcaption></figure></section><section id="ros" aria-labelledby="ros-title"><h2 id="ros-title">从教学栅格项目映射到 ROS 2 / Nav2</h2><p>把离散原型升级到 ROS 2 时，模块边界可以映射到 Nav2 的全局规划器、控制器、costmap、行为树导航器和 Collision Monitor。全局规划器插件生成全局路线，控制器在当前局部地图和机器人状态下产生速度命令；行为树协调导航任务和恢复行为；Collision Monitor 可以在规划和 costmap 之外对传感器输入执行附加碰撞监测。</p><p>真实系统还需要按 REP-105 对齐 <code>map → odom → base_link</code> 的坐标语义，处理 TF 时间戳、传感器延迟、footprint 和速度上限。软件碰撞监测不能替代按风险评估设计的硬件急停或功能安全链。</p></section><section id="interactive" aria-labelledby="interactive-title"><h2 id="interactive-title">交互：选择系统测试阶段</h2><p>系统从离线栅格仿真走向动态环境和实车时，验收内容会逐级增加。切换阶段查看最少需要保存的证据。</p><div class="interactive-box" data-capstone-demo><div class="demo-controls" role="group" aria-label="综合项目验收阶段"><button type="button" data-capstone-mode="offline" aria-pressed="true">离线单测</button><button type="button" data-capstone-mode="dynamic" aria-pressed="false">动态仿真</button><button type="button" data-capstone-mode="release" aria-pressed="false">实车准入</button></div><p class="demo-status" role="status" aria-live="polite">离线单测：验证A*路径、边界、障碍检查、时空状态、等待动作和顶点/边交换断言。</p><p class="micro">此选择器是测试清单，不会控制机器人或批准实车上线。</p></div></section><section id="extension" aria-labelledby="extension-title"><h2 id="extension-title">进阶扩展：不要把离散示例冒充连续导航</h2><ul><li><strong>加入机器人足迹：</strong>先把障碍按机器人半径/多边形足迹膨胀，或对完整扫掠体做碰撞检测。</li><li><strong>加入运动学：</strong>用差速或 Ackermann 模型代替格点瞬移；控制候选需满足速度、角速度、加速度和制动约束。</li><li><strong>改成 DWA / MPC：</strong>在连续速度或控制序列空间采样，模拟预测轨迹并检查每个时刻的碰撞；安全集合要基于可制动性。</li><li><strong>加入不确定障碍预测：</strong>使用预测分布、占据概率或保守包络，而不是把未来位置当成精确点。</li><li><strong>加入基准工具：</strong>导出每次任务的地图哈希、参数、种子、成功/失败、时延和路径质量，保持比较条件一致。</li></ul><p>路径平滑也不能只看曲线是否漂亮。任何 shortcut、样条或梯度平滑都必须重新验证整条线段或轨迹的碰撞、曲率、足迹和速度约束。</p></section><section id="sources" aria-labelledby="sources-title"><h2 id="sources-title">规范、算法与工程文档</h2><ul><li><a href="https://reps.openrobotics.org/rep-0105/">ROS REP-105: Coordinate Frames for Mobile Platforms</a></li><li><a href="https://docs.nav2.org/">Nav2 Documentation: Navigation, planners, controllers and costmaps</a></li><li><a href="https://docs.nav2.org/rolling/configuration_and_development/configuration_guide/core_servers/collision_monitor/configuring_collision_monitor_node/">Nav2 Collision Monitor</a></li><li><a href="https://ompl.kavrakilab.org/benchmark.html">OMPL: How to Benchmark Planners</a></li><li><a href="https://msl.cs.uiuc.edu/~lavalle/planning/">LaValle, Planning Algorithms</a></li></ul></section><nav class="article-footer" aria-label="章节翻页"><a href="27.html">← 27 · 前沿趋势与未来</a><a href="../index.html#curriculum">回到课程目录 ↑</a></nav></article></main></div></body></html>

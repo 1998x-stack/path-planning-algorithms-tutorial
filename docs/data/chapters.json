@@ -178,21 +178,21 @@
     "num": "26",
     "title": "学习型路径规划",
     "href": "chapters/26.html",
-    "status": "legacy",
-    "part": 5
+    "status": "redesigned",
+    "part": 6
   },
   {
     "num": "27",
     "title": "前沿趋势与未来",
     "href": "chapters/27.html",
-    "status": "legacy",
-    "part": 5
+    "status": "redesigned",
+    "part": 6
   },
   {
     "num": "28",
     "title": "综合项目",
     "href": "chapters/28.html",
-    "status": "legacy",
-    "part": 5
+    "status": "redesigned",
+    "part": 6
   }
 ]
