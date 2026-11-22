@@ -1,183 +1,43 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第8章 A*改进与变体</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html" class="active">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html">第20章 多目标路径规划</a></li>
-            <li><a href="21.html">第21章 多机器人协调</a></li>
-            <li><a href="22.html">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="深入理解 Weighted A* 的次优界，ARA* 的重用修复、双向 A* 的停机条件与分层抽象。"><title>08 · A* 变体与有界次优搜索 — 路径规划算法</title><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="09.html">下一章</a></nav></div></header><div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#motivation">最优性与计算预算的拉扯</a><a href="#weighted">加权 A* 的边界条件</a><a href="#example">交互：ε 怎样改变选择</a><a href="#ara">ARA* 不是重复跑几次 A*</a><a href="#bidirectional">双向 A* 的正确终止</a><a href="#hierarchy">分层方法的抽象误差</a><a href="#implementation">可运行的 WA* 微型实验</a><a href="#decision">方法选择与不能声称的保证</a><a href="#references">文献</a></nav></details></aside><main class="article-main" id="content"><article><header class="article-header"><p class="article-meta">GRAPH SEARCH / 08 OF 28</p><h1>A* 变体：把速度、质量与复用分开讨论</h1><p class="dek">ε 次优界到底保证什么？ARA* 为什么需要 INCONS？双向搜索何时才能停机？分层抽象又牺牲了什么？</p></header><section id="motivation" aria-labelledby="motivation-title"><h2 id="motivation-title">最优性与计算预算为什么会冲突</h2><p>在静态地图上，如果允许更多搜索，通常可以坚持精确的最短代价；但移动机器人需要很快给出一条可行路线，且障碍一变化，旧计划可能失效。为了让搜索在不同场景下取得平衡，研究人员发展了加权、双向、任意时刻与分层等 A* 变体。</p><p>它们分别修改的是<strong>排序权重、搜索方向、重复利用的搜索状态或状态空间表示</strong>。不能把这些变化简单归纳为“更高级的 A*”，因为正确性前提和可保证的性质不同。</p><figure><p class="figure-kicker">SEARCH VARIANTS · 08</p><img src="../assets/figures/08-variant-taxonomy.svg" loading="lazy" alt="四列分类：Weighted A星修改f权重，Bidirectional从两端搜索，ARA星反复修复OPEN和INCONS，Hierarchical抽象空间。"><figcaption>这四种设计不共享同一种最优性证明。运行时间是否降低由地图、启发式、数据结构及算法实现共同决定。</figcaption></figure></section><section id="weighted" aria-labelledby="weighted-title"><h2 id="weighted-title">Weighted A*：放大启发式意味着什么</h2><p>标准 A* 按 <code>g+h</code> 排序。加权 A*（WA*）将估计剩余成本乘以 ε≥1：</p><div class="equation" tabindex="0" aria-label="加权A星排序"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>f</mi><mi>ε</mi></msub><mo>(</mo><mi>n</mi><mo>)</mo><mo>=</mo><mi>g</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>+</mo><mi>ε</mi><mi>h</mi><mo>(</mo><mi>n</mi><mo>)</mo><mo>,</mo><mspace width="1em"/><mi>ε</mi><mo>≥</mo><mn>1</mn></mrow></math><span class="equation-label">(1) Weighted A* 排序键，ε=1 退化到标准 A*</span></div><p>ε 越大，队列通常越偏好对目标看起来更近的状态，更容易较早找到可行解，但通常不再保证最优。若满足非负边权、可纳 h、合适的最优路径存在与终止/重开等搜索假设，标准的 WA* 可得到<strong>成本不超过 ε 倍最优成本</strong>的次优界。这里 ε 是理论上界参数，不能把它理解成实际成本一定等于 εC*，也不能把 ε=3 当成“速度提升三倍”。</p><figure><p class="figure-kicker">SEARCH VARIANTS · 08</p><img src="../assets/figures/08-weighted-bound.svg" loading="lazy" alt="WA星候选路线：最优路径成本4与加权 epsilon3 返回路径成本6，且6小于理论上界12。"><figcaption>示例是有限图的手算结果，ε=3 的真实输出为 6，理论上界是 12。显示不同的三个数字是为了区分求解结果、最优基准与形式上的保证。</figcaption></figure><p>要证明界，直观地看某个最优路径前沿节点 n，若 h 可纳，则 <code>fε(n)=g(n)+εh(n)≤εC*</code>（满足当前最好 g 与最优前缀的关系）。当目标最终按最小可用 fε 弹出，g(goal) 不会超过该界。实现若错误丢弃改善路径、允许负边或使用高估的 h，就不能套用这段推理。</p></section><section id="example" aria-labelledby="example-title"><h2 id="example-title">交互：把 ε 从 1 调到 3</h2><p>使用四节点图 S→A→G (2+2=4) 与 S→B→G (1+5=6)。下界取 h(A)=2、h(B)=0、h(S)=3、h(G)=0，都是非负、可纳且与本示例边权一致的估计。ε=1 时，A 的优先级为 4，先于已经由 B 发现的目标候选 6；ε=3 时，A 的优先级变成 8，目标 6 先被弹出。</p><div class="interactive-box" data-weighted-demo><div class="demo-controls" role="group" aria-label="选择启发式权重"><button type="button" data-weight="1" aria-pressed="true">ε = 1</button><button type="button" data-weight="3" aria-pressed="false">ε = 3</button></div><p class="demo-status" aria-live="polite" role="status">ε=1：路径 S→A→G，总代价 4（最优）。</p><p class="micro">这是固定的教学图；操作时重新执行一个真正的优先队列演算，不是实时机器人实验。</p></div><p>如果忽略前提，随意给 h 乘权可能提前返回不可接受的路线。这一技巧不应该用来绕过安全约束；碰撞、动力学或最大允许风险仍需要作为独立的硬性约束。</p></section><section id="ara" aria-labelledby="ara-title"><h2 id="ara-title">ARA*：在一次搜索基础上逐次改进</h2><p><strong>Anytime Repairing A*</strong>（Likhachev、Gordon、Thrun，2003）是一种 anytime 算法：先以较高的 ε 迅速产生一条有界次优解，在计算预算允许时逐步降低 ε。它的关键不是重复从零执行 WA*，而是复用 <code>g</code> 值及 OPEN、CLOSED、INCONS 等集合，修复此前未完成的搜索。</p><figure><p class="figure-kicker">SEARCH VARIANTS · 08</p><img src="../assets/figures/08-anytime-repair.svg" loading="lazy" alt="左侧从epsilon3得到成本6，右侧使用较小epsilon后得到成本4，并显示OPEN与INCONS的复用箭头。"><figcaption>示意从粗解走向更好解的可能过程；成本 6→4 来自同一四节点示例，但不是原论文提供的基准结果。复用 OPEN/INCONS 是区分 ARA* 与多次独立 WA* 的核心。</figcaption></figure><p>对同一静态问题，ARA* 所维护的当前解成本不会因为发现更好候选而变差；将 ε 减到 1 并正确收敛时才恢复最优性。真实实现还要处理下界计算、闭集修复以及跨轮迭代的优先级更新。此处代码示范 WA*，<strong>并不是完整 ARA* 实现</strong>。</p></section><section id="bidirectional" aria-labelledby="bidirectional-title"><h2 id="bidirectional-title">双向 A*：碰头并不等于最优</h2><p>从起点向前与从目标按反向边向后进行搜索，直观上有机会缩小扩展区域。但对于有向图，反向搜索必须沿原图边的反向遍历并保留对应代价；若使用两个不同的启发式，还需要使前后搜索的代价变换与停止判定协调。</p><p>错误做法是：两侧第一次发现共同节点后立刻拼接两段路径。这通常只能得到一条候选路线。正确实现应维护当前最佳拼接成本 <code>μ</code>，并等待由两个搜索前沿提供的有效下界足以证明没有更便宜的完整路线。不同的双向 A* 方案停止条件并不完全相同，不能直接照搬无启发式双向 BFS 的终止策略。</p><p>双向搜索同样有可能得不偿失，例如反向邻接查询昂贵、目标不是单一确定点，或前后估计信息严重不对称的情形。</p></section><section id="hierarchy" aria-labelledby="hierarchy-title"><h2 id="hierarchy-title">分层 A*：先做抽象，再细化路径</h2><p>如果地图包含上百万栅格，可以先将房间、走廊或区域边界抽象成宏观节点，在粗图上选通道，再在具体栅格上连接局部路线。其节省来自<strong>减少查询时考虑的细节</strong>，不是 A* 的排序公式发生变化。</p><p>但抽象图中“两个门看起来连通”不代表底层存在相同代价的路径。过度简化的门/区连接、错误的预处理成本以及被遗漏的拓扑变化都可能导致次优或不完整结果。只有当抽象代价与局部优化的性质得到证明，才可声明全局最优。</p><div class="note caution"><p><strong>混用风险：</strong>WA* 的 ε 次优界、ARA* 的 anytime 修复、双向搜索的上下界停机、分层搜索的抽象误差，是四套不同的条件。单纯组合这些名称不会自动继承各自的保证。</p></div></section><section id="implementation" aria-labelledby="implementation-title"><h2 id="implementation-title">在最小图上验证 Weighted A*</h2><p>代码运行环境 Python 3.10+、无第三方库。它展示 WA* 的有界次优排序，在 g 改善时允许重复入队（通过跳过过期项）。断言覆盖 ε=1 的最优路径、ε=3 的成本 6 和该例中的次优界。这个小程序<strong>没有实现双向 A*、ARA* 或 HAA*</strong>。</p><pre><code>from heapq import heappush, heappop
+from math import inf
 
-        <p>大家好！上一章我们深入剖析了 A* 算法，理解了它如何通过启发式函数 <code>f(n)=g(n)+h(n)</code> 实现比 Dijkstra 更高效的搜索。但 A* 只是一个起点——在实际工程中，我们需要根据具体场景对 A* 进行各种改造。这一章我们来看看 A* 的四大实用变体：加权 A*、双向 A*、ARA* 和分层 A*。每个变体都在某个维度上突破了经典 A* 的限制。</p>
+def weighted_astar(graph, start, goal, h, epsilon=1.0):
+    """非负边权、有限图，h 是真实目标代价的可纳下界。"""
+    if epsilon &lt; 1:
+        raise ValueError("epsilon must be &gt;= 1")
+    best, parent = {start: 0.0}, {start: None}
+    queue = [(epsilon * h[start], 0.0, start)]
+    while queue:
+        score, g, u = heappop(queue)
+        if g != best.get(u, inf):
+            continue
+        if u == goal:
+            path = []
+            while u is not None:
+                path.append(u)
+                u = parent[u]
+            return g, path[::-1]
+        for v, cost in graph.get(u, []):
+            if cost &lt; 0:
+                raise ValueError("negative edges unsupported")
+            next_g = g + cost
+            if next_g &lt; best.get(v, inf):
+                best[v] = next_g
+                parent[v] = u
+                heappush(queue, (next_g + epsilon*h[v], next_g, v))
+    return inf, None
 
-        <h2>加权 A*（WA*）——用最优性换速度</h2>
-
-        <p>经典 A* 保证找到最短路径。但有时候，"足够好"的路径就已经够用了——尤其是在实时性要求极高的场景中。想象一下一个在仓库中穿梭的机器人：它需要在 50 毫秒内做出决策，此时花 200 毫秒去找那条短 3% 的路径毫无意义。</p>
-
-        <p>加权 A*（Weighted A*，简称 WA*）的思路极其简单：给启发式函数 <code>h(n)</code> 乘上一个权重 <code>w &gt; 1</code>。</p>
-
-        <pre><code>def weighted_astar(start, goal, grid, w=1.5):
-    open_set = [(0, 0, start)]  # (f, g, node)
-    g_score = {start: 0}
-    came_from = {}
-
-    while open_set:
-        _, current_g, current = heapq.heappop(open_set)
-
-        if current == goal:
-            return reconstruct_path(came_from, current)
-
-        for neighbor, step_cost in get_neighbors(current, grid):
-            tentative_g = g_score[current] + step_cost
-            if tentative_g &lt; g_score.get(neighbor, float('inf')):
-                came_from[neighbor] = current
-                g_score[neighbor] = tentative_g
-                f = tentative_g + w * heuristic(neighbor, goal)
-                heapq.heappush(open_set, (f, tentative_g, neighbor))
-
-    return None</code></pre>
-
-        <p>你看，改动只有一行：<code>f = tentative_g + w * heuristic(neighbor, goal)</code>。但这一行的影响是巨大的。</p>
-
-        <p>当 <code>w = 1</code> 时，WA* 退化为标准 A*，保证最优性。随着 <code>w</code> 增大，算法越来越"贪心"——它更倾向于朝着目标方向搜索，减少不必要的分支探索。但代价是：找到的路径可能不是最优的。理论上有界次优性（bounded suboptimality）：WA* 找到的路径代价不超过最优路径代价的 <code>w</code> 倍。</p>
-
-        <table>
-            <tr>
-                <th>w 值</th>
-                <th>展开节点数（相对 A*）</th>
-                <th>路径代价（相对最优）</th>
-                <th>适合场景</th>
-            </tr>
-            <tr>
-                <td>1.0</td>
-                <td>100%</td>
-                <td>100%（最优）</td>
-                <td>需要严格最优解</td>
-            </tr>
-            <tr>
-                <td>1.2</td>
-                <td>~65%</td>
-                <td>~101%</td>
-                <td>导航、仓储机器人</td>
-            </tr>
-            <tr>
-                <td>1.5</td>
-                <td>~40%</td>
-                <td>~104%</td>
-                <td>游戏 AI 寻路</td>
-            </tr>
-            <tr>
-                <td>2.0</td>
-                <td>~25%</td>
-                <td>~108%</td>
-                <td>实时策略游戏（RTS）</td>
-            </tr>
-            <tr>
-                <td>5.0</td>
-                <td>~10%</td>
-                <td>~125%</td>
-                <td>极其紧迫的时间预算</td>
-            </tr>
-        </table>
-
-        <div class="tip">
-            <strong>真实故事：</strong>我曾经给一个仓储机器人项目调参，团队一心想用标准 A* 保证最优路径。结果机器人在路口常常"思考"超过 100 毫秒，导致后方机器人急刹车，整个仓库的吞吐量上不去。我们把 <code>w</code> 设到 1.2 后，规划时间降到了 30 毫秒以内，路径只长了 1.8%。这个 trade-off 太值了——运维同事说 "这 2% 的电费，我们出得起"。记住：在工程中，"足够好且足够快"往往胜过"完美但慢吞吞"。
-        </div>
-
-        <h2>双向 A*——两头并进</h2>
-
-        <p>双向 A*（Bidirectional A*）的思路很直观：从起点和终点同时向中间搜索，两个搜索前沿在中间相遇。想象两个人分别从隧道两端向中间挖掘——显然比一个人从一端挖到另一端快得多。</p>
-
-        <h3>前置条件</h3>
-        <p>双向搜索要成功，两个搜索前沿必须满足"相遇"条件。经典做法是：正向搜索从起点向终点扩展，反向搜索从终点向起点扩展。当某个节点被双方都访问到时，就找到了路径。</p>
-
-        <p>但这里有一个陷阱：启发式函数必须一致。正向用 <code>h(n, goal)</code>，反向用 <code>h(n, start)</code>。如果启发式不满足可采纳性（admissible），双向 A* 可能比单向还要慢——因为双方都在错误的方向上浪费计算。</p>
-
-        <h3>什么时候用？</h3>
-        <p>双向 A* 在以下场景表现优异：</p>
-        <ul>
-            <li><strong>起点和终点距离很远</strong>——搜索空间巨大，双向几乎把搜索半径减半（圆的面积是 <code>πr²</code>，两个半圆加起来才 <code>2π(r/2)² = πr²/2</code>，仅为一半）</li>
-            <li><strong>启发式函数信息量充足</strong>——比如欧几里得距离在开放空间中</li>
-            <li><strong>地图是对称的</strong>——正向和反向搜索难度相当</li>
-        </ul>
-        <p>但在迷宫中，双向 A* 的优势会大打折扣——因为反向搜索同样会走入死胡同。</p>
-
-        <h2>Anytime Repairing A*（ARA*）——先凑合，再优化</h2>
-
-        <p>现实世界中，规划器往往面临一个矛盾：你既想要快速得到一个可用路径，又想在时间允许时获得更优解。这就是 ARA*（Anytime Repairing A*）的出现背景。</p>
-
-        <p>ARA* 的思路：先用一个较大的 <code>w</code> 快速得到一个次优路径，然后随着计算时间的推移逐步降低 <code>w</code>，利用之前的搜索结果来改进路径。它"随时"（anytime）都能给你一个答案，但等待越久，答案越好。</p>
-
-        <p>ARA* 的核心机制：</p>
-        <ul>
-            <li>初始使用高权重（如 <code>w=5</code>）快速搜索</li>
-            <li>记录搜索过程中的所有"不一致"状态（inconsistent states）</li>
-            <li>降低权重后，只需要修复这些不一致状态的代价估计，不需要重新搜索整个图</li>
-            <li>重复直到 <code>w=1</code>（最优）或时间耗尽</li>
-        </ul>
-
-        <p>想象一个自动驾驶汽车在十字路口前需要决策：它必须在 50ms 内给出一个方向（走哪条车道），但可以用接下来的 200ms 优化具体轨迹。ARA* 完美适配这类"截止时间驱动"的场景。</p>
-
-        <h2>分层 A*——先粗后细</h2>
-
-        <p>分层 A*（Hierarchical A*）解决的是大规模地图搜索的效率问题。核心思想：不要在一张高分辨率地图上直接搜索，而是先构建一个低分辨率的抽象图，在抽象层找到粗略路径，再在低层细化。</p>
-
-        <h3>HAA*（Hierarchical Annotated A*）</h3>
-        <p>具体做法是把原始栅格地图分块聚合。一个 1000x1000 的栅格地图有 100 万个节点。如果我们将每个 10x10 的块聚合成一个"区域节点"，则抽象图只有 1 万个节点。在抽象层上跑 A* 几乎是瞬时的，然后再在抽象路径经过的区域内做细粒度搜索。</p>
-
-        <p>在游戏 AI 中，分层 A* 是标配。想想《文明》这种大地图策略游戏，单位需要在几千个格子的地图上寻路——如果不做分层，每帧几千个单位的寻路计算会把 CPU 吃光。实际上，几乎所有现代游戏引擎（如 Unreal Engine 的 NavMesh）都采用了分层思想。</p>
-
-        <div class="warning">
-            <strong>踩坑提醒：</strong>分层 A* 的致命问题是"局部最优陷阱"。如果抽象层的路径选择了区域 A 到区域 B，但进入区域 A 后发现实际上最优路径需要经过区域 C——这被称为"边界效应"。解决方法是让相邻区域之间有重叠（overlap），或者在细化阶段允许一定程度的跨区域调整。不给抽象层留冗余，就相当于让一个近视眼摘了眼镜找路——大方向也许对，但细节处处是坑。
-        </div>
-
-        <p>这四种 A* 变体各有擅长场景：WA* 适合时间敏感的场景，双向 A* 适合远距离规划，ARA* 适合有时间截止压力的环境，分层 A* 适合超大规模地图。在实际系统中，它们经常被组合使用——比如在自动驾驶中，全局规划用分层 A*，局部规划用 WA* 保证实时性。</p>
-
-        <p>下一章我们将进入另一个维度的 A* 变体——<strong>D* Lite 增量搜索</strong>。当环境发生变化时（比如突然出现障碍物），A* 需要从头重新搜索，而 D* Lite 能够高效地"复用"之前的搜索结果，只重新计算受影响的部分。这在火星车探索未知地形时可是保命级的特性。</p>
-
-        <div class="footer-nav">
-            <a href="07.html">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="09.html">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+graph = {
+    "S": [("A", 2), ("B", 1)],
+    "A": [("G", 2)],
+    "B": [("G", 5)],
+    "G": [],
+}
+h = {"S": 3, "A": 2, "B": 0, "G": 0}
+optimal = weighted_astar(graph, "S", "G", h, 1)
+quick = weighted_astar(graph, "S", "G", h, 3)
+assert optimal == (4.0, ["S", "A", "G"])
+assert quick == (6.0, ["S", "B", "G"])
+assert quick[0] &lt;= 3 * optimal[0]  # 示例满足对应上界
+assert weighted_astar(graph, "G", "S", h) == (inf, None)
+print("epsilon=1:", optimal, "epsilon=3:", quick)</code></pre><p>更深入的实验应对多个地图、ε 值和启发式类型记录：解成本 / 已知最优成本、首次可行解时间、逐轮修复时间、内存峰值与扩展数。不应引用一张示意图来声称“平均加速多少”。</p></section><section id="decision" aria-labelledby="decision-title"><h2 id="decision-title">如何选择以及哪些保证不能随意说</h2><div class="table-wrap"><table><thead><tr><th>目标</th><th>优先考虑</th><th>需要额外核实</th></tr></thead><tbody><tr><td>静态问题，最优性严格</td><td>一致启发 A*</td><td>图建模、启发式和终止条件</td></tr><tr><td>有限预算，允许控制成本劣化</td><td>WA*</td><td>ε 界对应的全部假设</td></tr><tr><td>计算时间未知，希望持续改善</td><td>ARA*</td><td>OPEN/INCONS 修复是否正确</td></tr><tr><td>固定目标和易于反向查询</td><td>合适的双向搜索</td><td>双向终止下界与有向边</td></tr><tr><td>长距离多次查询</td><td>分层与预处理</td><td>抽象误差、更新成本与完整性</td></tr></tbody></table></div><p>无论采用哪种路线，约束正确性排在速度优化之前：先保证生成的状态转移合法，再讨论估价函数能否缩小搜索空间。</p></section><section id="references" aria-labelledby="references-title"><h2 id="references-title">来源与阅读</h2><ul><li><a href="https://publications.ri.cmu.edu/ara-anytime-a-with-provable-bounds-on-sub-optimality">Likhachev, Gordon, Thrun, ARA*: Anytime A* with Provable Bounds on Sub-Optimality (NeurIPS 2003)</a></li><li><a href="https://doi.org/10.1109/TSSC.1968.300136">Hart, Nilsson, Raphael, A* 原始论文 (1968)</a></li><li><a href="https://msl.cs.uiuc.edu/~lavalle/planning/">LaValle, Planning Algorithms</a></li></ul></section><nav class="article-footer" aria-label="章节翻页"><a href="07.html">← 07 · A* 搜索</a><a href="09.html">09 · D* Lite →</a></nav></article></main></div></body></html>
