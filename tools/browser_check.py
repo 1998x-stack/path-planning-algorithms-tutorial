@@ -56,7 +56,10 @@ def main():
                             missingAlt: [...document.images].filter(x => !x.getAttribute('alt')).length,
                             figures: document.querySelectorAll('figure').length,
                             emptyCaptions: [...document.querySelectorAll('figure')].filter(x => !x.querySelector('figcaption')?.textContent.trim()).length,
-                            badMath: [...document.querySelectorAll('math')].filter(x => x.getBoundingClientRect().width < 1 || x.getBoundingClientRect().height < 1).length
+                            badMath: [...document.querySelectorAll('math')].filter(x => x.getBoundingClientRect().width < 1 || x.getBoundingClientRect().height < 1).length,
+                            remoteAssets: [...document.querySelectorAll('script[src],link[rel="stylesheet"],img[src]')]
+                              .map(x => x.getAttribute('src') || x.getAttribute('href'))
+                              .filter(x => x && new URL(x, location.href).origin !== location.origin)
                         })""")
                         if not response or response.status != 200:
                             failures.append(f"{path} {key}: HTTP {response.status if response else 'no response'}")
@@ -66,7 +69,16 @@ def main():
                             failures.append(f"{path} {key}: broken images {stats['broken']}")
                         if stats["missingAlt"] or stats["emptyCaptions"] or stats["badMath"]:
                             failures.append(f"{path} {key}: alt/caption/MathML issue {stats}")
+                        if stats["remoteAssets"]:
+                            failures.append(f"{path} {key}: external runtime assets {stats['remoteAssets']}")
                         if errors: failures.append(f"{path} {key}: JS/console errors {errors}")
+                        if key == "desktop" and path.startswith("chapters/"):
+                            page.emulate_media(media="print")
+                            print_visible = page.locator(".article-main figure").first.is_visible()
+                            sidebar_hidden = page.locator(".article-sidebar").evaluate("(x) => getComputedStyle(x).display === 'none'")
+                            if not print_visible or not sidebar_hidden:
+                                failures.append(f"{path}: print stylesheet hides article content or leaves sidebar visible")
+                            page.emulate_media(media="screen")
                         if key == "desktop" and path == "index.html":
                             page.locator("#chapter-search").fill("RRT")
                             count = page.locator(".chapter-card:visible").count()

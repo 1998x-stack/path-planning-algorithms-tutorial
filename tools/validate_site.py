@@ -55,6 +55,18 @@ def check():
     for i in range(1, 21):
         evidence = DOCS / 'evidence' / f'{i:02}.json'
         if not evidence.is_file(): errors.append(f'missing evidence ledger: {evidence}')
+    manifest = DOCS / "evidence" / "figures-16-20.json"
+    if not manifest.is_file():
+        errors.append("missing figure manifest: "+str(manifest))
+    else:
+        try:
+            entries = json.loads(manifest.read_text(encoding="utf-8")).get("figures", [])
+            if len(entries) != 16: errors.append(f"figure manifest: expected 16 entries, got {len(entries)}")
+            for item in entries:
+                figure = DOCS / "assets" / "figures" / item["file"]
+                if not figure.is_file(): errors.append("manifest references missing figure: "+item["file"])
+        except Exception as e:
+            errors.append(f"invalid figure manifest: {e}")
     for file in DOCS.rglob("*.svg"):
         try:
             xml=ET.parse(file).getroot()
