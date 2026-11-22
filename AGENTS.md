@@ -23,7 +23,7 @@
 ## 提交前质量门槛
 1. `python3 tools/validate_site.py`：静态相对链接、章节完整性、图文、SVG 结构、MathML、禁用占位词。
 2. `python3 tools/build_site.py`：输出 `_site/` 且构建不篡改源目录。
-3. Chromium 1440/900、768/1024、390/844、360/800：无横向溢出，SVG 图签/节点可读、无 JS 异常、锚点和图片均可打开，真实点击文章交互。
+3. 运行 `python tools/browser_check.py`（需先安装 Playwright Chromium）；Chromium 1440/900、768/1024、390/844、360/800：无横向溢出，SVG 图签/节点可读、无 JS 异常、锚点和图片均可打开，真实点击文章交互。
 4. 离线加载、键盘 focus、减弱动画、打印检查。若未实际跑浏览器不得写“已通过浏览器 QA”。
 5. 使用分支/PR 审核变更及存量页面迁移；部署后检查 GitHub Pages 实际 URL 和 Actions 状态。Pages 未启用时明确说明设置前置条件。
 

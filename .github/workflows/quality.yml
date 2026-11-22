@@ -19,3 +19,16 @@ jobs:
         run: python tools/validate_examples.py
       - name: Build artifact
         run: python tools/build_site.py
+      - name: Install Chromium browser QA tools
+        run: |
+          python -m pip install playwright==1.56.0
+          python -m playwright install --with-deps chromium
+      - name: Run browser QA at desktop and mobile widths
+        run: python tools/browser_check.py
+      - name: Upload browser screenshots and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-qa
+          path: reports/browser/
+          retention-days: 7
