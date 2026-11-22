@@ -14,6 +14,8 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
+SITE = ROOT / "_site"
+SERVE_ROOT = SITE if SITE.is_dir() else DOCS
 OUTPUT = ROOT / "reports" / "browser"
 PAGES = ["index.html"] + [f"chapters/{n:02}.html" for n in range(1, 29)]
 VIEWS = [("desktop", 1440, 900), ("tablet", 768, 1024),
@@ -24,7 +26,7 @@ class Handler(SimpleHTTPRequestHandler):
 
 def main():
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    httpd = ThreadingHTTPServer(("127.0.0.1", 0), partial(Handler, directory=str(DOCS)))
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), partial(Handler, directory=str(SERVE_ROOT)))
     Thread(target=httpd.serve_forever, daemon=True).start()
     base = f"http://127.0.0.1:{httpd.server_address[1]}/"
     failures, results = [], []
@@ -176,7 +178,7 @@ def main():
                             if status.inner_text()==before or "等待" not in status.inner_text():
                                 failures.append("28: capstone dynamic simulation interaction did not update")
                         name=path.replace("/", "-").replace(".html", "")
-                        page.screenshot(path=str(OUTPUT / f"{name}-{key}.png"), full_page=True)
+                        page.screenshot(path=str(OUTPUT / f"{name}-{key}.jpg"), full_page=True, type="jpeg", quality=78)
                         results.append({"page": path, "viewport": key, "http": response.status if response else None,
                                         **stats, "consoleErrors": errors})
                     except Exception as exc:
@@ -186,7 +188,7 @@ def main():
             browser.close()
     finally:
         httpd.shutdown()
-    report = {"pages": len(PAGES), "viewports": len(VIEWS), "cases": len(results),
+    report = {"servedFrom": str(SERVE_ROOT.relative_to(ROOT)), "pages": len(PAGES), "viewports": len(VIEWS), "cases": len(results),
               "failures": failures, "results": results}
     (OUTPUT / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Browser QA: {len(results)} cases, {len(failures)} failures")

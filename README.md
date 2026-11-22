@@ -52,12 +52,12 @@ python3 tools/build_site.py
 # 可选：实际 Chromium 多视口截图、交互和打印测试
 python3 -m pip install playwright==1.56.0
 python3 -m playwright install chromium
-python3 tools/browser_check.py
+python3 tools/browser_check.py  # build_site.py 之后优先检查 _site/ 构建产物
 
 python3 -m http.server 8000 -d docs
 ```
 
-在浏览器访问 http://localhost:8000。构建脚本把 `docs/` 复制到 `_site/`，不会修改源文件。GitHub Actions 负责静态验证、代码示例和浏览器 QA，再上传 Pages 构建产物。仓库 Settings → Pages → Source 应选择 GitHub Actions；只有实际部署工作流成功后，才能称为已发布。
+在浏览器访问 http://localhost:8000。构建脚本把 `docs/` 复制到 `_site/`，不会修改源文件。PR 的 `quality.yml` 执行静态校验、28 篇代码示例、构建和 Chromium 多视口 QA；合并到 `main` 后，`pages.yml` 会重复发布前校验，并让浏览器直接检查 `_site/` 构建产物。浏览器验收失败会阻止 Pages artifact 上传和部署，同时保留 QA 报告。仓库 Settings → Pages → Source 应选择 GitHub Actions；只有实际部署工作流成功后，才能称为已发布。
 
 ## 编辑与验证原则
 

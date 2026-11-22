@@ -50,6 +50,8 @@
 - 21–25 每章保持独立可理解，Python 仅一个 <pre><code> 片段供 tools/validate_examples.py 执行。SVG 的节点箭头需对应事实，独立 XML / 浏览器验收。
  
 ## 学习型规划、研究前沿与综合项目审查原则
+- Pages 发布门禁必须在 `build_site.py` 之后对 `_site/` 执行 Chromium 多视口验收；浏览器失败不得上传 Pages artifact 或部署。PR 质量检查负责同一组检查，避免把静态校验成功误称为浏览器验收成功。
+- 动态局部规划的“等待”必须像移动动作一样经过下一时刻顶点冲突检查；若等待不安全，应显式停止/报告，不得把原地不动当作默认安全。滚动局部规划不能假设机器人每一步都仍位于全局路径节点上，应维护 waypoint 进度或使用投影/重定位逻辑。
 - BC 的监督样本来自专家访问分布；必须解释策略执行造成的 covariate shift。DAgger 通过 learner-induced observations 聚合专家标签，不能写成无条件安全保证。
 - 区分模仿学习、强化学习、可微分规划和 VLA：监督标签、MDP 奖励、可训练搜索模块和视觉语言动作模型不是同一个范式。Q-learning 终止状态不得 bootstrap；POMDP 不能假装完全可观测。
 - 任意 learned heuristic 不自动 admissible/consistent；Neural A*、VIN 的结构和训练目标需分别说明。训练分布、推理/执行时延和 OOD 评估要分开。

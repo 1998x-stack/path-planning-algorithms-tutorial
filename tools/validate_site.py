@@ -44,14 +44,28 @@ def check():
             if file.parent.name=="chapters" and p.figure<3: errors.append(f"{file}: expected >=3 figures, got {p.figure}")
         errors.extend(f"{file}: {e}" for e in p.errors)
         for tag,link in p.links:
-            if link.startswith(("http:","https:","mailto:","javascript:","data:","#","//")): continue
+            if link.startswith(("http:","https:","mailto:","javascript:","data:","//")): continue
             u=urlsplit(link)
-            if not u.path: continue
+            if not u.path:
+                if u.fragment and unquote(u.fragment) not in p.ids:
+                    errors.append(f"{file}: unknown anchor {link}")
+                continue
             dest=(file.parent/unquote(u.path)).resolve()
             if not dest.is_relative_to(DOCS.resolve()) or not dest.is_file():
                 errors.append(f"{file}: missing asset {link}")
-            elif u.fragment and dest.suffix==".html" and dest==file.resolve() and u.fragment not in p.ids:
-                errors.append(f"{file}: unknown anchor {link}")
+            elif u.fragment and dest.suffix==".html":
+                if dest == file.resolve():
+                    target_ids = p.ids
+                else:
+                    target = Tags()
+                    try:
+                        target.feed(dest.read_text(encoding="utf-8"))
+                        target_ids = target.ids
+                    except Exception as exc:
+                        errors.append(f"{file}: cannot inspect anchor target {link}: {exc}")
+                        target_ids = set()
+                if unquote(u.fragment) not in target_ids:
+                    errors.append(f"{file}: unknown anchor {link}")
     for i in range(1, 29):
         evidence = DOCS / 'evidence' / f'{i:02}.json'
         if not evidence.is_file(): errors.append(f'missing evidence ledger: {evidence}')
