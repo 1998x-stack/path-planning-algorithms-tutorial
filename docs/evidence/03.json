@@ -1,0 +1,30 @@
+{
+  "article": "03",
+  "claims": [
+    {
+      "id": "graph-search",
+      "claim": "BFS discovers shortest number-of-edges paths in unweighted graphs and DFS need not",
+      "kind": "textbook",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/book.html",
+      "locator": "Chapter 2 Discrete Planning",
+      "status": "verified"
+    },
+    {
+      "id": "weighted-path",
+      "claim": "BFS edge count differs from minimum total cost when weights vary",
+      "kind": "derived",
+      "source_url": "https://www.redblobgames.com/pathfinding/a-star/introduction.html",
+      "locator": "Breadth First Search vs Dijkstra",
+      "status": "derived",
+      "notes": "Counterexample graph total 10 vs 3"
+    },
+    {
+      "id": "grid-demo",
+      "claim": "nine-by-nine map and its BFS expansion are deterministic toy simulation",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "docs/assets/js/site.js",
+      "status": "illustrative"
+    }
+  ]
+}
