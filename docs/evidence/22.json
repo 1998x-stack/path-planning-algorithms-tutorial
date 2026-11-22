@@ -1,0 +1,37 @@
+{
+  "article": "22",
+  "claims": [
+    {
+      "id": "casadi",
+      "claim": "CasADi支持直接单次打靶、多重打靶、配点等最优控制离散化，具有自动微分和NLP求解器接口",
+      "kind": "official-documentation",
+      "source_url": "https://web.casadi.org/docs/",
+      "locator": "CasADi documentation §8 Optimal control with CasADi",
+      "status": "verified"
+    },
+    {
+      "id": "dompc",
+      "claim": "do-mpc提供建模、MPC优化和状态估计工具",
+      "kind": "official-documentation",
+      "source_url": "https://www.do-mpc.com/",
+      "locator": "do-mpc project documentation",
+      "status": "verified"
+    },
+    {
+      "id": "lavalle",
+      "claim": "动态规划中状态转换与机器人运动模型的联系",
+      "kind": "textbook",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/",
+      "locator": "LaValle Planning Algorithms, kinodynamic planning",
+      "status": "verified"
+    },
+    {
+      "id": "toy",
+      "claim": "教学程序穷举81条离散控制序列并在构造的扰动后重规划，不是连续非线性MPC求解器",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "22.html Python example",
+      "status": "illustrative"
+    }
+  ]
+}
