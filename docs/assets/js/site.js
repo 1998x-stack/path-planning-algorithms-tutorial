@@ -71,3 +71,20 @@ document.addEventListener("DOMContentLoaded",()=>{
    for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));
  });
 });
+
+// Interactive candidate-velocity comparison used by chapter 16 (DWA).
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-dwa-demo]");if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-cand]")],arcs=[...demo.querySelectorAll("[data-cand-trajectory]")];
+ const notes={
+   "1":"候选 1：朝向一般，但远离障碍，综合安全。",
+   "2":"候选 2：速度最快，但预测圆弧会穿过障碍，必须在评分前被可行窗口剔除。",
+   "3":"候选 3：朝向目标、速度较快，但仍需确认与障碍保持了足够间距。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{
+   const sel=b.dataset.cand;
+   for(const a of arcs)a.setAttribute("opacity",a.dataset.candTrajectory===sel?"1":"0.22");
+   status.textContent=notes[sel];
+   for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));
+ });
+});

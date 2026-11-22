@@ -1,0 +1,45 @@
+{
+  "article": "16",
+  "claims": [
+    {
+      "id": "dwa-paper",
+      "claim": "DWA 由 Fox、Burgard 与 Thrun 于 1997 年提出，在速度空间搜索并只保留可行速度（速度边界、动力学窗口与刹车可行速度的交集）",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1109/100.580977",
+      "locator": "Fox, Burgard & Thrun 1997, IEEE Robotics & Automation Magazine 4(1):23-33",
+      "status": "verified"
+    },
+    {
+      "id": "scoring",
+      "claim": "DWA 用朝向、障碍距离与速度三项加权求和对候选轨迹评分，并在求和前归一化各分量",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1109/100.580977",
+      "locator": "同论文，目标函数与归一化讨论",
+      "status": "verified"
+    },
+    {
+      "id": "ros",
+      "claim": "ROS 1 导航栈提供 dwa_local_planner 作为局部规划器",
+      "kind": "official-documentation",
+      "source_url": "https://wiki.ros.org/dwa_local_planner",
+      "locator": "ROS wiki 包页面",
+      "status": "verified"
+    },
+    {
+      "id": "nav2",
+      "claim": "ROS 2 Nav2 的现代局部控制器（如 DWB、MPPI）与经典 DWA 在轨迹生成和代价结构上存在差异",
+      "kind": "official-documentation",
+      "source_url": "https://docs.nav2.org/",
+      "locator": "Nav2 官方文档，控制器章节",
+      "status": "verified"
+    },
+    {
+      "id": "example",
+      "claim": "页面 Python 示例为确定性教学示意：给定输入下断言通过并输出 v=0.45 m/s, w=-0.10 rad/s",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "16.html Python 代码块与断言",
+      "status": "derived"
+    }
+  ]
+}
