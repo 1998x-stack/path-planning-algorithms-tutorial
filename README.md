@@ -44,6 +44,10 @@ Python 3.10+，不需要 Node、第三方字体、在线数学脚本。
 ```bash
 python3 tools/validate_site.py
 python3 tools/build_site.py
+# 可选：实际 Chromium 多视口截图测试
+python3 -m pip install playwright==1.56.0
+python3 -m playwright install chromium
+python3 tools/browser_check.py
 python3 -m http.server 8000 -d docs
 ```
 
