@@ -1,0 +1,38 @@
+{
+  "article": "05",
+  "claims": [
+    {
+      "id": "a-star-1968",
+      "claim": "A* uses g+h and establishes optimality under admissibility/consistency conditions",
+      "kind": "primary-paper",
+      "source_url": "https://ieeexplore.ieee.org/document/4082128",
+      "locator": "Hart, Nilsson, Raphael 1968",
+      "status": "verified",
+      "notes": "Conditions differ for tree-search and graph-search variants"
+    },
+    {
+      "id": "correction",
+      "claim": "authors' 1972 correction tightens conditions around optimal efficiency",
+      "kind": "primary-paper",
+      "source_url": "https://cse.sc.edu/~MGV/csce580f11/astarHNR1972.pdf",
+      "locator": "Correction",
+      "status": "verified"
+    },
+    {
+      "id": "grid-heuristics",
+      "claim": "Manhattan, Euclidean, octile and Chebyshev metrics under explicitly stated movement costs",
+      "kind": "derived",
+      "source_url": "https://www.redblobgames.com/pathfinding/a-star/implementation.html",
+      "locator": "Heuristic for grids",
+      "status": "derived"
+    },
+    {
+      "id": "frontier-numbers",
+      "claim": "P and Q scores are illustrative, not measurements",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "Figure 05-scoring-frontier",
+      "status": "illustrative"
+    }
+  ]
+}
