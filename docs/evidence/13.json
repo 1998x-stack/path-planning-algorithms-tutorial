@@ -1,0 +1,37 @@
+{
+  "article": "13",
+  "claims": [
+    {
+      "id": "original",
+      "claim": "PRM把学习/预处理阶段与多查询阶段分开，在自由构型空间构造稀疏路线图",
+      "kind": "primary-paper",
+      "source_url": "https://kavrakilab.rice.edu/publications/kavraki-svestka1996probabilistic-roadmaps-for.html",
+      "locator": "Kavraki et al. IEEE Transactions Robotics Automation 1996",
+      "status": "verified"
+    },
+    {
+      "id": "prmstar",
+      "claim": "PRM*适当连接半径或随n增长的近邻数量有渐进最优保证",
+      "kind": "primary-paper",
+      "source_url": "https://dspace.mit.edu/entities/publication/77dff1d1-ffd6-42f3-a3a5-fef87a964959",
+      "locator": "Karaman & Frazzoli 2011",
+      "status": "verified"
+    },
+    {
+      "id": "lazy",
+      "claim": "LazyPRM利用延迟碰撞验证思路",
+      "kind": "official-documentation",
+      "source_url": "https://ompl.kavrakilab.org/core/planners.html",
+      "locator": "Geometric Planners LazyPRM",
+      "status": "verified"
+    },
+    {
+      "id": "toy",
+      "claim": "130点双查询是原创固定种子的二维示例",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "13.html Python example",
+      "status": "illustrative"
+    }
+  ]
+}
