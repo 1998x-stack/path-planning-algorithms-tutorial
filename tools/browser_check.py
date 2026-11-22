@@ -41,6 +41,14 @@ def main():
                     try:
                         response = page.goto(base + path, wait_until="load", timeout=30000)
                         page.wait_for_timeout(150)  # allow initial DOMReady enhancements
+                        # Lazy images below the first viewport have not loaded yet.
+                        # Force them to load and decode before declaring image failure.
+                        page.evaluate("""async () => {
+                            await Promise.all([...document.images].map(async image => {
+                                image.loading = 'eager';
+                                try { await image.decode(); } catch (_) { /* verified below */ }
+                            }));
+                        }""")
                         stats = page.evaluate("""() => ({
                             scroll: document.documentElement.scrollWidth,
                             viewport: window.innerWidth,
