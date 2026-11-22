@@ -1,0 +1,70 @@
+{
+  "chapter": "27",
+  "snapshot_date": "2026-11-23",
+  "claims": [
+    {
+      "id": "nomad",
+      "claim": "NoMaD unifies goal-conditioned navigation and task-agnostic exploration using a diffusion policy and reports real-world mobile robot experiments",
+      "kind": "primary-paper-project",
+      "source_url": "https://general-navigation-models.github.io/nomad/",
+      "locator": "ICRA 2024 paper page and abstract",
+      "status": "verified"
+    },
+    {
+      "id": "rt2",
+      "claim": "RT-2 co-fine-tunes vision-language models on robotic trajectory and internet-scale vision-language data, encoding robot actions as tokens",
+      "kind": "primary-paper",
+      "source_url": "https://proceedings.mlr.press/v229/zitkovich23a.html",
+      "locator": "CoRL 2023 paper abstract",
+      "status": "verified"
+    },
+    {
+      "id": "pi05",
+      "claim": "pi0.5 uses heterogeneous robot data, high-level semantic prediction and multimodal examples for open-world robot manipulation generalization",
+      "kind": "primary-paper",
+      "source_url": "https://proceedings.mlr.press/v305/black25a.html",
+      "locator": "CoRL 2025 paper abstract",
+      "status": "verified"
+    },
+    {
+      "id": "vln-survey",
+      "claim": "2026 component-centric VLN survey organizes instruction understanding, environment representations, embodied agents and deployment",
+      "kind": "peer-reviewed-survey",
+      "source_url": "https://www.mdpi.com/2076-3417/16/16/8050",
+      "locator": "Applied Sciences 2026, 16(16), 8050; scope through June 2026",
+      "status": "verified"
+    },
+    {
+      "id": "vla-survey",
+      "claim": "Nov 13 2026 arXiv preprint surveys 88 VLA works from Dec 2022 through Oct 2026",
+      "kind": "preprint-survey",
+      "source_url": "https://arxiv.org/abs/2611.18372",
+      "locator": "arXiv:2611.18372 abstract and metadata; not peer reviewed",
+      "status": "verified"
+    },
+    {
+      "id": "gemini-announcement",
+      "claim": "Google DeepMind announced Gemini Robotics 2.5 on 2026-11-10 as a VLA model focused on dexterity and broader robot skills",
+      "kind": "vendor-announcement",
+      "source_url": "https://deepmind.google/blog/gemini-robotics-2-5-accelerates-real-world-physical-intelligence/",
+      "locator": "Google DeepMind blog dated 2026-11-10; vendor announcement, not independent navigation benchmark",
+      "status": "verified"
+    },
+    {
+      "id": "curobo",
+      "claim": "cuRobo presents GPU-parallelized collision-free motion generation and optimization for robot manipulators",
+      "kind": "primary-paper",
+      "source_url": "https://research.nvidia.com/publication/2023-05_curobo-parallelized-collision-free-robot-motion-generation",
+      "locator": "ICRA 2024 paper page",
+      "status": "verified"
+    },
+    {
+      "id": "candidate-demo",
+      "claim": "Constructed three candidate grid routes; direct route rejected and upper route selected after occupancy and adjacency validation",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "27.html standard-library candidate validation example",
+      "status": "illustrative"
+    }
+  ]
+}
