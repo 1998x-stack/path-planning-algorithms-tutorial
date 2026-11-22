@@ -1,0 +1,37 @@
+{
+  "article": "09",
+  "claims": [
+    {
+      "id": "dlite",
+      "claim": "D* Lite基于Lifelong Planning A*从目标增量修复路径",
+      "kind": "primary-paper",
+      "source_url": "https://idm-lab.org/bib/abstracts/Koen02e.html",
+      "locator": "Koenig & Likhachev, AAAI 2002",
+      "status": "verified"
+    },
+    {
+      "id": "key-rhs",
+      "claim": "rhs、二元key、km、ComputeShortestPath更新对应论文伪代码",
+      "kind": "primary-paper",
+      "source_url": "https://www.cs.cmu.edu/~maxim/files/dlite_tro05.pdf",
+      "locator": "Figure 4, Koenig & Likhachev 2005",
+      "status": "verified"
+    },
+    {
+      "id": "erratum",
+      "claim": "2002年版伪代码第33行注释有公开勘误",
+      "kind": "primary-paper",
+      "source_url": "https://idm-lab.org/bib/abstracts/Koen02e.html",
+      "locator": "Errata",
+      "status": "verified"
+    },
+    {
+      "id": "toy",
+      "claim": "图的边权变化从成本2转为4，是可运行代码验证的合成示例",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "Python example / 09-replanning-before-after.svg",
+      "status": "derived"
+    }
+  ]
+}
