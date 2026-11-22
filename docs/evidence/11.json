@@ -1,0 +1,38 @@
+{
+  "article": "11",
+  "claims": [
+    {
+      "id": "history",
+      "claim": "RRT 原始方法及面向高维规划问题的随机树结构",
+      "kind": "primary-paper",
+      "source_url": "https://msl.cs.illinois.edu/~lavalle/papers/Lav98c.pdf",
+      "locator": "LaValle 1998 tech report",
+      "status": "verified",
+      "notes": "独立重绘示意图，未复用论文原图"
+    },
+    {
+      "id": "bias",
+      "claim": "Voronoi偏置可解释外围顶点较易被均匀采样选中",
+      "kind": "author-index",
+      "source_url": "https://lavalle.pl/rrtpubs.html",
+      "locator": "LaValle RRT Publications",
+      "status": "verified"
+    },
+    {
+      "id": "probability",
+      "claim": "基础RRT在适当正则性假设下概率完备但不渐进最优",
+      "kind": "textbook",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/",
+      "locator": "Sampling-based Motion Planning",
+      "status": "verified"
+    },
+    {
+      "id": "toy",
+      "claim": "固定二维墙、步长0.48、15%目标偏置及随机种子均为原创教学配置",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "11.html Python example",
+      "status": "illustrative"
+    }
+  ]
+}
