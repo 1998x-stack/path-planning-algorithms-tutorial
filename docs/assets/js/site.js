@@ -162,3 +162,14 @@ document.addEventListener("DOMContentLoaded",()=>{
  };
  for(const b of buttons)b.addEventListener("click",()=>{const sel=b.dataset.conflict;for(const p of panels)p.setAttribute("opacity",p.dataset.conflictPanel===sel?"1":"0.35");status.textContent=notes[sel];for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));});
 });
+
+// Interactive objective-weight comparison used by chapter 22 (optimization).
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-opt-demo]");if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-opt]")],paths=[...demo.querySelectorAll("[data-opt-path]")];
+ const notes={
+   length:"仅长度：中间点停在 y=0，路径直穿障碍中心，避障惩罚很大。",
+   avoid:"长度 + 避障：中间点被推到 y≈0.56，最小间距为正，路径更长但满足避障。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{const sel=b.dataset.opt;for(const p of paths)p.setAttribute("opacity",p.dataset.optPath===sel?"1":"0.2");status.textContent=notes[sel];for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));});
+});

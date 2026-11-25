@@ -1,290 +1,34 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第22章 优化模型方法</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html">第20章 多目标路径规划</a></li>
-            <li><a href="21.html">第21章 多机器人协调</a></li>
-            <li><a href="22.html" class="active">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="把路径规划写成优化问题：决策变量、目标函数与约束；MPC 滚动优化、轨迹优化的梯度法与局部极小，附可运行示例与断言。"><title>22 · 优化模型方法 — 路径规划算法</title><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="21.html">上一章</a><a href="23.html">下一章</a></nav></div></header>
+<div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#problem">专用算法之外的另一条路</a><a href="#formulation">三要素与标准形式</a><a href="#mpc">模型预测控制与滚动优化</a><a href="#trajectory">轨迹优化的两类做法</a><a href="#interaction">交互：权重改变路径</a><a href="#implementation">可运行的权重—平滑示例</a><a href="#limits">边界条件</a><a href="#references">原始来源</a></nav></details></aside>
+<main class="article-main" id="content"><article>
+<header class="article-header"><p class="article-meta">CONSTRAINTS &amp; ONLINE PLANNING / 22 OF 28</p><h1>优化模型方法：把路径规划写成一个优化问题</h1><p class="dek">A*、RRT*、DWA 都是“专用”算法，各有一套启发式或采样规则。换一个视角：把路径规划写成一个带约束的优化问题，交给通用求解器。本章讲清决策变量、目标函数与约束，MPC 的滚动优化，以及轨迹优化的梯度方法与局部极小陷阱。</p></header>
+<section id="problem" aria-labelledby="problem-title"><h2 id="problem-title">专用算法之外的另一条路</h2><p>前面各章的方法都自带一套求解规则：A* 用代价函数与启发式，RRT* 用采样与重连，DWA 在速度空间采样。它们各自解决得很好，但当你同时要求“避障 + 平滑 + 满足加速度与转向限制 + 固定起终点位姿”时，逐个算法拼接会很别扭。</p><p>一个具体困境：先用 A* 算出一条几何路径，再做后处理平滑（第 15 章）。平滑会改变路径的几何，原本经过碰撞检查的路径可能被“拉”进障碍物；而且平滑一般不保证满足加速度、曲率限制。于是你只能反复调参、重做检查。</p><p>优化方法换一个思路：把“想要什么（目标）”与“必须满足什么（约束）”<strong>一起</strong>写进一个数学问题，让求解器同时考虑。它不是要取代采样或图搜索，而是多了一种统一的表达方式。</p><div class="note"><p>优化的“解”依赖于目标函数与约束是否把真实需求写对。写得不对，求解器会把一个错的问题解得很漂亮。并且优化问题通常非凸，解可能是局部极小——这一点在第 4 节讨论。</p></div></section>
+<section id="formulation" aria-labelledby="formulation-title"><h2 id="formulation-title">三要素与标准形式</h2><p>把路径规划写成优化问题，只需回答三个问题：</p><ul><li><strong>决策变量</strong>——要确定什么。可以是路径上的关键点 <code>x<sub>0</sub>,…,x<sub>N</sub></code>，也可以是每段的控制量 <code>u<sub>0</sub>,…,u<sub>N-1</sub></code>（加速度、转向角等）。</li><li><strong>目标函数</strong>——想最小化什么。常见的有路径长度、时间、能耗，以及平滑度（加速度平方和）与避障惩罚。通常是加权和：<code>J = w₁·长度 + w₂·平滑 + w₃·避障</code>。</li><li><strong>约束条件</strong>——必须满足什么。包括运动学/动力学约束（最大转弯半径、加速度、速度）、避障（与障碍距离大于安全阈值）、边界（起终点位姿固定）。</li></ul><p>把它们写在一起，就是一个标准的带约束优化问题：</p><div class="equation math-scroll" data-math-scroll tabindex="0" role="region" aria-label="(1) 路径规划的优化标准形式"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="最小化目标 J，满足动力学、边界与不等式约束"><mtable><mtr><mtd><mi>min</mi></mtd><mtd><mi>J</mi><mo>(</mo><mi>x</mi><mo>,</mo><mi>u</mi><mo>)</mo><mo>=</mo><munder><mo>Σ</mo><mi>i</mi></munder><mi>c</mi><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>,</mo><msub><mi>u</mi><mi>i</mi></msub><mo>)</mo></mtd></mtr><mtr><mtd><mtext>s.t.</mtext></mtd><mtd><msub><mi>x</mi><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><mi>f</mi><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>,</mo><msub><mi>u</mi><mi>i</mi></msub><mo>)</mo><mo>,</mo><mspace width="0.5em"/><msub><mi>x</mi><mn>0</mn></msub><mo>=</mo><msub><mi>x</mi><mtext>start</mtext></msub><mo>,</mo><mspace width="0.5em"/><msub><mi>x</mi><mi>N</mi></msub><mo>=</mo><msub><mi>x</mi><mtext>goal</mtext></msub></mtd></mtr><mtr><mtd/><mtd><mi>g</mi><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>,</mo><msub><mi>u</mi><mi>i</mi></msub><mo>)</mo><mo>≤</mo><mn>0</mn><mo>,</mo><mspace width="0.5em"/><mi>h</mi><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>,</mo><msub><mi>u</mi><mi>i</mi></msub><mo>)</mo><mo>=</mo><mn>0</mn></mtd></mtr></mtable></math><span class="equation-label">(1) 目标函数与四类约束（动力学、边界、不等式、等式）</span></div><figure><p class="figure-kicker">OPTIMIZATION · 22</p><img src="../assets/figures/22-opt-pipeline.svg" loading="lazy" alt="优化流程：左侧列出决策变量、目标函数与约束，箭头指向中间的求解器，求解器输出一条满足约束且使目标较小的轨迹。"><figcaption>优化建模的三个输入（决策变量、目标、约束）交给求解器，输出轨迹。与专用算法不同，这里“想要什么”与“必须满足什么”是分开写的，因此改需求只需改目标或约束。</figcaption></figure></section>
+<section id="mpc" aria-labelledby="mpc-title"><h2 id="mpc-title">模型预测控制与滚动优化</h2><p>把优化用于运动的一个典型是<strong>模型预测控制（MPC）</strong>，流程与第 19 章的滚动窗口同源：</p><ol><li>用当前状态与动力学模型，在未来一个固定长度 <code>H</code>（预测时域）内求解最优控制序列；</li><li>只执行序列中的第一步控制量；</li><li>用新的测量更新状态，重新求解；</li><li>重复。</li></ol><p>MPC 的价值在于<strong>约束被显式写进优化问题</strong>：速度上限、加速度上限、转向角限制、避障都可以作为不等式约束，由求解器保证结果满足它们，而不是先规划再“补”。</p><div class="note caution"><p>“每步都可行”并不自动意味着系统能长期稳定。要让 MPC 具有<strong>递归可行性</strong>（每步至少存在一个可行解）并稳定，通常需要额外的终端约束或终端代价。具体条件见 Mayne 等（2000）的综述。</p></div></section>
+<section id="trajectory" aria-labelledby="trajectory-title"><h2 id="trajectory-title">轨迹优化的两类做法</h2><p>把路径本身当作决策变量的优化叫<strong>轨迹优化</strong>。工程上主要有两类：</p><ul><li><strong>基于梯度</strong>——用障碍距离的势场作为目标的一部分，对整条轨迹做梯度下降。代表是 CHOMP（Ratliff 等 2009）；它需要可微的距离/碰撞代价。TrajOpt（Schulman 等 2014）则在信赖域内用序列凸优化（SQP）直接处理碰撞约束。</li><li><strong>无梯度/随机</strong>——STOMP（Kalakrishnan 等 2011）在轨迹上采样噪声扰动，用代价加权平均产生新轨迹，不要求代价可微，代价是每次迭代要大量采样。</li></ul><p>两类方法都与初值有关。目标函数中的避障惩罚通常是<strong>非凸</strong>的（障碍物后方也是代价高的区域），因此结果可能是局部极小：一条卡在障碍一侧的轨迹已经无法通过局部移动逃脱。</p><figure><p class="figure-kicker">OPTIMIZATION · 22</p><img src="../assets/figures/22-weights.svg" loading="lazy" alt="三个面板共用相同的起点、终点与障碍，仅改变目标中长度、平滑、避障三项的权重，得到一条偏直、一条偏平滑、一条远离障碍的路径。"><figcaption>权重决定形状：同一场景只改变目标函数中三项的权重，输出就不同。因此“优化得到的最优”总是相对于一个目标函数而言，调参本身就是建模的一部分。</figcaption></figure><div class="note"><p>常见补救：先给一个粗糙可行的初值（如 A* 或 RRT 的路径），只在它附近做局部优化；或把优化当平滑器，用碰撞检查拦住不可行结果。这正好说明优化与搜索/采样是互补的。</p></div></section>
+<section id="interaction" aria-labelledby="interaction-title"><h2 id="interaction-title">交互：权重如何改变路径</h2><p>下图中起点、终点与障碍相同，切换两种目标配置：只看长度会得到一条穿过障碍的直线；加入避障惩罚后，优化把中间点推离障碍。这与正文的确定性示例一致。</p><div class="interactive-box" data-opt-demo><div class="demo-controls" role="group" aria-label="目标配置"><button type="button" data-opt="length" aria-pressed="true">仅长度</button><button type="button" data-opt="avoid" aria-pressed="false">长度 + 避障</button></div><svg viewBox="0 0 520 260" role="img" aria-labelledby="opt-demo-title opt-demo-desc"><title id="opt-demo-title">目标函数权重对路径的影响</title><desc id="opt-demo-desc">起点在左、终点在右，中间一个圆形障碍。仅优化长度时路径为穿过障碍中心的直线；加入避障惩罚后路径向上弯曲，最小间距为正，但长度更长。</desc><rect width="520" height="260" rx="10" fill="#eef4f0"/><circle cx="260" cy="130" r="28" fill="#f0d3c9" stroke="#d06d4d" stroke-width="2"/><text x="260" y="174" font-size="13" fill="#a5482c" text-anchor="middle">障碍 R=0.5</text><polyline data-opt-path="length" points="60,130 460,130" fill="none" stroke="#d06d4d" stroke-width="4" stroke-dasharray="9 6"/><path data-opt-path="avoid" d="M60 130 Q260 34 460 130" fill="none" stroke="#147f80" stroke-width="4"/><circle cx="60" cy="130" r="7" fill="#203035"/><circle cx="460" cy="130" r="7" fill="#7461ba"/><text x="60" y="152" font-size="13" fill="#203035" text-anchor="middle">起点</text><text x="460" y="152" font-size="13" fill="#7461ba" text-anchor="middle">终点</text><text x="300" y="112" font-size="13" fill="#a5482c">穿过障碍</text></svg><p class="demo-status" role="status" aria-live="polite">仅长度：中间点停在 y=0，路径直穿障碍中心，避障惩罚很大。</p><p class="micro">图为示意，与正文示例的数值不完全同比例；正文示例给出可复现的代价与最小间距。</p></div></section>
+<section id="implementation" aria-labelledby="implementation-title"><h2 id="implementation-title">可运行的权重—平滑示例（Python 3.10+）</h2><p>用三个点（起点、中间点、终点）把问题降到一维：中间点的纵坐标 <code>y</code> 是唯一决策变量。目标 = 路径长度 + 避障惩罚；用一个圆形障碍（圆心 (1,0)、半径 0.5）挡在直线上。从 <code>y=0.1</code> 开始做梯度下降，断言代价下降且中间点被推离障碍。存成 <code>opt_demo.py</code> 运行，断言应当通过。</p><pre><code>import math  # Python 3.10+
+S, G = (0.0, 0.0), (2.0, 0.0)
+OBST = (1.0, 0.0, 0.5)          # 圆心 cx, cy 与半径 r
 
-        <p>大家好！如果你一路跟着课程走到了这里，你会发现我们已经学了很多算法：从 A* 到 RRT*，从 DWA 到 ORCA。这些算法各有特色，但它们有一个共同点——都是"专用"算法，各自用一套特定的启发式规则或采样策略来求解路径规划问题。而今天我们要换一个视角，把整个路径规划问题放到<strong>数学优化（Mathematical Optimization）</strong>的框架下来思考。这种方法的好处是：一旦你有了一个统一的数学建模方式，你就可以利用各种现成的优化求解器来求解，而不用每次都从头发明一个新算法。</p>
+def cost(y):
+    mid = (1.0, y)
+    length = math.dist(S, mid) + math.dist(mid, G)
+    d = math.dist(mid, (OBST[0], OBST[1]))
+    pen = 100.0 * (OBST[2] - d) ** 2 if d &lt; OBST[2] else 0.0
+    return 1.0 * length + pen
 
-        <p>讲个我自己的经历。有次我在做一个 AGV 的轨迹规划，要求路径不仅要避开障碍物，还要尽可能平滑（毕竟运的是精密仪器，颠簸不得），同时还要满足加速度限制和转向角限制。我用 A* 算了一条路径，然后做后处理平滑——结果平滑后的路径穿过了障碍物，来回调了一个多月。后来我的师兄看了一眼说："你为什么不直接把它写成优化问题？" 他用三行数学公式就把我的问题定义清楚了，然后用一个开源的优化求解器一个小时就搞定了。那一刻我深刻理解了什么叫"<strong>数学的力量</strong>"。</p>
+y, lr = 0.1, 0.05
+for _ in range(200):
+    g = (cost(y + 1e-6) - cost(y - 1e-6)) / 2e-6   # 有限差分梯度
+    y -= lr * g
 
-        <h2>路径规划作为优化问题</h2>
-
-        <p>把路径规划写成优化问题，通常包含三个要素：</p>
-
-        <p><strong>1. 决策变量（Decision Variables）</strong>——你需要确定的东西。在路径规划中，决策变量就是路径上的关键点（waypoints）或控制输入。比如：x₀, x₁, ..., x_N 表示路径上的 N+1 个位置点，u₀, u₁, ..., u_{N-1} 表示每个段上的控制量（加速度、转向角等）。</p>
-
-        <p><strong>2. 目标函数（Objective Function / Cost Function）</strong>——你想最小化的东西。可以是路径总长度、总时间、能量消耗、路径平滑度（加速度平方和）、障碍物安全距离倒数的惩罚等。通常是一个加权和：</p>
-
-        <p style="text-align:center; font-style:italic;">min J = w₁ · (路径长度) + w₂ · (平滑度) + w₃ · (障碍物惩罚)</p>
-
-        <p><strong>3. 约束条件（Constraints）</strong>——你必须满足的条件。包括：</p>
-        <ul>
-            <li><strong>运动学约束</strong>——车辆不能原地转向、最大转弯半径有限</li>
-            <li><strong>动力学约束</strong>——最大加速度、最大速度、刹车距离</li>
-            <li><strong>避障约束</strong>——路径上的每个点与障碍物的距离大于安全阈值</li>
-            <li><strong>边界约束</strong>——起点和终点的位置、姿态固定</li>
-        </ul>
-
-        <p>形式化地写出来就是这样：</p>
-
-        <pre><code>minimize    J(x, u) = Σ c(x_i, u_i)          // 目标函数：累计代价
-subject to  x_{i+1} = f(x_i, u_i)            // 动力学模型
-            x_0 = x_start                     // 初始条件
-            x_N = x_goal                      // 终点条件
-            g(x_i, u_i) ≤ 0                   // 不等式约束（避障、限速等）
-            h(x_i, u_i) = 0                   // 等式约束（姿态要求等）</code></pre>
-
-        <p>一旦你将路径规划写成了这样的形式，你就有了强大的工具箱可以利用——二次规划（QP）、序列二次规划（SQP）、内点法、梯度下降、甚至商用求解器（如 Gurobi、CPLEX）。这些求解器经过几十年的优化，比任何人手写的专用规划器都要高效和稳定。</p>
-
-        <h2>MPC模型预测控制</h2>
-
-        <p>模型预测控制（Model Predictive Control, MPC）是将优化方法用于路径规划/控制的最典型代表。它的核心流程是：</p>
-
-        <ol>
-            <li>在每一时刻，利用当前状态和系统的动力学模型，优化求解一个固定时间窗口（比如未来 3 秒）内的最优控制序列</li>
-            <li>只执行这个序列中的第一步控制量</li>
-            <li>进入下一时刻，利用最新的传感器测量更新状态，重新求解优化问题</li>
-            <li>重复——这就是"滚动优化（Receding Horizon）"</li>
-        </ol>
-
-        <p>MPC 最大的优势是<strong>可以显式地处理约束</strong>。不论是避障约束、速度限制、加速度限制，还是转向角限制，你都可以把它们写成不等式约束，然后求解器会保证输出结果满足所有约束。这比 A* + 后处理平滑的方法要优雅得多。</p>
-
-        <p>下面是一个最小化的 MPC 路径规划器实现。它使用梯度下降来求解一个简单的"无碰撞 + 平滑"轨迹优化问题：</p>
-
-        <pre><code>import numpy as np
-
-class SimpleMPCPlanner:
-    """
-    一个简化的 MPC 路径规划器。
-    在二维平面上规划一条从 start 到 goal 的路径，
-    避开已知的圆形障碍物，同时最小化路径长度和加速度。
-    """
-    def __init__(self, dt=0.1, horizon=20):
-        self.dt = dt          # 时间步长
-        self.N = horizon      # 规划 horizon（路径点数量）
-        self.dim = 2          # 二维空间
-
-    def cost(self, trajectory, obstacles):
-        """
-        计算一条轨迹的总代价。
-        trajectory: shape (N+1, 2) 的路径点序列
-        """
-        total = 0.0
-        # 1. 路径长度代价：相邻点之间的欧几里得距离和
-        for i in range(len(trajectory) - 1):
-            dist = np.linalg.norm(trajectory[i+1] - trajectory[i])
-            total += 50.0 * dist
-
-        # 2. 平滑代价：加速度（二阶差分）的平方和
-        for i in range(1, len(trajectory) - 1):
-            acc = (trajectory[i+1] - 2*trajectory[i] + trajectory[i-1]) / (self.dt**2)
-            total += 100.0 * np.sum(acc**2)
-
-        # 3. 避障代价：对每个障碍物施加高斯惩罚
-        for obs in obstacles:
-            center = np.array(obs[:2])
-            radius = obs[2]
-            for point in trajectory:
-                dist = np.linalg.norm(point - center)
-                if dist < radius:
-                    # 进入障碍物内部：极大惩罚
-                    total += 10000.0 * (radius - dist)**2
-                elif dist < radius + 1.0:
-                    # 靠近障碍物：软惩罚
-                    total += 1000.0 * (1.0 - dist + radius)**2
-
-        return total
-
-    def plan(self, start, goal, obstacles, iterations=500, lr=0.1):
-        """
-        使用梯度下降（有限差分法计算梯度）优化轨迹。
-        """
-        # 初始化：在起点和终点之间线性插值
-        traj = np.zeros((self.N + 1, self.dim))
-        for i in range(self.N + 1):
-            alpha = i / self.N
-            traj[i] = (1 - alpha) * np.array(start) + alpha * np.array(goal)
-
-        # 固定起点和终点不变
-        best_traj = traj.copy()
-        best_cost = self.cost(traj, obstacles)
-
-        for it in range(iterations):
-            # 计算数值梯度（对内部路径点）
-            grad = np.zeros_like(traj)
-            eps = 1e-4
-            for i in range(1, self.N):  # 不优化起点和终点
-                for d in range(self.dim):
-                    traj[i, d] += eps
-                    c_plus = self.cost(traj, obstacles)
-                    traj[i, d] -= 2 * eps
-                    c_minus = self.cost(traj, obstacles)
-                    grad[i, d] = (c_plus - c_minus) / (2 * eps)
-                    traj[i, d] += eps
-
-            # 梯度下降更新
-            traj[1:self.N] -= lr * grad[1:self.N]
-
-            # 评估新轨迹
-            current_cost = self.cost(traj, obstacles)
-            if current_cost < best_cost:
-                best_cost = current_cost
-                best_traj = traj.copy()
-
-            # 学习率衰减
-            if it % 100 == 0:
-                lr *= 0.5
-                print(f"迭代 {it}: 代价 = {current_cost:.4f}")
-
-        return best_traj
-
-
-# ---------- 使用示例 ----------
-if __name__ == "__main__":
-    planner = SimpleMPCPlanner(dt=0.1, horizon=30)
-
-    start = (0.0, 0.0)
-    goal = (10.0, 10.0)
-    # 障碍物定义为 [x, y, radius]
-    obstacles = [(3.0, 3.0, 1.5), (6.0, 7.0, 1.2), (8.0, 4.0, 1.0)]
-
-    trajectory = planner.plan(start, goal, obstacles)
-
-    print(f"规划完成！路径包含 {len(trajectory)} 个路径点")
-    print(f"起点: {trajectory[0]}, 终点: {trajectory[-1]}")
-
-    # 你可以在这里绘制轨迹验证避障效果
-    # import matplotlib.pyplot as plt
-    # plt.plot(trajectory[:, 0], trajectory[:, 1], 'b-')
-    # plt.scatter([s[0] for s in obstacles], [s[1] for s in obstacles], c='r')
-    # plt.show()</code></pre>
-
-        <p>这段代码展示了优化方法的精髓：你不需要告诉求解器"向左走还是向右走"，你只需要定义好代价函数和约束条件，求解器自己会找到最优的走法。代价函数中的权重（50.0 给路径长度、100.0 给平滑度、10000.0 给避障）决定了不同目标之间的权衡——调整这些权重就相当于"调教"规划器的行为。</p>
-
-        <p>当然，这个简化版的 MPC 使用了梯度下降和数值梯度，效率不高。真实的 MPC 通常会利用问题的结构（比如二次型代价、线性动力学）来使用更高效的求解器（如 OSQP、qpOASES），可以在毫秒级别求解。</p>
-
-        <h2>梯度优化方法</h2>
-
-        <p>除了 MPC，路径规划领域还有几个著名的基于梯度的轨迹优化方法，值得你了解：</p>
-
-        <p><strong>CHOMP（Covariant Hamiltonian Optimization for Motion Planning）</strong>——由 CMU 的 Matt Zucker 等人于 2013 年提出。CHOMP 的核心思想是对"轨迹"这个整体进行优化，使用函数空间的梯度（而非参数空间的梯度），将平滑度代价和避障代价用协变梯度下降（covariant gradient descent）联合优化。它的标志性贡献是引入了"梯度场"的概念——障碍物产生的排斥力以梯度场的形式作用在轨迹上，推动轨迹远离障碍物，同时平滑项防止轨迹变得过于曲折。</p>
-
-        <p><strong>STOMP（Stochastic Trajectory Optimization for Motion Planning）</strong>——由 Mrinal Kalakrishnan 等人提出。与 CHOMP 的梯度下降不同，STOMP 使用随机优化：它生成大量带噪声的轨迹候选，然后选择其中代价最低的。这种方法不需要梯度信息，因此可以处理不可微的约束条件（比如某些障碍物形状不光滑）。代价是计算量较大。</p>
-
-        <p><strong>TrajOpt</strong>——由 John Schulman（OpenAI 联合创始人，TRPO/PPO 的作者）在其博士期间提出。TrajOpt 使用序列凸优化（Sequential Convex Optimization）逐次逼近的方式求解带约束的轨迹优化问题。它在每一步将非凸的避障约束线性化，然后求解一个凸优化子问题，收敛速度非常快。</p>
-
-        <p>下表对比了这几种方法的差异：</p>
-
-        <table>
-            <tr>
-                <th>方法</th>
-                <th>优化方式</th>
-                <th>是否需要梯度</th>
-                <th>约束处理</th>
-                <th>收敛速度</th>
-                <th>典型应用</th>
-            </tr>
-            <tr>
-                <td>MPC</td>
-                <td>滚动时域优化</td>
-                <td>是（或转化为 QP）</td>
-                <td>显式约束（硬约束）</td>
-                <td>快（几毫秒到几十毫秒）</td>
-                <td>自动驾驶、无人机控制</td>
-            </tr>
-            <tr>
-                <td>CHOMP</td>
-                <td>协变梯度下降</td>
-                <td>是</td>
-                <td>软约束（惩罚函数）</td>
-                <td>中等</td>
-                <td>机械臂运动规划</td>
-            </tr>
-            <tr>
-                <td>STOMP</td>
-                <td>随机优化</td>
-                <td>否</td>
-                <td>软约束（可处理不可微约束）</td>
-                <td>慢（需要大量采样）</td>
-                <td>复杂障碍物环境</td>
-            </tr>
-            <tr>
-                <td>TrajOpt</td>
-                <td>序列凸优化</td>
-                <td>是（雅可比矩阵）</td>
-                <td>显式约束（线性化后为硬约束）</td>
-                <td>快（通常 < 1 秒）</td>
-                <td>高维机械臂、接触丰富的任务</td>
-            </tr>
-        </table>
-
-        <h2>ROS2 Nav2实战</h2>
-
-        <p>如果你觉得这些优化方法的理论还是太抽象了，那我们来点实战的——ROS2 Nav2 是目前最流行的机器人导航框架，它提供了一套可插拔的路径规划系统，让你可以在实际机器人上验证不同的规划器。</p>
-
-        <p>Nav2 的核心架构中，有两个关键组件：</p>
-
-        <ul>
-            <li><strong>Global Planner</strong>——全局路径规划器，负责在已知地图上规划从起点到终点的全局路径。默认使用 NavFn（基于 A* 的栅格规划器），但可以替换为 Smac Planner（Hybrid-A*，考虑运动学约束）或 Planner 插件</li>
-            <li><strong>Local Planner / Controller</strong>——局部路径规划器 / 控制器，负责在全局路径的引导下，在局部环境中进行平滑跟踪和避障。默认使用 DWB（Dynamic Window-based），也可以使用 MPPI（Model Predictive Path Integral，一种基于采样的 MPC 变体）</li>
-        </ul>
-
-        <div class="tip">
-            <strong>Nav2 小技巧：更换规划器只需改一行配置！</strong>在 Nav2 的配置文件中，全局规划器的选择通过 <code>planner_plugins</code> 参数指定。例如，从默认的 NavFn 切换到 Smac Planner（Hybrid-A*），你只需要将 <code>planner_plugins: ['NavFn']</code> 改为 <code>planner_plugins: ['SmacPlanner']</code>，并在配置中设置对应的参数（如网格分辨率、搜索窗口大小）。这种"插件化"的设计使得 Nav2 成为了测试不同规划算法的理想平台——你可以在仿真中一键切换规划器，对比它们的表现而不用改任何代码。如果你想知道不同规划器在你自己构建的地图上的实际表现，直接用 <code>ros2 launch nav2_bringup navigation_launch.py</code> 启动 Nav2，然后用 Rviz2 上的 "2D Pose Estimate" 和 "2D Nav Goal" 进行可视化测试即可。
-        </div>
-
-        <p>Nav2 的插件生态还在迅速壮大中。除了官方的 NavFn 和 Smac Planner，社区还贡献了多种规划器插件，包括基于 RRT 的、基于状态晶格（State Lattice）的、以及基于优化的规划器。如果你想在真实机器人上部署前面学到的各种算法，Nav2 是一个绝佳的起点——它帮你处理好了传感器融合、定位、地图管理、控制执行等底层细节，让你可以专注于规划算法的设计和调优。</p>
-
-        <p>好了，第四部分——高级场景的讨论到这里就结束了。我们用了四章的篇幅聊了动态环境重规划、多目标路径规划、多机器人协调、以及优化模型方法。从下一章开始，我们将进入<strong>第五部分——实战工具篇</strong>，讨论如何把算法变成可以运行、调试、测试和部署的工程系统。下一章我们先从<strong>可视化与调试</strong>讲起——你将看到，一个好的可视化工具能让你调试路径规划的效率提升十倍以上。</p>
-
-        <div class="footer-nav">
-            <a href="21.html">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="23.html">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+assert cost(y) &lt; cost(0.1)          # 代价确实下降
+assert abs(y) &gt; OBST[2]             # 中间点被推离障碍（超出半径）
+print(f"mid y={y:.3f}, cost {cost(0.1):.2f} -> {cost(y):.2f}")
+# 输出：mid y=0.561, cost 27.00 -> 2.29
+</code></pre><p>注意：这个目标函数关于 <code>y</code> 是对称的，所以从 <code>y=0</code> 出发梯度为零、会“稳”在障碍中心——这也是局部极小/对称陷阱的一个小例子。确定性教学示意，不是真实车辆规划器。</p></section>
+<section id="limits" aria-labelledby="limits-title"><h2 id="limits-title">边界条件</h2><ul><li><strong>目标函数决定解：</strong>“最优”总是相对于一个具体目标函数；不同量纲（米、秒、焦耳）需归一化，否则权重实际上被量纲偷走。</li><li><strong>非凸与局部极小：</strong>避障代价通常非凸，结果依赖初值。同一问题换一个初值可能收敛到不同轨迹。</li><li><strong>实时性：</strong>MPC 每个控制周期都要重新解一个优化问题，求解时间必须小于周期；否则只能降时域、降精度或改用热启动。</li><li><strong>递归可行性与稳定：</strong>“每一步有可行解”需要终端约束/终端代价来保证，否则可能在无解处卡死。</li><li><strong>约束冲突即无解：</strong>当避障与动力学约束互相矛盾时，问题无可行解；工程上常用软约束（slack）并加惩罚，但你得接受“不再严格满足”。</li></ul></section>
+<section aria-labelledby="references-title" id="references"><h2 id="references-title">来源与实现参照</h2><ul><li><a href="https://doi.org/10.1016/S0005-1098(99)00214-9">Mayne, Rawlings, Rao &amp; Scokaert (2000), Constrained Model Predictive Control: Stability and Optimality, Automatica 36(6)</a>——MPC 的稳定性与递归可行性条件。</li><li><a href="https://doi.org/10.1177/0278364914528132">Schulman et al. (2014), Motion Planning with Sequential Convex Optimization and Convex Collision Checking, IJRR 33(9)</a>——TrajOpt 的 SQP 与碰撞约束处理。</li><li><a href="https://doi.org/10.1109/ROBOT.2009.5152817">Ratliff, Zucker, Bagnell &amp; Srinivasa (2009), CHOMP: Gradient Optimization Techniques for Efficient Motion Planning, ICRA</a>——基于梯度的轨迹优化。</li><li>Nocedal &amp; Wright, Numerical Optimization（教材）——QP/SQP、内点法与 KKT 条件。</li></ul></section>
+<footer class="article-footer"><a href="21.html">← 多机器人协调</a><a href="23.html">下一章 · 可视化与调试 →</a></footer>
+</article></main></div></body></html>

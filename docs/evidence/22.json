@@ -1,0 +1,45 @@
+{
+  "article": "22",
+  "claims": [
+    {
+      "id": "mpc-stability",
+      "claim": "MPC 的递归可行性与稳定性通常需要终端约束或终端代价，并非每步可行即稳定",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1016/S0005-1098(99)00214-9",
+      "locator": "Mayne, Rawlings, Rao & Scokaert (2000), Automatica 36(6):789-814",
+      "status": "verified"
+    },
+    {
+      "id": "trajopt",
+      "claim": "TrajOpt 用信赖域内序列凸优化（SQP）处理碰撞约束",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1177/0278364914528132",
+      "locator": "Schulman et al. (2014), IJRR 33(9):1251-1270",
+      "status": "verified"
+    },
+    {
+      "id": "chomp",
+      "claim": "CHOMP 用可微的障碍代价对整条轨迹做梯度优化",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1109/ROBOT.2009.5152817",
+      "locator": "Ratliff et al. (2009), CHOMP, ICRA 2009",
+      "status": "verified"
+    },
+    {
+      "id": "nonconvex",
+      "claim": "避障代价通常非凸，轨迹优化结果可能为局部极小，依赖初值",
+      "kind": "derived",
+      "source_url": "https://doi.org/10.1177/0278364914528132",
+      "locator": "TrajOpt 论文对非凸碰撞代价与序列凸化的讨论",
+      "status": "derived"
+    },
+    {
+      "id": "example",
+      "claim": "页面 Python 示例为确定性教学示意：一维中间点梯度下降把 y 从 0.1 推到 0.561，代价 27.00→2.29，断言通过",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "22.html Python 代码块与断言",
+      "status": "derived"
+    }
+  ]
+}
