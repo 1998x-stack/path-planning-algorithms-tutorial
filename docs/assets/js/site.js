@@ -149,3 +149,16 @@ document.addEventListener("DOMContentLoaded",()=>{
  };
  for(const b of buttons)b.addEventListener("click",()=>{const sel=b.dataset.tour;for(const p of paths)p.setAttribute("opacity",p.dataset.tourPath===sel?"1":"0.2");status.textContent=notes[sel];for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));});
 });
+
+// Interactive conflict-type comparison used by chapter 21 (multi-robot).
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-conflict-demo]");if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-conflict]")],panels=[...demo.querySelectorAll("[data-conflict-panel]")];
+ const notes={
+   headon:"正面冲突：两台机器人在同一通道相向而行，路径正好反向重叠。",
+   crossing:"交叉冲突：两条路径在一个路口中心相交，交点是共享资源。",
+   merging:"汇合冲突：支路机器人汇入主路，与主路已有机器人争夺同一段。",
+   following:"跟驰冲突：同向前后跟随，没有交点，但前车减速会沿队列向后传播。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{const sel=b.dataset.conflict;for(const p of panels)p.setAttribute("opacity",p.dataset.conflictPanel===sel?"1":"0.35");status.textContent=notes[sel];for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));});
+});

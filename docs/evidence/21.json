@@ -1,0 +1,45 @@
+{
+  "article": "21",
+  "claims": [
+    {
+      "id": "orca",
+      "claim": "ORCA 为每个邻居生成速度空间中的半平面约束，双方各取一个落在各自半平面内的速度即可保证一段时间互不碰撞",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1007/978-3-642-19457-3_1",
+      "locator": "van den Berg, Guy, Lin & Manocha (2011), Reciprocal n-body Collision Avoidance, ISRR (Springer STAR)",
+      "status": "verified"
+    },
+    {
+      "id": "velocity-obstacle",
+      "claim": "速度障碍把会导致未来碰撞的相对速度集合表示为速度空间中的锥",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1177/027836499801700706",
+      "locator": "Fiorini & Shiller (1998), IJRR 17(7):760-772",
+      "status": "verified"
+    },
+    {
+      "id": "joint-space",
+      "claim": "k 台机器人联合状态空间大小为单机器人状态空间大小的 k 次方，随机器人数量指数增长",
+      "kind": "derived",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/",
+      "locator": "LaValle, Planning Algorithms 多机器人章节",
+      "status": "derived"
+    },
+    {
+      "id": "prioritized-incomplete",
+      "claim": "优先级规划对固定优先顺序不完备：某顺序下无解不代表不存在可行路径组合",
+      "kind": "derived",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/",
+      "locator": "LaValle, Planning Algorithms 解耦/优先级规划讨论",
+      "status": "derived"
+    },
+    {
+      "id": "example",
+      "claim": "页面 Python 示例为确定性教学示意：直角交叉场景最小间距 -1.00（碰撞），让行减速后 1.24（安全），断言通过",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "21.html Python 代码块与断言",
+      "status": "derived"
+    }
+  ]
+}
