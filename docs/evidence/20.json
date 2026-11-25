@@ -1,0 +1,45 @@
+{
+  "article": "20",
+  "claims": [
+    {
+      "id": "nn-bound",
+      "claim": "度量型 TSP 的最近邻启发式最坏情况可达到最优解的 (⌈log₂ n⌉+1)/2 倍",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1137/0206041",
+      "locator": "Rosenkrantz, Stearns & Lewis (1977), SIAM J. Comput. 6(3):563-581",
+      "status": "verified"
+    },
+    {
+      "id": "christofides",
+      "claim": "Christofides 算法对度量型对称 TSP 保证不超过最优解的 3/2 倍",
+      "kind": "primary-paper",
+      "source_url": null,
+      "locator": "Christofides (1976), Report 388, GSIA, Carnegie Mellon University",
+      "status": "verified"
+    },
+    {
+      "id": "np-hard",
+      "claim": "TSP 是 NP-hard 的，n 个目标的访问顺序有 n! 种可能；20 个目标约 2.43×10^18 种",
+      "kind": "derived",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/",
+      "locator": "LaValle, Planning Algorithms 与 TSP 组合复杂度结论",
+      "status": "derived"
+    },
+    {
+      "id": "example",
+      "claim": "页面 Python 示例为确定性教学示意：6 个固定目标点上最近邻 24.02、2-opt 19.12、精确最优 19.12，断言通过",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "20.html Python 代码块与断言",
+      "status": "derived"
+    },
+    {
+      "id": "matrix-teaching",
+      "claim": "代价矩阵图中 10 与 30 的直线/绕行数值标注为教学示意，非实测",
+      "kind": "teaching-note",
+      "source_url": null,
+      "locator": "20.html 代价矩阵一节与图 20-2 图题",
+      "status": "derived"
+    }
+  ]
+}

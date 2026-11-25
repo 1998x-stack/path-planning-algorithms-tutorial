@@ -138,3 +138,14 @@ document.addEventListener("DOMContentLoaded",()=>{
  for(const b of buttons)b.addEventListener("click",()=>{render(b.dataset.trigger);for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));});
  render("timed");
 });
+
+// Interactive visit-order comparison used by chapter 20 (multi-goal).
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-tour-demo]");if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-tour]")],paths=[...demo.querySelectorAll("[data-tour-path]")];
+ const notes={
+   nn:"最近邻顺序：总长约 24.02（图中折线为示意）。",
+   opt:"2-opt 改进顺序：总长约 19.12，恰好达到 6 点的精确最优。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{const sel=b.dataset.tour;for(const p of paths)p.setAttribute("opacity",p.dataset.tourPath===sel?"1":"0.2");status.textContent=notes[sel];for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));});
+});

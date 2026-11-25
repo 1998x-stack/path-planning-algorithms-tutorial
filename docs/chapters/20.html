@@ -1,258 +1,55 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第20章 多目标路径规划</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html" class="active">第20章 多目标路径规划</a></li>
-            <li><a href="21.html">第21章 多机器人协调</a></li>
-            <li><a href="22.html">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="多目标路径规划：访问顺序与路径代价的双层问题、最近邻与 2-opt、遗传算法，以及可运行的最优性对比示例与断言。"><title>20 · 多目标路径规划 — 路径规划算法</title><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="19.html">上一章</a><a href="21.html">下一章</a></nav></div></header>
+<div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#problem">从一个终点到多个目标</a><a href="#order">顺序决定一切</a><a href="#matrix">代价矩阵不是欧氏距离</a><a href="#nn">最近邻与 2-opt</a><a href="#ga">遗传算法求解</a><a href="#interaction">交互：访问顺序</a><a href="#implementation">可运行的最优性对比</a><a href="#limits">边界条件</a><a href="#references">原始来源</a></nav></details></aside>
+<main class="article-main" id="content"><article>
+<header class="article-header"><p class="article-meta">CONSTRAINTS &amp; ONLINE PLANNING / 20 OF 28</p><h1>多目标路径规划：顺序为什么往往比走法更重要？</h1><p class="dek">巡检 20 个仪表、测绘一片区域、一次配送多个包裹——这些问题不止一个终点，而是“依次访问一批目标”。本章把问题拆成外层访问顺序与内层两点路径两层，讲清最近邻、2-opt、遗传算法的取舍，并给出可验证的最优性对比。</p></header>
+<section id="problem" aria-labelledby="problem-title"><h2 id="problem-title">从一个终点到多个目标</h2><p>前面各章的问题都是一对一：给定起点与终点，找一条最短路径。但很多真实任务不是这样：机器人要依次查看一组仪表盘、无人机要扫过区域内每个角落、配送车要在一趟内送完多个站点。共同特征是<strong>目标不止一个，而且要决定“先访谁、后访谁”</strong>。这就是多目标路径规划。</p><p>按目标的性质，可以分成三类：</p><ul><li><strong>巡检（inspection）</strong>——必须经过一组指定的检查点，目标是在覆盖全部检查点的前提下总代价最小；</li><li><strong>覆盖（coverage）</strong>——要扫过区域内每个可达位置，目标是覆盖率最高、重复率最低（扫地机器人、植保无人机）；</li><li><strong>配送（delivery）</strong>——在一批站点间配送，常带有时间窗、载量等约束。</li></ul><p>巡检型问题的一个干净抽象是：给定起点与 <code>n</code> 个目标点，找一条经过全部目标点、总路径长度最短的路线。这正是<strong>旅行商问题（TSP）</strong>的变体：经典 TSP 要求回到起点形成一个回路，而路径规划版本有明确的起、终点，且两点间的代价由内层路径规划决定，而不是直线距离。</p><p>与第 2 章的状态空间一样，这里的“顺序”本身就是一个组合对象。若目标数为 <code>n</code>，可能的访问顺序有：</p><div class="equation math-scroll" data-math-scroll tabindex="0" role="region" aria-label="(1) 可能访问顺序的数量"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block" aria-label="可能访问顺序数量等于 n 的阶乘"><mrow><mi>n</mi><mo>!</mo></mrow></math><span class="equation-label">(1) 访问顺序的可能性数量</span></div><p>当 <code>n=10</code> 时约 362 万，<code>n=20</code> 时约 <code>2.43×10<sup>18</sup></code>——这就是为什么枚举所有顺序不可行，TSP 是 <strong>NP-hard</strong> 的。</p></section>
+<section id="order" aria-labelledby="order-title"><h2 id="order-title">顺序决定一切</h2><p>多目标路径规划通常是一个<strong>双层优化</strong>：</p><ul><li><strong>外层</strong>：决定访问顺序，这是一个 TSP 类的组合问题；</li><li><strong>内层</strong>：给定两个目标点，计算它们之间的一条最优路径（第 6–10 章的图搜索、第 11–13 章的采样方法都可以用在这里）。</li></ul><p>关键点是两层会<strong>耦合</strong>：内层的代价取决于地图上的障碍，不是固定的直线距离。因此外层不能用“先排顺序再连线”的方式，而必须先知道每对目标点之间的真实路径代价。</p><figure><p class="figure-kicker">MULTI-GOAL · 20</p><img src="../assets/figures/20-two-layer.svg" loading="lazy" alt="双层结构示意：外层是一串访问顺序（目标点的排列），每个相邻目标点对之间用一𠆪箭头指向内层的路径规划，内层在障碍地图上求两点间最优路径并回传代价。"><figcaption>双层优化：外层搜索访问顺序，对每一对相邻目标点调用内层路径规划；内层返回真实代价，外层据此评分并搜索更好的顺序。两层反复交互，而不是一次完成。</figcaption></figure><p>“顺序”的影响可以很直观：同一组目标点，换一种访问顺序，即使每两点之间都走最优路径，总长度也可能差很多。直觉上，好的顺序会避免路线反复交叉、来回折返。</p></section>
+<section id="matrix" aria-labelledby="matrix-title"><h2 id="matrix-title">代价矩阵不是欧氏距离</h2><p>大多数 TSP 教程直接拿两点的欧氏距离当代价。在有障碍的环境里这是错的：A、B 两点的直线距离可能只有 10 米，但中间隔着一道墙或一个禁行区，真实路径可能是 30 米。如果在欧氏距离上排序，得到的最优顺序在真实地图上可能很差。</p><p>正确做法是先构造一个 <strong>n×n 的代价矩阵</strong> <code>D</code>，其中 <code>D[i][j]</code> 是“从目标 i 到目标 j 的最优路径长度”：</p><ul><li>对每一对目标点跑一次内层规划（可用第 6–10 章的图搜索，代价图取自第 4 章的代价地图）；</li><li>把结果填入矩阵；无通路的两点记为无穷大；</li><li>若路径代价与方向无关（无单向道、无坡道代价），矩阵是对称的，只需算一半。</li></ul><p>这个预计算是 <code>O(n<sup>2</sup>)</code> 次内层规划，在目标数较大时可能比外层搜索还贵——它是多目标规划中最容易被忽略的成本。</p><figure><p class="figure-kicker">MULTI-GOAL · 20</p><img src="../assets/figures/20-cost-matrix.svg" loading="lazy" alt="左图两个目标点直线相连穿过阴影障碍，标注直线距离 10 米；右图同两点间实际路径绕过障碍，标注代价 30 米。下方为代价矩阵示意，使用绕行后的真实代价而非直线距离。"><figcaption>为什么不能用欧氏距离：障碍使 A→B 的真实路径远长于直线。代价矩阵必须来自内层路径规划，否则外层的“最优顺序”是建立在错误距离上的。</figcaption></figure><div class="note"><p>如果内层用的是栅格路径，注意第 4 章的两套代价体系：概率占据 <code>p∈[0,1]</code>、<code>nav_msgs/OccupancyGrid</code> 的 <code>{-1,0..100}</code> 与 Nav2 <code>costmap_2d</code> 的 <code>uint8 0..255</code> 不能混写。填入矩阵的是最终选定的路径代价，单位要与外层目标函数一致。</p></div></section>
+<section id="nn" aria-labelledby="nn-title"><h2 id="nn-title">最近邻与 2-opt</h2><p>最简单的启发式是<strong>最近邻（nearest neighbor）</strong>：从当前位置出发，在未访问的目标中选最近的一个，走过去，重复，直到访完。</p><ol><li>当前位置设为起点；</li><li>在未访问目标中选与当前位置代价最小的那个，走过去并标记为已访问；</li><li>重复第 2 步直到全部访问，必要时最后回到终点。</li></ol><p>它的复杂度是 <code>O(n<sup>2</sup>)</code>：只需看代价矩阵，不再调用内层规划。但它是贪心的，容易“提前把远处目标排除到很贵”。对度量型 TSP，Rosenkrantz 等人（1977）证明最近邻的解最坏可达最优解的 <code>(⌈log₂ n⌉+1)/2</code> 倍，即随 <code>n</code> 对数增长——所以不能把它当作“差不多最优”。</p><p>常见的修补是<strong>2-opt 局部搜索</strong>：反复尝试反转顺序中的一段子序列（即把两条访问边换成另外两条），只要总代价下降就接受，直到无法改进。</p><figure><p class="figure-kicker">MULTI-GOAL · 20</p><img src="../assets/figures/20-tsp-order.svg" loading="lazy" alt="左图用较差的顺序连接同一组目标点，路线出现交叉和折返；右图用 2-opt 改进后的顺序连接同样的点，交叉减少、总长度更短。"><figcaption>同一组目标点的两种访问顺序：右图通过 2-opt 反转子序列，消除了左图中的交叉与折返。图的几何为教学示意，具体长度以正文的确定性示例为准。</figcaption></figure><div class="note"><p>最近邻不一定比“按角度旋转”之类的简单规则好；2-opt 也不保证全局最优。它们只是“用得起”的基线，适合作精确解或元启发式的初值。</p></div></section>
+<section id="ga" aria-labelledby="ga-title"><h2 id="ga-title">遗传算法求解</h2><p>当目标数超过十几个、又想要比最近邻更好的解时，可以用<strong>元启发式</strong>在顺序空间里搜索。遗传算法（GA）是常用的一种：</p><ul><li><strong>染色体</strong>——一个候选顺序，例如 <code>[3,1,4,0,2]</code> 表示先访问目标 3，再到 1……</li><li><strong>适应度</strong>——该顺序在代价矩阵下的总代价，越短越好；</li><li><strong>选择</strong>——适应度好的个体被选中作为父代的概率更大；</li><li><strong>交叉</strong>——把两条父代的片段组合成子代，常用 PMX（部分映射交叉）以保证子代仍是一个合法排列（不重复、不遗漏）；</li><li><strong>变异</strong>——以较小概率交换两个位置，避免种群过早趋同。</li></ul><p>GA 不保证找到最优，结果依赖于种群大小、代数、交叉/变异算子与随机种子。因此报告结果时必须给出<strong>种子、预算（代数与种群）与多次运行的分布</strong>，而不是只报一次最好的样本。也可以用 2-opt 作为局部算子，与 GA 结合（如“遗传 + 局部搜索”的混合方法）。</p><div class="note"><p>若需要可证明的近似比，可以考虑度量型 TSP 的 Christofides 算法：用最小生成树加最小权完美匹配构造回路，保证不超过最优解的 <code>3/2</code> 倍。它适用于满足三角不等式的对称代价。本页的实现示例不构建完整 GA，只做可验证的基线对比。</p></div></section>
+<section id="interaction" aria-labelledby="interaction-title"><h2 id="interaction-title">交互：同一组目标的两种顺序</h2><p>下面 6 个目标点固定不变，切换两种访问顺序。它们的起、终点相同，每两点之间都走直线，但因<strong>顺序</strong>不同，总长度相差很大。数字与正文中的确定性示例一致。</p><div class="interactive-box" data-tour-demo><div class="demo-controls" role="group" aria-label="访问顺序"><button type="button" data-tour="nn" aria-pressed="true">最近邻顺序</button><button type="button" data-tour="opt" aria-pressed="false">2-opt 改进顺序</button></div><svg viewBox="0 0 460 340" role="img" aria-labelledby="tour-demo-title tour-demo-desc"><title id="tour-demo-title">两种访问顺序对比</title><desc id="tour-demo-desc">六个目标点与相同起点，一条折线是最近邻顺序，另一条是 2-opt 改进后的顺序。</desc><rect width="460" height="340" rx="10" fill="#eef4f0"/><polyline data-tour-path="nn" points="40,300 116,222 192,144 306,170 344,196 382,248 78,92" fill="none" stroke="#d06d4d" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><polyline data-tour-path="opt" points="40,300 116,222 78,92 192,144 306,170 344,196 382,248" fill="none" stroke="#147f80" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="40" cy="300" r="7" fill="#203035"/><text x="30" y="322" font-size="13" fill="#203035">起点</text><circle cx="116" cy="222" r="6" fill="#7461ba"/><text x="124" y="218" font-size="13" fill="#7461ba">g0</text><circle cx="306" cy="170" r="6" fill="#7461ba"/><text x="314" y="166" font-size="13" fill="#7461ba">g1</text><circle cx="78" cy="92" r="6" fill="#7461ba"/><text x="62" y="84" font-size="13" fill="#7461ba">g2</text><circle cx="382" cy="248" r="6" fill="#7461ba"/><text x="390" y="256" font-size="13" fill="#7461ba">g3</text><circle cx="192" cy="144" r="6" fill="#7461ba"/><text x="200" y="140" font-size="13" fill="#7461ba">g4</text><circle cx="344" cy="196" r="6" fill="#7461ba"/><text x="352" y="208" font-size="13" fill="#7461ba">g5</text></svg><p class="demo-status" role="status" aria-live="polite">最近邻顺序：总长约 24.02（图中折线为示意）。</p><p class="micro">数值来自正文的确定性示例（起点 (0,0)，六个目标点固定），图中连线为直线示意，未叠加障碍。</p></div></section>
+<section id="implementation" aria-labelledby="implementation-title"><h2 id="implementation-title">可运行的最优性对比（Python 3.10+）</h2><p>下面用 6 个固定目标点验证三件事：最近邻得到一个可行顺序；2-opt 不会把最近邻改差；两者的总长度都不小于（穷举得到的）精确最优。存成 <code>tsp_demo.py</code>，运行 <code>python3 tsp_demo.py</code>，断言应当通过。</p><pre><code>import itertools, math  # Python 3.10+
+PTS = [(2,3),(7,5),(1,8),(9,2),(4,6),(8,4)]   # 6 个固定目标点
+START = (0, 0)
 
-        <p>大家好！上一章我们聊了动态环境中的重规划，学会了如何在变化的世界中持续找到可行路径。但还有一些场景是普通路径规划解决不了的——比如机器人巡检时需要依次查看 20 个仪表盘、无人机需要飞过一片区域的每一个角落进行测绘、快递员需要在一趟行程中配送 50 个包裹。这些问题的共同特征是什么？<strong>不再只有一个终点，而是有多个目标点需要依次访问</strong>。这就是<strong>多目标路径规划（Multi-Goal Path Planning）</strong>。</p>
+def d(a, b):
+    return math.hypot(a[0] - b[0], a[1] - b[1])
 
-        <p>在深入之前，我先讲一个有趣的亲身经历。2019 年我参与了一个仓库盘点机器人的项目——机器人需要在夜间自动巡视仓库，扫描每个货架上的 RFID 标签来盘点库存。仓库有 200 个货架，分布在 5000 平米的场地上。我们一开始天真地给机器人规划了一条"蛇形走位"路线：从最左边第一排走到头，拐到第二排再走回来，像割草一样。结果机器人的电池只能撑 2 小时，但蛇形路线慢悠悠要走 4 小时。问题在哪？因为我们没有优化<strong>访问顺序</strong>——有些货架明明在附近，我们却让它绕了一大圈才去访问。从那以后我明白了一个道理：<strong>在多目标路径规划中，决定先访问谁、后访问谁，往往比路径怎么走更重要</strong>。</p>
+def tour_cost(order, pts):
+    total = d(START, pts[order[0]])
+    for i in range(len(order) - 1):
+        total += d(pts[order[i]], pts[order[i + 1]])
+    return total
 
-        <h2>多目标问题的本质</h2>
+def nearest(pts):
+    remaining = set(range(len(pts)))
+    cur, order = START, []
+    while remaining:
+        nxt = min(remaining, key=lambda i: d(cur, pts[i]))
+        order.append(nxt); remaining.remove(nxt); cur = pts[nxt]
+    return order
 
-        <p>多目标路径规划在最简单的情况下可以被描述为：给定一个起点、一个终点和 N 个需要经过的中间目标点，找到一条经过所有这些点的最短路径。这听起来是不是有点耳熟？没错，这本质上就是<strong>旅行商问题（Traveling Salesman Problem, TSP）</strong>。</p>
-
-        <p>TSP 的问题是：给定 N 个城市以及两两之间的距离，找到一条经过所有城市且每个城市只经过一次的最短回路。而我们的多目标路径规划稍有不同——它有明确的起点和终点（不一定相同），而且"经过"不一定要求精确到点，只要路径覆盖了目标区域即可。</p>
-
-        <p>但它们的核心挑战是一样的：<strong>确定最优的访问顺序</strong>。如果你有 3 个目标点，那么可能的访问顺序有 3! = 6 种。如果有 10 个点，就有 10! ≈ 362 万种。如果有 20 个点，就有 2.43 × 10¹⁸ 种——即使使用最快的超级计算机暴力枚举也是不可能的。这就是所谓<strong>NP-hard</strong>问题的威力。</p>
-
-        <p>根据不同的场景需求，多目标规划还可以细分为：</p>
-
-        <ul>
-            <li><strong>覆盖路径规划（Coverage Path Planning）</strong>——机器人需要经过区域内每一点（如扫地机器人、植保无人机），目标不是路径最短，而是覆盖率最高、重复率最低。</li>
-            <li><strong>巡检路径规划（Inspection Path Planning）</strong>——需要经过一系列指定的检查点（如电力线巡检、管道检测），目标是最短路径 + 覆盖所有检查点。</li>
-            <li><strong>配送路径规划（Delivery Route Planning）</strong>——在一个城市范围内配送多个包裹，目标是在满足时间窗口约束下的总距离最短。</li>
-        </ul>
-
-        <h2>TSP与路径规划</h2>
-
-        <p>TSP 是一个非常古老且优美的问题，最早可以追溯到 19 世纪 30 年代。经过近两个世纪的研究，人们对它已经有了非常深的理解：</p>
-
-        <ul>
-            <li><strong>精确解法</strong>——分支定界（Branch and Bound）、整数线性规划（ILP）、动态规划（Held-Karp 算法，O(n²·2ⁿ)）。对于 n ≤ 20 的问题，精确解法可以在合理时间内求解。</li>
-            <li><strong>近似算法</strong>——Christofides 算法（保证解不超过最优解的 1.5 倍）、最小生成树法（2 倍近似比）。对大规模问题有用。</li>
-            <li><strong>启发式算法</strong>——最近邻、2-opt、3-opt 局部搜索、模拟退火、遗传算法。在实践中使用最广泛。</li>
-            <li><strong>学习型方法</strong>——基于注意力机制（Attention）的 Pointer Networks、GCN-based 方法。前沿研究热点。</li>
-        </ul>
-
-        <p>在路径规划的语境下，多目标规划通常是一个<strong>双层优化</strong>问题：外层决定访问顺序（这是一个 TSP），内层计算两点之间的最优路径（这是传统的路径规划）。两层耦合起来，使得问题比纯 TSP 更复杂——因为内层的路径代价不是固定的直线距离，而是取决于具体的地形和障碍物分布。</p>
-
-        <p>例如，虽然目标 A 和目标 B 的直线距离只有 10 米，但因为中间有一堵墙，实际路径长度可能是 30 米。这就意味着我们不能简单地用欧几里得距离作为 TSP 的代价矩阵，而必须先对所有目标点对运行一次路径规划，得到精确的距离矩阵。</p>
-
-        <h2>最近邻启发式</h2>
-
-        <p>在所有求解方法中，最近邻启发式（Nearest Neighbor Heuristic）是最简单、最容易实现的方法。它的逻辑非常直白：</p>
-
-        <ol>
-            <li>从起点出发</li>
-            <li>在所有未访问的目标点中，选择离当前位置最近的那个</li>
-            <li>移动到该点，标记为已访问</li>
-            <li>重复步骤 2-3，直到所有目标点都被访问</li>
-            <li>如果终点与起点不同，最后移动到终点</li>
-        </ol>
-
-        <p>这个算法的时间复杂度是 O(n²)，其中的 n 是目标点的数量。对于 50 个目标点，只需要 2500 次距离计算，在毫秒级别就能完成。</p>
-
-        <p>但它的缺点是显而易见的——你永远在"贪心"地选择最近的，但最终的总路径长度可能远非最优。数学上已经证明，最近邻启发式在最坏情况下的解可以劣于最优解约 25%。不过在实践中，对于随机分布的目标点，它的效果通常还不错——只需要最优解的 1.1 到 1.25 倍。</p>
-
-        <h2>遗传算法求解</h2>
-
-        <p>当目标点数超过 20 且你对路径质量有较高要求时，最近邻可能不够用了。这时候<strong>遗传算法（Genetic Algorithm, GA）</strong>是一个很不错的选择。</p>
-
-        <p>遗传算法模拟了自然选择的过程。在我们的多目标路径规划场景中：</p>
-
-        <ul>
-            <li><strong>染色体（Chromosome）</strong>——一个候选的访问顺序，比如 [3, 1, 4, 0, 2] 表示先访问目标点 3，然后 1，然后 4……</li>
-            <li><strong>适应度（Fitness）</strong>——这条路径的总长度（适应度越高 = 路径越短）</li>
-            <li><strong>选择（Selection）</strong>——适应度高的染色体被选中的概率更大</li>
-            <li><strong>交叉（Crossover）</strong>——将两条父染色体的序列片段组合成新的子代</li>
-            <li><strong>变异（Mutation）</strong>——随机交换染色体中的两个位置</li>
-        </ul>
-
-        <p>下面是使用遗传算法求解多目标路径规划的完整 Python 实现：</p>
-
-        <pre><code>import random
-import math
-
-# ---------- 问题设定 ----------
-goal_points = [(2, 3), (7, 5), (1, 8), (9, 2), (4, 6),
-               (6, 9), (3, 1), (8, 4), (5, 7), (0, 5)]
-start = (0, 0)
-end = (10, 10)
-N = len(goal_points)
-
-# 两点间的路径代价（简化为欧几里得距离，实际中应该是路径规划结果）
-def distance(a, b):
-    return math.sqrt((a[0]-b[0])**2 + (a[1]-b[1])**2)
-
-# 预先计算所有点对之间的距离矩阵
-points = [start] + goal_points + [end]
-dist = [[distance(points[i], points[j])
-         for j in range(N+2)] for i in range(N+2)]
-
-# ---------- 适应度函数 ----------
-def fitness(route):
-    """计算总路径长度：start -> route[0] -> ... -> route[-1] -> end"""
-    total = dist[0][route[0] + 1]  # start到第一个目标
-    for i in range(len(route) - 1):
-        total += dist[route[i] + 1][route[i+1] + 1]
-    total += dist[route[-1] + 1][N + 1]  # 最后一个目标到end
-    return 1.0 / total   # 取倒数，使"越短越好"变成"越大越好"
-
-# ---------- 初始化种群 ----------
-POP_SIZE = 100
-population = [random.sample(range(N), N) for _ in range(POP_SIZE)]
-
-# ---------- 交叉操作：PMX (Partially Mapped Crossover) ----------
-def pmx(parent1, parent2):
-    size = len(parent1)
-    child = [None] * size
-    # 随机选择交叉区间
-    cx1, cx2 = sorted(random.sample(range(size), 2))
-    # 复制区间
-    child[cx1:cx2] = parent1[cx1:cx2]
-    # 映射剩余位置
-    for i in range(cx1, cx2):
-        if parent2[i] not in child:
-            pos = i
-            while cx1 <= pos < cx2:
-                pos = parent2.index(parent1[pos])
-            child[pos] = parent2[i]
-    for i in range(size):
-        if child[i] is None:
-            child[i] = parent2[i]
-    return child
-
-# ---------- 变异操作：随机交换两个位置 ----------
-def mutate(route, rate=0.1):
-    if random.random() < rate:
-        i, j = random.sample(range(len(route)), 2)
-        route[i], route[j] = route[j], route[i]
-    return route
-
-# ---------- 主循环 ----------
-GENERATIONS = 500
-ELITE_SIZE = 5
-
-for gen in range(GENERATIONS):
-    # 计算适应度
-    scored = [(fitness(route), route) for route in population]
-    scored.sort(key=lambda x: x[0], reverse=True)
-
-    # 精英保留
-    new_pop = [route for _, route in scored[:ELITE_SIZE]]
-
-    # 轮盘赌选择 + 生成子代
-    weights = [s[0] for s in scored]
-    while len(new_pop) < POP_SIZE:
-        p1 = random.choices(population, weights=weights, k=1)[0]
-        p2 = random.choices(population, weights=weights, k=1)[0]
-        child = pmx(p1, p2)
-        child = mutate(child)
-        new_pop.append(child)
-
-    population = new_pop
-
-# ---------- 结果 ----------
-best_route = max(population, key=fitness)
-best_fitness = fitness(best_route)
-total_distance = 1.0 / best_fitness
-
-print(f"最优访问顺序: {best_route}")
-print(f"总路径长度: {total_distance:.2f}")
-print(f"访问路线: start -> ", end="")
-for idx in best_route:
-    print(f"g{idx}({goal_points[idx]}) -> ", end="")
-print("end")</code></pre>
-
-        <p>这段代码的核心在于 PMX 交叉操作——它保证了子代继承了父代中一段完整的访问序列，同时通过映射关系避免了重复目标。经过 500 代进化后，GA 通常能找到非常接近最优解的方案。</p>
-
-        <p>下表给出了不同方法在 10 个目标点和 20 个目标点情况下的对比：</p>
-
-        <table>
-            <tr>
-                <th>方法</th>
-                <th>时间复杂度</th>
-                <th>解质量（10 目标）</th>
-                <th>解质量（20 目标）</th>
-                <th>适用场景</th>
-            </tr>
-            <tr>
-                <td>最近邻启发式</td>
-                <td>O(n²)</td>
-                <td>最优的 110-120%</td>
-                <td>最优的 115-125%</td>
-                <td>实时性要求极高、目标数少</td>
-            </tr>
-            <tr>
-                <td>遗传算法</td>
-                <td>O(pop·gen·n)</td>
-                <td>最优的 100-105%</td>
-                <td>最优的 102-108%</td>
-                <td>中等规模、需要较高质量</td>
-            </tr>
-            <tr>
-                <td>分支定界（精确解）</td>
-                <td>O(n!)，n≤15 可用</td>
-                <td>100%（精确最优）</td>
-                <td>100%（但需数分钟）</td>
-                <td>小规模、需要证明最优</td>
-            </tr>
-        </table>
-
-        <div class="tip">
-            <strong>真实案例：亚马逊配送无人机的路径规划</strong>——亚马逊的 Prime Air 无人机一次起飞需要配送 50 多个包裹，覆盖一个社区的数十个投递点。如果按"先到先得"的顺序投递，一趟行程可能要飞 30 公里。而使用遗传算法优化访问顺序后，距离可以压缩到 15 公里以内——直接让单次配送的能耗减少一半，电池刚刚够用。据亚马逊公开的信息，GA 的适应度计算中还嵌入了风场模型、禁飞区规避和电池余量约束，比我们这里的简化版本复杂得多，但核心思想完全一致：<strong>顺序决定一切</strong>。
-        </div>
-
-        <p>多目标路径规划把 TSP 和传统路径规划结合在了一起，是一个非常实用却又充满挑战的领域。当然，在真实世界中，机器人往往不是单独工作的——当多个机器人在同一空间内同时规划路径时，问题会变得更加复杂。下一章我们就来讨论<strong>多机器人协调</strong>问题，看看如何在共享空间中让多个机器人在不撞上彼此的情况下高效完成任务。</p>
-
-        <div class="footer-nav">
-            <a href="19.html">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="21.html">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+def two_opt(order, pts):
+    best, improved = order[:], True
+    while improved:
+        improved = False
+        for i in range(len(best) - 1):
+            for j in range(i + 1, len(best)):
+                cand = best[:i] + best[i:j + 1][::-1] + best[j + 1:]
+                if tour_cost(cand, pts) &lt; tour_cost(best, pts) - 1e-9:
+                    best, improved = cand, True
+    return best
+</code></pre>
+<pre><code>nn = nearest(PTS)
+opt = min(itertools.permutations(range(len(PTS))), key=lambda o: tour_cost(o, PTS))
+c_nn   = tour_cost(nn, PTS)
+c_2opt = tour_cost(two_opt(nn, PTS), PTS)
+c_opt  = tour_cost(opt, PTS)
+assert c_opt &lt;= c_2opt &lt;= c_nn        # 精确解不差于 2-opt，2-opt 不差于最近邻
+print(f"nearest={c_nn:.2f}  2-opt={c_2opt:.2f}  exact={c_opt:.2f}")
+# 输出：nearest=24.02  2-opt=19.12  exact=19.12
+</code></pre><p>本例中 2-opt 从最近邻的 24.02 降到 19.12，恰好达到了 6 点的精确最优。这是确定性教学示意（固定点、无随机种子），不代表更大规模或带障碍地图上的性能；真实场景中内层代价应来自代价矩阵而非直线距离。</p></section>
+<section id="limits" aria-labelledby="limits-title"><h2 id="limits-title">边界条件</h2><ul><li><strong>“最短”的定义：</strong>TSP 常用“总距离最短”；实际任务可能是时间、能耗、风险或它们的加权，必须先明确目标函数，再谈“最优顺序”。</li><li><strong>代价矩阵的真实性：</strong>矩阵元素必须来自内层路径规划；若用欧氏距离代替，顺序可能在真实地图上并不优。无通路的两点应记为无穷大。</li><li><strong>复杂度二重性：</strong>内层 <code>O(n<sup>2</sup>)</code> 次规划可能比外层搜索还贵，需要根据算力预算选择近似内层还是精确内层。</li><li><strong>启发式无保证：</strong>最近邻的解最坏可达最优的 <code>(⌈log₂ n⌉+1)/2</code> 倍；2-opt 与 GA 都不保证全局最优，报告结果需附种子、预算与多次运行分布。</li><li><strong>覆盖不等同于巡检：</strong>覆盖要求扫过区域而非“经过几个点”，它的目标是覆盖率/重复率，不能用 TSP 直接套用。</li></ul></section>
+<section aria-labelledby="references-title" id="references"><h2 id="references-title">来源与实现参照</h2><ul><li><a href="https://doi.org/10.1137/0206041">Rosenkrantz, Stearns &amp; Lewis (1977), An Analysis of Several Heuristics for the Traveling Salesman Problem, SIAM J. Comput. 6(3)</a>——最近邻的最坏情况比 <code>(⌈log₂ n⌉+1)/2</code>。</li><li>Christofides (1976), Worst-Case Analysis of a New Heuristic for the Traveling Salesman Problem, Report 388, GSIA, Carnegie Mellon University——度量型 TSP 的 <code>3/2</code> 近似保证（参见 Rosenkrantz 等 1977 对该结果的引述）。</li><li><a href="https://msl.cs.uiuc.edu/~lavalle/planning/">LaValle, Planning Algorithms</a>——多目标与覆盖路径规划相关章节。</li></ul></section>
+<footer class="article-footer"><a href="19.html">← 动态环境重规划</a><a href="21.html">下一章 · 多机器人协调 →</a></footer>
+</article></main></div></body></html>
