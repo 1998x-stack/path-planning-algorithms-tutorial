@@ -1,0 +1,45 @@
+{
+  "article": "19",
+  "claims": [
+    {
+      "id": "lpa-star",
+      "claim": "LPA* 用 g 与 rhs 两个量描述节点，当 g(s)=rhs(s) 时节点一致；边代价变化时只重展开不一致节点",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1016/j.artint.2003.04.001",
+      "locator": "Koenig, Likhachev & Furcy (2004), Lifelong Planning A*, Artificial Intelligence 155(1-2):93-146",
+      "status": "verified"
+    },
+    {
+      "id": "dstar-lite",
+      "claim": "D* Lite 是反向（从goal出发）的增量搜索，适合机器人运动中的重规划",
+      "kind": "primary-paper",
+      "source_url": "https://www.cs.cmu.edu/~motionplanning/papers/sbp_papers/integrated2/koenig_dstar_lite.pdf",
+      "locator": "Koenig & Likhachev (2002), D* Lite, AAAI-02",
+      "status": "verified"
+    },
+    {
+      "id": "spacetime-size",
+      "claim": "把时间显式建模的时空图节点数为位置数乘以时间层数，随维度增长",
+      "kind": "derived",
+      "source_url": "https://msl.cs.uiuc.edu/~lavalle/planning/",
+      "locator": "LaValle, Planning Algorithms 时间维规划相关章节",
+      "status": "derived"
+    },
+    {
+      "id": "two-hundred-ms",
+      "claim": "“200ms 闭环”等时效数字在页面中被明确标注为经验法则/教学示意，非论文给出的普适阈值",
+      "kind": "teaching-note",
+      "source_url": null,
+      "locator": "19.html 滚动窗口一节 caution 注记",
+      "status": "derived"
+    },
+    {
+      "id": "example",
+      "claim": "页面 Python 示例为确定性教学示意：最小 LPA* 在移除障碍后把路径长度从 4 增量修复到 2，断言通过",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "19.html Python 代码块与断言",
+      "status": "derived"
+    }
+  ]
+}

@@ -122,3 +122,19 @@ document.addEventListener("DOMContentLoaded",()=>{
    for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));
  });
 });
+
+// Interactive replanning-trigger comparison used by chapter 19.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-replan-demo]");if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-trigger]")],rows=[...demo.querySelectorAll("[data-replan-row]")];
+ const notes={
+   timed:"定时重规划：10 个时间步里触发 10 次重算，环境未变的步也照算。",
+   event:"事件触发：只在障碍发生变化的第 4、8 步重算，其余步复用已有路径。"
+ };
+ function render(sel){
+   for(const r of rows)r.setAttribute("opacity",r.dataset.replanRow===sel?"1":"0.28");
+   status.textContent=notes[sel];
+ }
+ for(const b of buttons)b.addEventListener("click",()=>{render(b.dataset.trigger);for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));});
+ render("timed");
+});
