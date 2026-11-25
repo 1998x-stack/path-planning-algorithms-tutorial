@@ -35,7 +35,7 @@
     },
     {
       "id": "example",
-      "claim": "页面 Python 示例为确定性教学示意：一维中间点梯度下降把 y 从 0.1 推到 0.561，代价 27.00→2.29，断言通过",
+      "claim": "页面 Python 示例为确定性教学示意：一维中间点梯度下降把 y 从 0.1 推到 0.561，代价 18.01→2.29，断言通过",
       "kind": "derived",
       "source_url": null,
       "locator": "22.html Python 代码块与断言",
