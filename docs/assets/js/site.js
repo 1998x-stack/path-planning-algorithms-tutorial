@@ -173,3 +173,14 @@ document.addEventListener("DOMContentLoaded",()=>{
  };
  for(const b of buttons)b.addEventListener("click",()=>{const sel=b.dataset.opt;for(const p of paths)p.setAttribute("opacity",p.dataset.optPath===sel?"1":"0.2");status.textContent=notes[sel];for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));});
 });
+
+// Interactive sample-size / confidence-interval demo used by chapter 24.
+document.addEventListener("DOMContentLoaded",()=>{
+ const demo=document.querySelector("[data-sample-demo]");if(!demo)return;
+ const status=demo.querySelector(".demo-status"),buttons=[...demo.querySelectorAll("[data-sample]")],bands=[...demo.querySelectorAll("[data-sample-band]")];
+ const notes={
+   "3":"n = 3：置信区间很宽，单次波动足以覆盖任何“提升”。",
+   "30":"n = 30：区间明显变窄，点估计更稳定，但仍需报分布。"
+ };
+ for(const b of buttons)b.addEventListener("click",()=>{const sel=b.dataset.sample;for(const band of bands)band.setAttribute("opacity",band.dataset.sampleBand===sel?"1":"0.18");status.textContent=notes[sel];for(const item of buttons)item.setAttribute("aria-pressed",String(item===b));});
+});

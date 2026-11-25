@@ -1,0 +1,45 @@
+{
+  "article": "24",
+  "claims": [
+    {
+      "id": "ompl-benchmark",
+      "claim": "OMPL 内置基准测试框架，把规划请求、规划器与输出分离以支持批量运行与分布分析",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1109/MRA.2012.2205651",
+      "locator": "Sucan, Moll & Kavraki (2012), The Open Motion Planning Library, IEEE RAM 19(4)",
+      "status": "verified"
+    },
+    {
+      "id": "sampling-survey",
+      "claim": "sampling-based 规划具有随机性，需以分布与多次试验评估，而非单次运行",
+      "kind": "survey",
+      "source_url": "https://doi.org/10.1145/3310276",
+      "locator": "Salzman (2019), Sampling-based Robot Motion Planning, Communications of the ACM 62(4)",
+      "status": "verified"
+    },
+    {
+      "id": "bootstrap",
+      "claim": "用 bootstrap 重采样可以从样本估计均值的置信区间，样本量越大区间越窄",
+      "kind": "textbook",
+      "source_url": null,
+      "locator": "Efron & Tibshirani, An Introduction to the Bootstrap",
+      "status": "derived"
+    },
+    {
+      "id": "failure-reporting",
+      "claim": "剔除失败/超时样本会系统性美化平均值；应按固定预算报告失败率或最坏代价",
+      "kind": "derived",
+      "source_url": "https://doi.org/10.1109/MRA.2012.2205651",
+      "locator": "24.html 公平对比与统计显著性两节",
+      "status": "derived"
+    },
+    {
+      "id": "example",
+      "claim": "页面 Python 示例为确定性教学示意：固定 30 个测量上 bootstrap 置信区间宽度由 n=3 的 14.00 收窄到 n=30 的 7.97，断言通过",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "24.html Python 代码块与断言",
+      "status": "derived"
+    }
+  ]
+}
