@@ -1,0 +1,53 @@
+{
+  "article": "28",
+  "claims": [
+    {
+      "id": "dwa",
+      "claim": "DWA（动态窗口法）由 Fox, Burgard & Thrun 于 1997 年提出，用于在速度空间中搜索安全的局部运动",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1109/100.580977",
+      "locator": "Fox, Burgard & Thrun (1997), The Dynamic Window Approach to Collision Avoidance, IEEE RAM 4(1)",
+      "status": "verified"
+    },
+    {
+      "id": "astar",
+      "claim": "A* 由 Hart, Nilsson & Raphael 于 1968 年提出，用可采纳启发式引导最小代价路径搜索",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1016/0004-3702(68)90029-6",
+      "locator": "Hart, Nilsson & Raphael (1968), A Formal Basis ..., Artificial Intelligence 4(2)",
+      "status": "verified"
+    },
+    {
+      "id": "lavalle",
+      "claim": "LaValle 的 Planning Algorithms 教材系统覆盖图搜索、采样规划（RRT、PRM）与运动学规划",
+      "kind": "textbook",
+      "source_url": "http://planning.cs.uiuc.edu/",
+      "locator": "LaValle (2006), Planning Algorithms, Cambridge University Press",
+      "status": "verified"
+    },
+    {
+      "id": "nav2",
+      "claim": "ROS 2 Nav2 提供工业级导航栈的模块划分与参数，可作为本项目对比参考",
+      "kind": "official-docs",
+      "source_url": "https://docs.nav2.org/",
+      "locator": "ROS 2 Nav2 官方文档",
+      "status": "verified"
+    },
+    {
+      "id": "example",
+      "claim": "页面 Python 示例为确定性教学示意：8x8 栅格 4 邻域 A* 得到 14 步路径，前瞻 3 步落在 (0,3)，路径合法性与前瞻断言通过",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "28.html 两段 Python 代码块与断言",
+      "status": "derived"
+    },
+    {
+      "id": "scope",
+      "claim": "本章为教学尺度导航栈，不含定位融合、传感器标定、故障处理与安全认证，不可直接部署到真车",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "28.html 要搭的是什么与边界条件两节",
+      "status": "derived"
+    }
+  ]
+}

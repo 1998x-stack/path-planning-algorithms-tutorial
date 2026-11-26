@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="330" viewBox="0 0 900 330" role="img" aria-labelledby="st-t st-d"><title id="st-t">完整导航栈的模块与数据流</title><desc id="st-d">单行五个方框，从左到右依次为感知与定位、全局规划（A* 或 RRT*）、路径平滑与前瞻点选择、局部规划（DWA）、速度指令输出到机器人。下方一条反馈箭头从机器人回到感知，表示每个控制周期的位姿与传感器更新。全局与局部规划器分别标注其职责。</desc>
+<rect width="900" height="330" rx="18" fill="#fffdf9"/>
+<g font-family="Arial,PingFang SC,sans-serif">
+<g font-size="14">
+<rect x="30" y="70" width="150" height="72" rx="8" fill="#eef4f0" stroke="#147f80" stroke-width="2"/>
+<text x="105" y="102" text-anchor="middle" fill="#147f80" font-weight="bold">感知与定位</text>
+<text x="105" y="124" text-anchor="middle" fill="#53676d">位姿 · 点云 · 障碍</text>
+<rect x="202" y="70" width="150" height="72" rx="8" fill="#eef4f0" stroke="#147f80" stroke-width="2"/>
+<text x="277" y="96" text-anchor="middle" fill="#147f80" font-weight="bold">全局规划</text>
+<text x="277" y="116" text-anchor="middle" fill="#53676d">A* 或 RRT*</text>
+<text x="277" y="134" text-anchor="middle" fill="#53676d">粗路径</text>
+<rect x="374" y="70" width="150" height="72" rx="8" fill="#fff6f1" stroke="#d06d4d" stroke-width="2"/>
+<text x="449" y="96" text-anchor="middle" fill="#a5482c" font-weight="bold">平滑 + 前瞻</text>
+<text x="449" y="116" text-anchor="middle" fill="#53676d">样条后处理</text>
+<text x="449" y="134" text-anchor="middle" fill="#53676d">选前瞻点</text>
+<rect x="546" y="70" width="150" height="72" rx="8" fill="#eef4f0" stroke="#147f80" stroke-width="2"/>
+<text x="621" y="96" text-anchor="middle" fill="#147f80" font-weight="bold">局部规划</text>
+<text x="621" y="116" text-anchor="middle" fill="#53676d">DWA</text>
+<text x="621" y="134" text-anchor="middle" fill="#53676d">避动态障碍</text>
+<rect x="718" y="70" width="152" height="72" rx="8" fill="#f3eefc" stroke="#7461ba" stroke-width="2"/>
+<text x="794" y="96" text-anchor="middle" fill="#7461ba" font-weight="bold">速度指令</text>
+<text x="794" y="116" text-anchor="middle" fill="#53676d">(v, ω)</text>
+<text x="794" y="134" text-anchor="middle" fill="#53676d">→ 机器人</text>
+</g>
+<g stroke="#203035" stroke-width="2" fill="#203035">
+<line x1="180" y1="106" x2="202" y2="106"/><path d="M202 106 l-9 -5 v10 z"/>
+<line x1="352" y1="106" x2="374" y2="106"/><path d="M374 106 l-9 -5 v10 z"/>
+<line x1="524" y1="106" x2="546" y2="106"/><path d="M546 106 l-9 -5 v10 z"/>
+<line x1="696" y1="106" x2="718" y2="106"/><path d="M718 106 l-9 -5 v10 z"/>
+</g>
+<path d="M794 142 v70 H105 v-70" fill="none" stroke="#53676d" stroke-width="2" stroke-dasharray="6 4"/>
+<path d="M105 142 l-5 9 h10 z" fill="#53676d"/>
+<text x="450" y="232" font-size="13" fill="#53676d" text-anchor="middle">每个控制周期：机器人位姿与传感器更新回到感知与定位</text>
+<text x="30" y="282" font-size="13" fill="#53676d">全局层保证完备性/最优性，局部层保证对动态障碍的实时反应；两层职责不重叠。</text>
+<text x="30" y="306" font-size="13" fill="#53676d">路径平滑与前瞻点选择是两层的接口，也是最容易出问题的地方。</text>
+</g></svg>
