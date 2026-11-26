@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="300" viewBox="0 0 900 300" role="img" aria-labelledby="mdp-t mdp-d"><title id="mdp-t">路径规划的马尔可夫决策过程回路</title><desc id="mdp-d">左侧策略网络接收状态 s_t（位姿、传感器、目标），输出动作 a_t（线速度与角速度）作用于环境；环境返回奖励 r_t 与下一个状态 s_{t+1}。下方标注路径规划里三者的具体含义。奖励由到达目标、碰撞、每步代价三项组成。</desc>
+<rect width="900" height="300" rx="18" fill="#fffdf9"/>
+<g font-family="Arial,PingFang SC,sans-serif">
+<rect x="80" y="70" width="240" height="90" rx="10" fill="#eef4f0" stroke="#147f80" stroke-width="2"/>
+<text x="200" y="108" font-size="16" font-weight="bold" fill="#147f80" text-anchor="middle">策略（规划器）</text>
+<text x="200" y="134" font-size="14" fill="#203035" text-anchor="middle">π(s) 输出动作 a</text>
+<rect x="580" y="70" width="240" height="90" rx="10" fill="#fff6f1" stroke="#d06d4d" stroke-width="2"/>
+<text x="700" y="108" font-size="16" font-weight="bold" fill="#a5482c" text-anchor="middle">环境（仿真/实车）</text>
+<text x="700" y="134" font-size="14" fill="#203035" text-anchor="middle">运动学 + 障碍 + 噪声</text>
+<line x1="320" y1="95" x2="580" y2="95" stroke="#203035" stroke-width="2"/>
+<path d="M580 95 l-12 -6 v12 z" fill="#203035"/>
+<text x="450" y="86" font-size="14" fill="#203035" text-anchor="middle">动作 a_t = (v, ω)</text>
+<line x1="580" y1="138" x2="320" y2="138" stroke="#53676d" stroke-width="2"/>
+<path d="M320 138 l12 -6 v12 z" fill="#53676d"/>
+<text x="450" y="158" font-size="14" fill="#53676d" text-anchor="middle">状态 s_t、奖励 r_t</text>
+<g font-size="13" fill="#53676d">
+<text x="80" y="210">状态 s：位姿 + 传感器观测 + 目标方位（可选速度、局部代价地图）</text>
+<text x="80" y="238">动作 a：连续 (v, ω) 或离散｛前、左、右、停｝</text>
+<text x="80" y="266">奖励 r：到达 +、碰撞 −、每步小负值（三项权重的取舍即“奖励塑造”）</text>
+</g>
+</g></svg>

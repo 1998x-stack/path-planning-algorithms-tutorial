@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320" role="img" aria-labelledby="sh-t sh-d"><title id="sh-t">模仿学习中的分布偏移与误差复合</title><desc id="sh-d">横轴为时间步。青色窄带表示专家示范数据覆盖的状态分布。teal 轨迹一开始落在带内，但一次微小偏差后逐步偏出带状区域，进入分布外区域并以陶红色标出。下方更宽的浅色带表示加入 DAgger 恢复样本后扩大的覆盖范围，可把偏移轨迹重新纳入训练分布。</desc>
+<rect width="900" height="320" rx="18" fill="#fffdf9"/>
+<g font-family="Arial,PingFang SC,sans-serif">
+<line x1="60" y1="250" x2="860" y2="250" stroke="#53676d" stroke-width="2"/>
+<text x="840" y="274" font-size="14" fill="#53676d" text-anchor="end">时间步 →</text>
+<rect x="90" y="150" width="300" height="70" rx="8" fill="#dfeee9" opacity="0.8"/>
+<text x="98" y="142" font-size="14" fill="#147f80">专家示范覆盖的分布</text>
+<rect x="90" y="118" width="620" height="134" rx="10" fill="#f0d3c9" opacity="0.28"/>
+<text x="98" y="110" font-size="14" fill="#a5482c">加入 DAgger 恢复样本后的覆盖（示意）</text>
+<path d="M100 185 C 220 183 320 178 400 168 C 520 154 640 132 760 100" fill="none" stroke="#147f80" stroke-width="3"/>
+<path d="M400 168 C 520 190 640 214 780 236" fill="none" stroke="#d06d4d" stroke-width="3"/>
+<circle cx="400" cy="168" r="5" fill="#203035"/>
+<text x="360" y="162" font-size="13" fill="#203035">一次微小偏差</text>
+<text x="470" y="150" font-size="13" fill="#147f80">留在分布内：可纠正</text>
+<text x="560" y="222" font-size="13" fill="#a5482c">偏出分布：误差逐步复合</text>
+<rect x="90" y="292" width="16" height="10" fill="#dfeee9"/>
+<text x="114" y="301" font-size="13" fill="#53676d">专家分布</text>
+<rect x="210" y="292" width="16" height="10" fill="#f0d3c9"/>
+<text x="234" y="301" font-size="13" fill="#53676d">DAgger 扩大覆盖</text>
+<line x1="380" y1="297" x2="400" y2="297" stroke="#d06d4d" stroke-width="3"/>
+<text x="408" y="301" font-size="13" fill="#53676d">偏离的轨迹</text>
+</g></svg>

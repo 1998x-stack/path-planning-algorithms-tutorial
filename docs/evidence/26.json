@@ -1,0 +1,53 @@
+{
+  "article": "26",
+  "claims": [
+    {
+      "id": "alvinn",
+      "claim": "行为克隆（模仿学习）可追溯到 Pomerleau 1988 的 ALVINN，用神经网络从道路图像回归转向",
+      "kind": "primary-paper",
+      "source_url": null,
+      "locator": "Pomerleau (1988), ALVINN, NIPS 1988",
+      "status": "verified"
+    },
+    {
+      "id": "dagger",
+      "claim": "DAgger 通过在当前策略访问到的状态分布上聚合专家标注来缓解模仿学习的分布偏移",
+      "kind": "primary-paper",
+      "source_url": "https://arxiv.org/abs/1011.0686",
+      "locator": "Ross, Gordon & Bagnell (2011), A Reduction of Imitation Learning ..., AISTATS",
+      "status": "verified"
+    },
+    {
+      "id": "ppo",
+      "claim": "PPO 是一种在稳定性与实现简单之间取得平衡的策略梯度方法",
+      "kind": "primary-paper",
+      "source_url": "https://arxiv.org/abs/1707.06347",
+      "locator": "Schulman et al. (2017), Proximal Policy Optimization Algorithms",
+      "status": "verified"
+    },
+    {
+      "id": "prm-rl",
+      "claim": "PRM-RL 将经典路线图与强化学习结合，属于混合架构",
+      "kind": "primary-paper",
+      "source_url": "https://arxiv.org/abs/1807.06757",
+      "locator": "Faust et al. (2018), PRM-RL, ICRA",
+      "status": "verified"
+    },
+    {
+      "id": "reward-hacking",
+      "claim": "稠密奖励可能被策略利用（如往复振荡累积逼近奖励）而非真正到达目标",
+      "kind": "derived",
+      "source_url": "https://arxiv.org/abs/1707.06347",
+      "locator": "26.html 强化学习一节的奖励塑造讨论",
+      "status": "derived"
+    },
+    {
+      "id": "example",
+      "claim": "页面 Python 示例为确定性教学示意：一维模型 x'=1.05x+u、u=-g·x+b 下，精确策略收敛到 0.006、偏置 0.02 稳态偏移 0.404、丢失反馈发散到 131.5，断言通过",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "26.html Python 代码块与断言",
+      "status": "derived"
+    }
+  ]
+}
