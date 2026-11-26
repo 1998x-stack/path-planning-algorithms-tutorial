@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="330" viewBox="0 0 900 330" role="img" aria-labelledby="hy-t hy-d"><title id="hy-t">学习型组件嵌入经典导航栈的分层结构</title><desc id="hy-d">三层结构。顶层为语义与语言层，可由基础模型把“去蓝色椅子旁”这类指令变成子目标，属学习型。中层为经典规划层，包含全局 A*／RRT* 与局部 DWA／MPC。底层为几何与安全层，包含碰撞检查、代价地图与形式化安全边界。箭头标注学习型组件可介入的环节：高层子目标、启发式权重、局部代价权重。</desc>
+<rect width="900" height="330" rx="18" fill="#fffdf9"/>
+<g font-family="Arial,PingFang SC,sans-serif">
+<rect x="80" y="40" width="740" height="62" rx="8" fill="#f3eefc" stroke="#7461ba" stroke-width="2"/>
+<text x="100" y="68" font-size="15" font-weight="bold" fill="#7461ba">语义/语言层（学习型）</text>
+<text x="100" y="90" font-size="13" fill="#203035">把“去蓝色椅子旁”转成子目标；不直接输出底层控制。</text>
+<rect x="80" y="118" width="740" height="62" rx="8" fill="#eef4f0" stroke="#147f80" stroke-width="2"/>
+<text x="100" y="146" font-size="15" font-weight="bold" fill="#147f80">经典规划层</text>
+<text x="100" y="168" font-size="13" fill="#203035">全局 A*／RRT* —— 局部 DWA／MPC；提供完备性与可解释的搜索证据。</text>
+<rect x="80" y="196" width="740" height="62" rx="8" fill="#fff6f1" stroke="#d06d4d" stroke-width="2"/>
+<text x="100" y="224" font-size="15" font-weight="bold" fill="#a5482c">几何/安全层</text>
+<text x="100" y="246" font-size="13" fill="#203035">碰撞检查、代价地图、形式化安全边界；任何上层输出都要在这里被独立复核。</text>
+<g font-size="13" fill="#53676d">
+<line x1="860" y1="71" x2="880" y2="71" stroke="#53676d" stroke-width="2"/>
+<line x1="860" y1="149" x2="880" y2="149" stroke="#53676d" stroke-width="2"/>
+<line x1="860" y1="227" x2="880" y2="227" stroke="#53676d" stroke-width="2"/>
+<line x1="880" y1="71" x2="880" y2="227" stroke="#53676d" stroke-width="1.5"/>
+</g>
+<text x="80" y="292" font-size="13" fill="#53676d">学习型可介入的环节：高层子目标 · 启发式权重 · 局部代价权重（均在经典层之上叠加，而非替代）。</text>
+<text x="80" y="314" font-size="13" fill="#53676d">安全层始终独立于学习型组件运行。</text>
+</g></svg>

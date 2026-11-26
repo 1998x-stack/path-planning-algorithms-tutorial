@@ -1,0 +1,53 @@
+{
+  "article": "27",
+  "claims": [
+    {
+      "id": "rt-2",
+      "claim": "RT-2 把视觉-语言模型扩展为视觉-语言-动作模型，将动作离散化为 token 与文本一起生成",
+      "kind": "primary-paper",
+      "source_url": "https://arxiv.org/abs/2307.15818",
+      "locator": "Brohan et al. (2023), RT-2",
+      "status": "verified"
+    },
+    {
+      "id": "palm-e",
+      "claim": "PaLM-E 将传感器观测、机器人状态与语言指令统一编码后自回归生成规划序列",
+      "kind": "primary-paper",
+      "source_url": "https://arxiv.org/abs/2303.03378",
+      "locator": "Driess et al. (2023), PaLM-E",
+      "status": "verified"
+    },
+    {
+      "id": "qaoa",
+      "claim": "QAOA 由 Farhi, Goldstone & Gutmann 于 2014 年提出，用于求解组合优化问题",
+      "kind": "primary-paper",
+      "source_url": "https://arxiv.org/abs/1411.4028",
+      "locator": "Farhi, Goldstone & Gutmann (2014), A Quantum Approximate Optimization Algorithm",
+      "status": "verified"
+    },
+    {
+      "id": "standards",
+      "claim": "ISO 26262（功能安全）与 ISO 21448/SOTIF（预期功能安全）是自动驾驶安全认证框架",
+      "kind": "standard",
+      "source_url": null,
+      "locator": "ISO 标准编号（版本以 ISO 官方页面为准）",
+      "status": "verified"
+    },
+    {
+      "id": "hybrid-reality",
+      "claim": "混合（经典+学习）架构已是当前工程做法，学习组件叠在经典层之上、安全层独立运行",
+      "kind": "derived",
+      "source_url": "https://arxiv.org/abs/1807.06757",
+      "locator": "27.html 混合架构一节，并参见第 26 章 PRM-RL",
+      "status": "derived"
+    },
+    {
+      "id": "forecast-levels",
+      "claim": "本章对“基础模型受限场景试点”“V2X 试点”“通用语义规划”“量子规划”等条目给出的时间与证据分级，均为编辑判断而非任何机构路线图",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "27.html 趋势分级、时间线图与交互",
+      "status": "derived"
+    }
+  ]
+}

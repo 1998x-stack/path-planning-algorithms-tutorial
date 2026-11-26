@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="360" viewBox="0 0 900 360" role="img" aria-labelledby="tl-t tl-d"><title id="tl-t">路径规划不同趋势的证据等级与时间尺度</title><desc id="tl-d">三个时间列：当下、2 到 3 年、5 年以上。每列放置若干趋势条目，用线型区分证据等级：实线表示可验证的现状，虚线表示合理外推，点线表示纯推测。混合架构归为现状，形式化验证工具与受限场景基础模型、V2X 试点归为外推，通用语义规划与量子规划归为推测。</desc>
+<rect width="900" height="360" rx="18" fill="#fffdf9"/>
+<g font-family="Arial,PingFang SC,sans-serif">
+<rect x="30" y="40" width="270" height="250" rx="10" fill="#eef4f0"/>
+<text x="165" y="72" font-size="15" font-weight="bold" fill="#147f80" text-anchor="middle">当下</text>
+<rect x="50" y="90" width="230" height="40" rx="6" fill="#fff" stroke="#147f80" stroke-width="2"/>
+<text x="165" y="115" font-size="13" fill="#203035" text-anchor="middle">混合架构已成工程现实</text>
+<rect x="50" y="146" width="230" height="40" rx="6" fill="#fff" stroke="#7461ba" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="165" y="171" font-size="13" fill="#203035" text-anchor="middle">小网络可做形式验证</text>
+<rect x="30" y="40" width="270" height="250" rx="10" fill="none" stroke="#147f80" stroke-width="2" opacity="0.001"/>
+<rect x="315" y="40" width="270" height="250" rx="10" fill="#f7faf7"/>
+<text x="450" y="72" font-size="15" font-weight="bold" fill="#53676d" text-anchor="middle">2–3 年</text>
+<rect x="335" y="90" width="230" height="40" rx="6" fill="#fff" stroke="#7461ba" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="450" y="115" font-size="13" fill="#203035" text-anchor="middle">基础模型受限场景试点</text>
+<rect x="335" y="146" width="230" height="40" rx="6" fill="#fff" stroke="#7461ba" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="450" y="171" font-size="13" fill="#203035" text-anchor="middle">V2X 高速/园区试点</text>
+<rect x="600" y="40" width="270" height="250" rx="10" fill="#fff6f1"/>
+<text x="735" y="72" font-size="15" font-weight="bold" fill="#a5482c" text-anchor="middle">5 年以上</text>
+<rect x="620" y="90" width="230" height="40" rx="6" fill="#fff" stroke="#d06d4d" stroke-width="2" stroke-dasharray="2 5"/>
+<text x="735" y="115" font-size="13" fill="#203035" text-anchor="middle">通用语义规划</text>
+<rect x="620" y="146" width="230" height="40" rx="6" fill="#fff" stroke="#d06d4d" stroke-width="2" stroke-dasharray="2 5"/>
+<text x="735" y="171" font-size="13" fill="#203035" text-anchor="middle">量子规划的特定场景</text>
+<text x="735" y="215" font-size="12" fill="#a5482c" text-anchor="middle">仅为推测</text>
+<g font-size="13" fill="#53676d">
+<line x1="40" y1="320" x2="70" y2="320" stroke="#147f80" stroke-width="2"/>
+<text x="78" y="325">已验证现状</text>
+<line x1="200" y1="320" x2="230" y2="320" stroke="#7461ba" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="238" y="325">合理外推</text>
+<line x1="350" y1="320" x2="380" y2="320" stroke="#d06d4d" stroke-width="2" stroke-dasharray="2 5"/>
+<text x="388" y="325">纯推测</text>
+</g>
+</g></svg>
