@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320" role="img" aria-labelledby="mg-t mg-d"><title id="mg-t">障碍膨胀裕度必须覆盖最坏情况下的未建模横向漂移</title><desc id="mg-d">一条水平走廊。名义路径沿中线以虚线前进，实车路径因未建模侧滑向右侧障碍物偏移。障碍物外侧画出一圈膨胀裕度。当漂移量小于膨胀半径时仍保持安全，漂移量超过膨胀半径时路径进入碰撞区。图不给出具体数值，只表示“裕度大于漂移才安全”的方向关系。</desc>
+<rect width="900" height="320" rx="18" fill="#fffdf9"/>
+<g font-family="Arial,PingFang SC,sans-serif">
+<line x1="40" y1="70" x2="860" y2="70" stroke="#4e6060" stroke-width="6"/>
+<line x1="40" y1="250" x2="860" y2="250" stroke="#4e6060" stroke-width="6"/>
+<text x="40" y="52" font-size="14" fill="#53676d">走廊上边界</text>
+<text x="40" y="278" font-size="14" fill="#53676d">走廊下边界</text>
+<circle cx="70" cy="160" r="8" fill="#203035"/>
+<text x="52" y="192" font-size="13" fill="#53676d">起点</text>
+<circle cx="830" cy="160" r="8" fill="#7461ba"/>
+<text x="800" y="192" font-size="13" fill="#7461ba">目标</text>
+<path d="M70 160 H830" fill="none" stroke="#147f80" stroke-width="2.5" stroke-dasharray="7 5"/>
+<text x="330" y="150" font-size="13" fill="#147f80">名义路径（地图中线）</text>
+<rect x="560" y="86" width="90" height="60" fill="#4e6060"/>
+<text x="562" y="80" font-size="13" fill="#203035">障碍物</text>
+<rect x="548" y="74" width="114" height="84" fill="none" stroke="#d06d4d" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="668" y="112" font-size="13" fill="#a5482c">膨胀裕度 r</text>
+<path d="M70 160 C 300 160 430 176 556 196" fill="none" stroke="#d06d4d" stroke-width="3"/>
+<text x="180" y="212" font-size="13" fill="#a5482c">实车路径向障碍侧漂移 e</text>
+<line x1="556" y1="146" x2="556" y2="196" stroke="#203035" stroke-width="2"/>
+<line x1="548" y1="146" x2="564" y2="146" stroke="#203035" stroke-width="2"/>
+<line x1="548" y1="196" x2="564" y2="196" stroke="#203035" stroke-width="2"/>
+<text x="572" y="182" font-size="13" fill="#203035">e</text>
+<text x="40" y="306" font-size="14" fill="#53676d">安全条件：最坏情况漂移 e &lt; 膨胀裕度 r（示意，不是某个机器人的标定值）。</text>
+</g></svg>

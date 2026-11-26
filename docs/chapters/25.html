@@ -1,327 +1,64 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>第25章 仿真到实车部署</title>
-    <link rel="stylesheet" href="theme.css">
-</head>
-<body>
-<div class="double-border">
-<div class="container">
-    <div class="sidebar">
-        <h3>🤖 课程目录</h3>
-        <ul class="chapter-list">
-            <li><a href="01.html">第1章 什么是路径规划</a></li>
-            <li><a href="02.html">第2章 状态空间与构型空间</a></li>
-            <li><a href="03.html">第3章 图论基础</a></li>
-            <li><a href="04.html">第4章 栅格地图与代价地图</a></li>
-            <li><a href="05.html">第5章 启发式搜索入门</a></li>
-            <li><a href="06.html">第6章 Dijkstra算法</a></li>
-            <li><a href="07.html">第7章 A*算法</a></li>
-            <li><a href="08.html">第8章 A*改进与变体</a></li>
-            <li><a href="09.html">第9章 D* Lite增量搜索</a></li>
-            <li><a href="10.html">第10章 JPS跳点搜索</a></li>
-            <li><a href="11.html">第11章 RRT快速随机树</a></li>
-            <li><a href="12.html">第12章 RRT*渐进最优</a></li>
-            <li><a href="13.html">第13章 PRM概率路线图</a></li>
-            <li><a href="14.html">第14章 采样方法大对比</a></li>
-            <li><a href="15.html">第15章 路径平滑与后处理</a></li>
-            <li><a href="16.html">第16章 动态窗口法DWA</a></li>
-            <li><a href="17.html">第17章 人工势场法</a></li>
-            <li><a href="18.html">第18章 运动学约束与曲线</a></li>
-            <li><a href="19.html">第19章 动态环境重规划</a></li>
-            <li><a href="20.html">第20章 多目标路径规划</a></li>
-            <li><a href="21.html">第21章 多机器人协调</a></li>
-            <li><a href="22.html">第22章 优化模型方法</a></li>
-            <li><a href="23.html">第23章 可视化与调试</a></li>
-            <li><a href="24.html">第24章 算法性能基准测试</a></li>
-            <li><a href="25.html" class="active">第25章 仿真到实车部署</a></li>
-            <li><a href="26.html">第26章 学习型路径规划</a></li>
-            <li><a href="27.html">第27章 前沿趋势与未来</a></li>
-            <li><a href="28.html">第28章 综合项目</a></li>
-        </ul>
-    </div>
-    <div class="main-content">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="仿真到实车部署：reality gap 的四个来源、传感器噪声建模、域随机化与鲁棒规划安全裕度，附可运行且带断言的漂移累积示例。"><title>25 · 仿真到实车部署 — 路径规划算法</title><link rel="icon" type="image/svg+xml" href="../favicon.svg"><link rel="stylesheet" href="../assets/css/site.css"><script defer src="../assets/js/site.js"></script></head><body><a class="skip-link" href="#content">跳转至正文</a><header class="topbar"><div class="shell bar"><a class="wordmark" href="../index.html"><span class="brand-mark">⌁</span> Path Planning <span class="wordmark-sub">/ 课程</span></a><nav aria-label="课程导航"><a href="../index.html#curriculum">全部章节</a><a href="24.html">上一章</a><a href="26.html">下一章</a></nav></div></header>
+<div class="article-layout"><aside class="article-sidebar"><a class="return" href="../index.html">← 返回课程目录</a><details open><summary class="toc-heading">本章路径</summary><nav aria-label="本文目录"><a href="#problem">仿真里完美，实车为何失手</a><a href="#gap">鸿沟的四个来源</a><a href="#noise">传感器噪声建模</a><a href="#randomization">域随机化</a><a href="#robust">鲁棒规划与安全裕度</a><a href="#interaction">交互：裕度与漂移</a><a href="#implementation">可运行的漂移累积示例</a><a href="#limits">边界条件</a><a href="#references">原始来源</a></nav></details></aside>
+<main class="article-main" id="content"><article>
+<header class="article-header"><p class="article-meta">DEPLOYMENT / 25 OF 28</p><h1>仿真到实车部署：仿真里完美的规划器，为什么一到实车就失手</h1><p class="dek">同一套规划器，仿真里路径平滑、避障灵敏，装到实车上却擦碰、急停、跑偏。这不是某一处 bug，而是模型与世界之间的系统性差距——“reality gap”。它无法被彻底消除，只能被度量、被预留、被持续管理。</p></header>
+<section id="problem" aria-labelledby="problem-title"><h2 id="problem-title">仿真里完美，实车为何失手</h2><p>设想一个只在仿真里验证过的规划器：它拿到精确的栅格地图、无噪声的位姿、理想的运动学，于是它敢让路径贴着障碍物 2 cm 通过，敢在转角处保持高速。换到实车，同样的代码立刻出问题——路径偏移几厘米就擦上障碍，速度环跟不上规划的速度就在转角处抖动，最后触发急停。</p><p>问题不在算法本身。仿真里的规划器隐式依赖了三件在现实中并不成立的事：<strong>地图是精确的、位姿是精确的、动力学是它所假设的那一种</strong>。这三条任何一条被打破，规划与执行之间就出现缺口。机器人学习领域把这种“仿真中有效、现实中失效”的系统性差异称为 <strong>reality gap（现实鸿沟）</strong>，这一说法可追溯到 Jakobi、Husbands 与 Harvey 在 1995 年对“仿真中的进化机器人为何到现实就退化”的讨论。</p><p>关键认识是：<strong>reality gap 不是一次性的 bug，而是两个概率分布的偏移</strong>。仿真定义了一个（动力学、传感器、环境）参数的分布，真实世界定义的是另一个。你在前者上训练的规划或策略，放到后者上就处在训练分布之外。要缩小它，只能靠<strong>让训练分布覆盖更多的“假现实”</strong>（域随机化），以及在决策里<strong>显式预留不确定性的空间</strong>（鲁棒规划）。</p></section>
+<section id="gap" aria-labelledby="gap-title"><h2 id="gap-title">鸿沟的四个来源</h2><p>把 gap 拆开看，它主要来自四类差异。分开理解的价值在于：不同类型的差异，对应的对策也不同。</p><figure><p class="figure-kicker">DEPLOYMENT · 25</p><img src="../assets/figures/25-reality-gap.svg" loading="lazy" alt="左图仿真中规划器看到精确地图，路径沿理想曲线到达目标；右图实车中传感器带噪声、存在未建模侧滑，同一条名义路径发生偏移并擦到障碍。底部四个方框列出鸿沟来源：动力学失配、传感器真实性、环境多样性、时序与系统集成。"><figcaption>同一个规划器、同一条名义路径，在“模型即真相”的仿真与“模型只是近似”的实车中产生不同结果。四类差异叠加，任何一类都足以让贴着障碍的激进行为失败。图中不给出具体成功率，只表示差异的方向。</figcaption></figure><h3>动力学失配</h3><p>仿真用的摩擦、惯性、回差、轮胎形变都是对真实物理的近似。你在仿真里规划出的曲率，假设机器人能以某个速度沿它转弯；但真实轮胎在地毯与瓷砖上的摩擦系数可能相差很大，转弯时发生侧滑。单次侧滑也许只有几毫米，但连续多个转弯后偏差会累积成可观的横向误差。</p><h3>传感器真实性</h3><p>仿真中的激光雷达常返回精确的射线—面片交点。真实点云包含混合像素（一个脉冲打在物体边缘）、反射率导致的测距偏差、以及扫描过程中的运动畸变。规划器若在“干净”数据上调到极致，面对真实点云反而更容易误判。</p><h3>环境多样性</h3><p>仿真环境往往只有有限场景。真实世界有阳光直射导致视觉过曝、地面水渍造成激光噪点、地毯边缘带来颠簸。这些“小事”叠加，足以让最精巧的规划器失效。</p><h3>时序与系统集成</h3><p>感知、定位、规划、控制各模块的周期与延迟并不对齐。定位以较低频率更新、重规划以另一周期触发，两者之间的相位差会把一次微小的位姿跳变放大成路径级的偏差。这类问题仿真几乎无法预测，因为它出现在模块之间，而非模块之内。</p></section>
+<section id="noise" aria-labelledby="noise-title"><h2 id="noise-title">传感器噪声建模</h2><p>从仿真走向实车的第一步，是承认规划器拿到的不是真值。三类常见传感器的误差性质很不一样，混淆它们会导致错误的鲁棒性假设：</p><ul><li><strong>激光雷达（LiDAR）：</strong>单次测距误差近似独立，量级小（厘米级），但存在系统性偏差与偶发丢点、混合像素。多次扫描不能在时间上简单地“平均掉”系统性偏差。</li><li><strong>里程计（Odometry）：</strong>误差<strong>随里程累积</strong>。每一小段位移的比例误差与偏置会不断叠加，因此几十米后位置估计可能严重偏离真值。这是与 LiDAR 最本质的区别。</li><li><strong>全球定位（GPS）：</strong>大部分时间误差有界，但会偶发多径导致的大幅“跳变”，以及信号丢失。跳变是离群点，不是高斯尾巴。</li></ul><p>在规划层面，最需要盯住的是里程计的累积性。用一个只保留“横向误差随里程线性累积”这一效应的简化模型表示：</p><div class="equation" data-math-scroll tabindex="0" role="region" aria-label="横向误差 e 随里程 D 线性累积的简化模型，比例系数为 k"><math display="block" aria-label="e 等于 k 乘 D"><mrow><mi>e</mi><mo>=</mo><mi>k</mi><mo>·</mo><mi>D</mi></mrow></math><span class="equation-label">式 25-1 · 教学示意（不是具体机器人的标定模型）</span></div><p>其中 <code>e</code> 是横向位置误差（单位 m），<code>D</code> 是已行驶里程（单位 m），<code>k</code> 是无量纲的比例系数。<strong>量纲约定：</strong><code>k</code> 没有单位，表示“每米里程积累多少米横向误差”。真实系统里误差并非严格线性，但线性模型足以说明“误差随里程增长”这个决定性的定性事实，下一节的可运行示例就建立在它之上。</p></section>
+<section id="randomization" aria-labelledby="randomization-title"><h2 id="randomization-title">域随机化</h2><p>既然无法让仿真等于现实，一个策略是反过来：<strong>不要只训练/调参在一个“特定的假现实”上，而是让训练分布覆盖很多个“假现实”</strong>。这就是 Tobin 等人 2017 年提出的域随机化（domain randomization）：在仿真里随机化物理与传感器参数，使模型在真实世界中更鲁棒——其哲学是“见过足够多的假现实，就不会被某一个特定的假现实误导”。</p><p>典型的随机化对象包括：</p><ul><li><strong>物理参数：</strong>质量、摩擦系数、阻尼、电机延迟；</li><li><strong>传感器参数：</strong>噪声标准差、采样频率、丢包/丢点率；</li><li><strong>环境参数：</strong>光照强度、地面纹理、障碍物位置；</li><li><strong>执行器参数：</strong>最大速度、最大力矩、响应延迟。</li></ul><div class="note caution"><p>随机化不是万能的。第一，它<strong>只保证你在仿真中见过的分布被覆盖</strong>，真实世界的参数若落在该分布之外，鲁棒性依旧不成立；第二，随机化区间过宽会让模型在仿真内变差（“学一个大而无用的策略”），区间过窄又覆盖不到现实。区间如何选，本身又是一个需要实验回答的问题。</p></div></section>
+<section id="robust" aria-labelledby="robust-title"><h2 id="robust-title">鲁棒规划与安全裕度</h2><p>即使不做完整的域随机化，也可以在规划器里显式预留不确定性。核心思路是：<strong>当误差无法被精确消除时，就用空间与速度上的余量把它“装住”</strong>。</p><ul><li><strong>安全裕度（障碍膨胀）：</strong>在代价地图上把所有障碍物向外膨胀一个半径 <code>r</code>，使规划出的路径与真实障碍保持距离。ROS 2 Nav2 的 costmap 即通过 inflation layer 实现这一点。</li><li><strong>不确定性感知的代价：</strong>把定位协方差并入代价——不确定性越大的区域代价越高，机器人自然倾向绕开“看不清”的地方。</li><li><strong>保守的速度规划：</strong>靠近障碍或转角时主动减速；理想路径贴着障碍边缘通过，在加上执行器延迟与定位误差后往往等同于危险。</li><li><strong>频繁重规划：</strong>不要指望一次规划管到底；以固定周期重规划，让系统能持续纠正偏差。</li></ul><figure><p class="figure-kicker">DEPLOYMENT · 25</p><img src="../assets/figures/25-margin.svg" loading="lazy" alt="一条水平走廊，名义路径沿中线虚线前进，实车路径因未建模侧滑向右侧障碍物偏移。障碍物外画出一圈膨胀裕度 r，漂移量 e 被标注出来。当漂移 e 小于裕度 r 时仍安全，e 超过 r 则进入碰撞区。"><figcaption>膨胀裕度 <code>r</code> 的作用是把未建模的横向漂移 <code>e</code> 装进安全边界。工程上可用的安全条件是最坏情况漂移 <code>e<sub>max</sub> &lt; r</code>；前式 25-1 给出 <code>e</code> 随里程的增长，因此走廊越长，所需的 <code>r</code> 也越大。图中不给出标定数值。</figcaption></figure><div class="note"><p>把这两个量写在一起看：由式 25-1 有 <code>e_max = k · D</code>，安全条件变成 <code>k · D &lt; r</code>。它给出了一个很有用的工程结论——<strong>要么减小比例误差 <code>k</code>（更好的标定/滤波），要么缩短单段里程 <code>D</code>（更频繁重规划），要么加大膨胀半径 <code>r</code></strong>。三者都是可操作的口子，而不是玄学。</p></div></section>
+<section id="interaction" aria-labelledby="interaction-title"><h2 id="interaction-title">交互：裕度与漂移的量级比较</h2><p>固定膨胀裕度 <code>r = 0.30 m</code>、单段里程 <code>D = 20 m</code>，只改变比例误差 <code>k</code>。切换两个按钮，看 20 m 处的横向漂移 <code>e = k·D</code> 是否越过裕度。这正是“同一套参数，换一类地面就从安全变成危险”的几何直观。</p><div class="interactive-box" data-gap-demo><div class="demo-controls" role="group" aria-label="比例误差 k"><button type="button" data-k="1" aria-pressed="true">k = 0.01 /m</button><button type="button" data-k="2" aria-pressed="false">k = 0.02 /m</button></div><svg viewBox="0 0 520 200" role="img" aria-labelledby="gd-t gd-d"><title id="gd-t">膨胀裕度与 20 米处横向漂移的比较</title><desc id="gd-d">一条从 0 到 0.5 米的水平轴。青色区域表示膨胀裕度 r 等于 0.30 米。一条陶红色竖线表示 20 米里程处的横向漂移 e，随 k 在 0.20 与 0.40 米之间切换。</desc><rect width="520" height="200" rx="10" fill="#eef4f0"/><rect x="60" y="96" width="240" height="34" rx="6" fill="#dfeee9"/><text x="60" y="88" font-size="13" fill="#147f80">膨胀裕度 r = 0.30 m</text><line x1="60" y1="130" x2="460" y2="130" stroke="#53676d" stroke-width="2"/><g font-size="12" fill="#53676d" text-anchor="middle"><text x="60" y="152">0</text><text x="140" y="152">0.1</text><text x="220" y="152">0.2</text><text x="300" y="152">0.3</text><text x="380" y="152">0.4</text><text x="460" y="152">0.5</text></g><text x="460" y="176" font-size="13" fill="#53676d" text-anchor="end">横向漂移 e (m)</text><line data-gap-mark x1="220" y1="70" x2="220" y2="130" stroke="#d06d4d" stroke-width="3"/><text data-gap-value x="220" y="60" font-size="13" fill="#a5482c" text-anchor="middle">e = 0.20 m</text></svg><p class="demo-status" role="status" aria-live="polite">k = 0.01 /m：e = 0.20 m &lt; r = 0.30 m，仍存余量。</p><p class="micro">数值属教学示例；真实系统的 e 不一定随里程严格线性。</p></div></section>
+<section id="implementation" aria-labelledby="implementation-title"><h2 id="implementation-title">可运行的漂移累积示例（Python 3.10+）</h2><p>下面把“裕度能否装住漂移”写成一个确定性例子：同样 20 m 里程，比例误差从 1%/m 变成 2%/m，横向漂移就从 0.20 m 跳到 0.40 m，而 0.30 m 的膨胀裕度刚好被跨过。存成 <code>gap_demo.py</code>，运行 <code>python3 gap_demo.py</code>，断言应当通过。</p><pre><code>import math  # Python 3.10+
 
-        <p>大家好，经过前面二十四章的学习，你的算法已经在 notebook 中跑通了、可视化效果完美、基准测试数据也令人满意。现在你面临真正的考验：把它放到一台真实机器人上，看它能不能在现实的物理世界中工作。</p>
+# 教学示意模型：横向误差随里程线性累积 e = k * D，
+# 只保留“误差随里程增长”这一效应，不是具体机器人的标定模型。
+def lateral_error(distance_m: float, k: float) -> float:
+    return k * distance_m
 
-        <p>这一步，是所有路径规划学习者的"成年礼"。仿真中的完美表现可能在真实机器人上完全失效——你的优雅算法会碰到传感器噪声、执行器延迟、地面摩擦力不均、电池电压波动等一系列仿真环境中从未出现过的问题。我自己在第一次把路径规划系统部署到真实机器人上时，经历了整整三周的"崩溃-修复-再崩溃"循环。最终它跑起来的那一刻，实验室的师兄弟们都围过来鼓掌——那是我整个研究生生涯最有成就感的瞬间之一。</p>
+R = 0.30        # 障碍膨胀裕度 (m)
+D = 20.0        # 单段行驶里程 (m)
 
-        <h2>仿真的价值与局限</h2>
+e_small = lateral_error(D, 0.01)   # 1% 每米
+e_large = lateral_error(D, 0.02)   # 2% 每米
 
-        <p>在讨论 sim-to-real 问题之前，首先要明确：仿真不是可选项，它是路径规划开发的必备工具。几乎所有的现代机器人系统都依赖于仿真进行开发迭代。但我们需要清楚仿真的边界在哪。</p>
+assert math.isclose(e_small, 0.20)
+assert math.isclose(e_large, 0.40)
+assert e_small &lt; R &lt; e_large        # 同样 20 m，k 翻倍就从安全变成危险
 
-        <h3>仿真做什么做得很好</h3>
-        <ul>
-            <li><strong>快速迭代算法逻辑</strong>——在仿真中你可以 1 秒跑完真实世界中需要 1 小时的实验。这意味着你可以在短时间内尝试几十种参数组合。</li>
-            <li><strong>复现和调试bug</strong>——仿真环境是完全可复现的：相同输入一定得到相同输出。在真实机器人上，一次实验的条件几乎不可能完全复现。</li>
-            <li><strong>测试极端场景</strong>——在仿真中你可以安全地测试传感器失效、通信延迟、极端地形——这些场景在实体上测试要么太危险、要么太昂贵。</li>
-            <li><strong>大规模并行测试</strong>——你可以同时启动几百个仿真实例，在一夜之间完成真实世界中几个月才能积累的测试里程。</li>
-        </ul>
-
-        <h3>仿真永远教不会你的</h3>
-        <ul>
-            <li><strong>传感器噪声的真实分布</strong>——仿真中的噪声模型通常是高斯分布的简化假设，而真实传感器的噪声往往包含系统性偏差和长尾异常值。</li>
-            <li><strong>硬件的非理想特性</strong>——电机回差、轮胎打滑、履带震动、机械结构柔性——这些物理效应极其复杂，几乎不可能完全建模。</li>
-            <li><strong>系统集成的"最后一公里"</strong>——把所有软件模块（感知、规划、控制、通信、状态机）连成一个完整系统后出现的偶发问题，仿真几乎无法预测。</li>
-        </ul>
-
-        <div class="tip">
-            <strong>我的原则：</strong>在仿真中完成 95% 的开发工作，但永远为最后的 5% 预留至少 30% 的工期。这不单纯是经验之谈——sim-to-real gap 的本质决定了最后 5% 的工程工作往往比前 95% 更耗时。
-        </div>
-
-        <p>目前主流的机器人仿真器有以下几个选择，各有优劣：</p>
-
-        <table>
-            <tr>
-                <th>仿真器</th>
-                <th>物理引擎</th>
-                <th>渲染质量</th>
-                <th>物理精度</th>
-                <th>ROS集成</th>
-                <th>适合场景</th>
-            </tr>
-            <tr>
-                <td>Gazebo</td>
-                <td>ODE / DART / Bullet</td>
-                <td>中等</td>
-                <td>中等</td>
-                <td>原生（ros_control）</td>
-                <td>地面移动机器人、多机器人、ROS 生态</td>
-            </tr>
-            <tr>
-                <td>PyBullet</td>
-                <td>Bullet</td>
-                <td>低</td>
-                <td>高</td>
-                <td>插件支持</td>
-                <td>学术研究、快速原型、机械臂规划</td>
-            </tr>
-            <tr>
-                <td>Isaac Sim</td>
-                <td>PhysX</td>
-                <td>极高（RTX）</td>
-                <td>极高</td>
-                <td>扩展支持</td>
-                <td>工业级仿真、域随机化、合成数据生成</td>
-            </tr>
-            <tr>
-                <td>MuJoCo</td>
-                <td>MuJoCo (专有)</td>
-                <td>低</td>
-                <td>极高（接触模型）</td>
-                <td>社区集成</td>
-                <td>强化学习、接触密集型操作</td>
-            </tr>
-            <tr>
-                <td>Webots</td>
-                <td>ODE</td>
-                <td>中等</td>
-                <td>中等</td>
-                <td>原生支持</td>
-                <td>教育、快速原型</td>
-            </tr>
-        </table>
-
-        <h2>传感器噪声建模</h2>
-
-        <p>从仿真到现实的第一步，是理解你的机器人上的传感器实际上在给你什么数据。每一个传感器都引入误差。如果你在仿真中假设传感器是完美的，你的规划器必然无法应对真实世界。下面我们来看如何对最常见的几种传感器噪声进行建模：</p>
-
-        <pre><code>import numpy as np
-from dataclasses import dataclass
-
-
-@dataclass
-class LiDARNoiseModel:
-    """激光雷达噪声模型"""
-    range_std: float = 0.02       # 距离标准差 (m)
-    angular_std: float = 0.003     # 角度标准差 (rad)
-    drop_out_rate: float = 0.01    # 丢点率
-    max_range: float = 30.0        # 最大量程 (m)
-    min_range: float = 0.1         # 最小量程 (m)
-
-    def apply(self, ranges: np.ndarray, angles: np.ndarray) -> np.ndarray:
-        """对完美激光雷达数据施加噪声"""
-        noisy = ranges.copy()
-
-        # 1. 高斯测距噪声
-        noisy += np.random.normal(0, self.range_std, len(noisy))
-
-        # 2. 随机丢点（返回 inf 表示无回波）
-        drop_mask = np.random.random(len(noisy)) < self.drop_out_rate
-        noisy[drop_mask] = np.inf
-
-        # 3. 量程截断
-        noisy = np.clip(noisy, self.min_range, self.max_range)
-
-        return noisy
-
-
-@dataclass
-class OdometryNoiseModel:
-    """里程计漂移噪声模型"""
-    trans_std: float = 0.01        # 平移漂移 (m/m)
-    rot_std: float = 0.005         # 旋转漂移 (rad/rad)
-    bias_drift: float = 0.001      # 偏置随时间漂移 (m/s)
-
-    def __post_init__(self):
-        self.trans_bias = 0.0
-        self.rot_bias = 0.0
-
-    def apply(self, dx: float, dy: float, dtheta: float,
-              dt: float) -> tuple:
-        """对里程计增量施加累积性噪声"""
-        # 偏置随机游走
-        self.trans_bias += np.random.normal(0, self.bias_drift * dt)
-        self.rot_bias += np.random.normal(0, self.bias_drift * dt * 0.5)
-
-        # 比例噪声 + 偏置
-        noise_dx = dx * (1 + np.random.normal(0, self.trans_std)
-                         + self.trans_bias * dt)
-        noise_dy = dy * (1 + np.random.normal(0, self.trans_std)
-                         + self.trans_bias * dt)
-        noise_dtheta = dtheta * (1 + np.random.normal(0, self.rot_std)
-                                  + self.rot_bias * dt)
-
-        return noise_dx, noise_dy, noise_dtheta
-
-
-@dataclass
-class GPSNoiseModel:
-    """GPS 噪声模型"""
-    xy_std: float = 0.5            # 水平位置标准差 (m)
-    update_rate: float = 10.0      # 更新频率 (Hz)
-    outage_prob: float = 0.001     # 信号丢失概率
-    multipath_prob: float = 0.02   # 多径效应概率
-    multipath_offset: float = 3.0  # 多径偏移量 (m)
-
-    def apply(self, true_position: np.ndarray, dt: float) -> np.ndarray:
-        """GPS 测量模型"""
-        if np.random.random() < self.outage_prob:
-            return None  # 信号丢失
-
-        noisy = true_position.copy()
-
-        # 基础高斯噪声
-        noisy += np.random.normal(0, self.xy_std, 2)
-
-        # 多径效应（突发大偏移）
-        if np.random.random() < self.multipath_prob:
-            angle = np.random.uniform(0, 2 * np.pi)
-            noisy += np.array([
-                self.multipath_offset * np.cos(angle),
-                self.multipath_offset * np.sin(angle),
-            ])
-
-        return noisy
-
-
-# ---- 噪声注入测试 ----
-def simulate_sensor_noise():
-    """模拟机器人直线运动时的传感器噪声"""
-    lidar = LiDARNoiseModel()
-    odom = OdometryNoiseModel()
-    gps = GPSNoiseModel()
-
-    # 模拟 100 步直线运动
-    true_path = []
-    odom_path = []
-    gps_path = []
-
-    x, y, theta = 0.0, 0.0, 0.0
-    dt = 0.1
-
-    for step in range(100):
-        # 真实运动：以 0.5 m/s 直线前进
-        dx = 0.5 * dt * np.cos(theta)
-        dy = 0.5 * dt * np.sin(theta)
-        dtheta = 0.0  # 直线
-
-        x += dx
-        y += dy
-        true_path.append((x, y))
-
-        # 带噪声的里程计
-        dx_n, dy_n, dt_n = odom.apply(dx, dy, dtheta, dt)
-        # odom 是累积的，所以保持姿态估计
-        theta_n = theta + dt_n
-        if step == 0:
-            ox, oy = dx_n, dy_n
-        else:
-            ox += dx_n
-            oy += dy_n
-        odom_path.append((ox, oy))
-
-        # 带噪声的 GPS
-        gps_meas = gps.apply(np.array([x, y]), dt)
-        if gps_meas is not None:
-            gps_path.append(gps_meas)
-
-        theta = theta_n  # 实际控制用里程计更新的姿态
-
-    return true_path, odom_path, gps_path</code></pre>
-
-        <p>这段代码的关键在于：<strong>里程计的误差是累积的</strong>。随着机器人移动，里程计的偏置会不断漂移——这就是为什么只靠里程计的机器人在移动几十米后位置估计会严重偏离真实值。而 LiDAR 的误差是每次测量独立的（虽然也有系统性偏差），GPS 则偶尔会有多径效应导致的"跳变"。在你的规划器中，你必须考虑到这些不确定性——<strong>规划器的"世界模型"永远是不完美的</strong>。</p>
-
-        <h2>Sim-to-Real Gap</h2>
-
-        <p>Sim-to-real gap（仿真到现实的鸿沟）是机器人领域最棘手的问题之一。它指的是：在仿真中表现完美的系统，搬到真实世界后性能急剧下降的现象。这不是某一两个参数的问题，而是多方面的系统性差异：</p>
-
-        <h3>动力学失配</h3>
-        <p>仿真中的物理模型（摩擦力、惯性、弹性形变）是对真实物理的近似。你为仿真中的机器人规划的路径，假设它能以某个速度拐弯——但真实机器人的轮胎在地毯上和瓷砖上的摩擦力系数可能相差 30%。这意味着你规划的曲率半径在真实世界中可能是错误的。</p>
-
-        <h3>传感器真实性</h3>
-        <p>仿真中的 LiDAR 返回的是精确的射线-三角面片交点。真实的 LiDAR 点云包含混合像素（一个激光脉冲打到两个物体的边缘）、反射率导致的测量偏差、运动畸变（扫描过程中机器人移动了位置）。你的规划器可能完美地利用了仿真中的"干净"数据，但在面对真实点云时完全不知所措。</p>
-
-        <h3>环境多样性</h3>
-        <p>仿真环境通常只包含有限的场景变化。真实世界有无穷的变化：阳光直射导致视觉传感器过曝、雨滴反射导致 LiDAR 产生噪点、地毯边缘高出地面 1 毫米导致机器人颠簸。这些"小"事叠加起来，足以让最精巧的规划器崩溃。</p>
-
-        <div class="warning">
-            <strong>踩坑故事：</strong>我曾经参与一个 AGV（自动导引车）项目，所有算法在 Gazebo 仿真中跑得完美无缺——路径平滑、避障灵敏、停位精度 ±1 厘米。我们兴高采烈地把系统部署到实车上，结果第一圈就跑偏了 30 厘米。排查了两天发现罪魁祸首是：仿真中的轮胎摩擦模型假设了理想库伦摩擦，而真实仓库地面有微小的油渍残留，导致机器人在转弯时侧滑了约 5%。这个侧滑在单次转弯中微乎其微，但在经过 6 个连续转弯后累积了 30 厘米的偏差。我们的路径规划器完全不知道"轮胎可能打滑"这件事——它假设机器人可以精确跟踪任意路径。最后的解决方案是通过实车标定获取侧滑模型参数，并在规划器中的运动学约束里加入安全裕度。教训是：<strong>永远不要相信仿真中的动力学参数——它们永远是"接近真实"而非"等于真实"。</strong>
-        </div>
-
-        <h2>域随机化与鲁棒规划</h2>
-
-        <p>既然 sim-to-real gap 无法完全消除，我们需要系统性的方法来缩小它。两种最有效的方法是域随机化和鲁棒规划。</p>
-
-        <h3>域随机化（Domain Randomization）</h3>
-        <p>域随机化的思路很简单：在仿真中随机化各种参数（摩擦系数、质量、传感器噪声水平、光照条件等），让规划器在多样化的条件下训练，从而在真实世界中更具鲁棒性。它的哲学是：如果你见过足够多的"假真实"，你就不会被任何一个"特定假真实"所误导。</p>
-
-        <p>常用的域随机化参数包括：</p>
-        <ul>
-            <li><strong>物理参数</strong>——质量 ±20%、摩擦系数 ±50%、阻尼系数 ±30%</li>
-            <li><strong>传感器参数</strong>——噪声标准差 ±50%、采样频率 ±10%、丢包率 0-5%</li>
-            <li><strong>环境参数</strong>——光照强度 100-1000 lux、地面纹理、随机障碍物位置</li>
-            <li><strong>执行器参数</strong>——电机延迟 0-50ms、最大速度 ±10%、最大力矩 ±20%</li>
-        </ul>
-
-        <h3>鲁棒规划策略</h3>
-        <p>即使不做完整的域随机化训练，你也可以在规划器中加入鲁棒性设计：</p>
-        <ul>
-            <li><strong>安全裕度</strong>——在代价地图中将障碍物膨胀半径比实际值大 10-20%。仿真中的完美路径在真实机器人上可能根本走不出来——永远留 30% 的安全裕度。</li>
-            <li><strong>不确定性感知规划</strong>——将定位不确定性建模到代价函数中：不确定性越大的区域，代价越高。机器人在狭小空间中应该走得更慢、更谨慎。</li>
-            <li><strong>保守的速度规划</strong>——在靠近障碍物时主动减速。理想路径可能贴着障碍物边缘通过，但加上执行器延迟和定位误差后，这无异于自杀式导航。</li>
-            <li><strong>频繁重规划</strong>——不要期望一次规划管到底。每 100ms 重规划一次，让系统能够及时纠正偏差。</li>
-        </ul>
-
-        <div class="highlight">
-            <strong>核心要点：</strong>仿真中的完美路径在真实机器人上可能根本走不出来——永远留 30% 的安全裕度。具体来说：在代价地图中将所有障碍物额外膨胀 1-2 个栅格、将最大速度限制在理论值的 70%、让规划路径与最近的障碍物保持至少 20 厘米的距离。这些看起来"保守"的做法，恰恰是让系统在真实世界中可靠运行的关键。
-        </div>
-
-        <p>最后分享一个我亲身经历的 sim-to-real 故事。2020 年，我们团队为某制造工厂部署一批 AGV。仿真测试中，每台 AGV 在 4000 平米的车间内路径规划成功率接近 100%，平均路径长度仅比理论最短长 3%。但上线第一天就出事了：一台 AGV 在通过一个门洞时，由于地面有一条 3 毫米高的电缆槽盖板，机器人碾过时发生了轻微颠簸。这一颠簸导致 LiDAR 的一帧扫描产生了运动畸变，定位模块短暂跳变，航向角估计偏离了 2 度。2 度看起来极小，但结合机器人 0.8m/s 的速度和规划器的 500ms 重规划周期，这 2 度的航向偏差被放大成了 14 厘米的位置误差。机器人擦到了门框，触发了急停。整个车间的 AGV 因为交通管制策略的连锁反应全部停摆。根本原因不是规划算法本身有问题，而是我们的重规划周期和定位频率之间的时间解耦没有考虑到传感器噪声在实际物理环境中的传播效应。后来我们在规划器中加入了基于定位协方差的自适应安全距离：当定位不确定性增大时，自动扩大障碍物膨胀半径、降低最大速度。这个改动只花了 2 天时间，却彻底解决了这类问题——后来的 8 个月部署中再没有出现过类似事故。</p>
-
-        <p>这个故事告诉我们：sim-to-real 不是一个"可以解决"的问题，而是一个"需要持续管理"的风险。理解这个 gap 的存在，尊重它的复杂性，然后在系统设计中为它留出足够的空间。做好了这一步，你的路径规划系统才能从"玩具"变成"产品"。</p>
-
-        <p>下一章我们将进入本课程的第六部分——前沿与项目。我们将探讨如何用深度学习来提升路径规划的智能性，开启学习型路径规划的新篇章。我们第 26 章见。</p>
-
-        <div class="footer-nav">
-            <a href="24.html">← 上一章</a>
-            <a href="index.html">📖 返回目录</a>
-            <a href="26.html">下一章 →</a>
-        </div>
-    </div>
-</div>
-</div>
-</body>
-</html>
+print(f"k=0.01: e={e_small:.2f} m &lt; r={R:.2f} m -&gt; 安全")
+print(f"k=0.02: e={e_large:.2f} m &gt; r={R:.2f} m -&gt; 进入碰撞区")
+# 输出：
+# k=0.01: e=0.20 m &lt; r=0.30 m -&gt; 安全
+# k=0.02: e=0.40 m &gt; r=0.30 m -&gt; 进入碰撞区
+</code></pre><p>这个例子只证明“线性累积下裕度会被跨过”这一点，它不预测任何真实机器人的误差。断言固定了全部输入因此可复现；真实标定应报告多类地面、多个种子下的 <code>k</code> 分布，而不是把一次测得的常数当成通用值。</p></section>
+<section id="limits" aria-labelledby="limits-title"><h2 id="limits-title">边界条件</h2><ul><li><strong>裕度不是越大越好：</strong>膨胀半径过大会把本来可通行的窄通道堵死，或让系统无解。裕度是一个安全性与通过性的权衡，不能无限调大。</li><li><strong>域随机化的区间本身需要证据：</strong>区间过宽会让策略在仿真内变差，过窄则覆盖不到现实；选定区间后应用一批区间外的真实场景做留出测试。</li><li><strong>gap 不能被证明为零：</strong>你只能报告“在测试过的场景集上未发生碰撞”，不能声称系统在所有现实中安全。没有测试场景清单的“鲁棒”没有意义。</li><li><strong>时序耦合容易被忽略：</strong>定位频率与重规划周期不匹配会把微小的位姿跳变放大成路径级偏差，这一点在仿真中几乎观察不到。</li><li><strong>安全条件只对假设成立：</strong>式 25-1 的线性关系是假设，不是定律；若误差随里程超线性增长（如长时间积分漂移），则需重新标定 <code>k</code>。</li></ul><div class="note caution"><p>不要把“仿真里跑通”当成“实车可用”的证据。一个可交付的结论至少应包含：测试场景清单、传感器与动力学误差的标定范围、安全裕度的取值依据，以及未执行的测试项。</p></div></section>
+<section id="references" aria-labelledby="references-title"><h2 id="references-title">原始来源</h2><ul class="references"><li><a href="https://doi.org/10.1007/3-540-59496-5_337">Jakobi, Husbands &amp; Harvey (1995), Noise and the Reality Gap: The Use of Simulation in Evolutionary Robotics, ECAL 1995</a>——“现实鸿沟”一词的出处：仿真中有效、现实中退化的系统性差异。</li><li><a href="https://arxiv.org/abs/1703.06907">Tobin et al. (2017), Domain Randomization for Transferring Deep Neural Networks from Simulation to the Real World, IROS</a>——域随机化的原始工作。</li><li><a href="https://docs.nav2.org/">ROS 2 Nav2 官方文档</a>——costmap 的 inflation layer 与代价地图分层；版本以 Nav2 文档首页为准。</li><li>本章式 25-1、两幅图与 Python 示例均为教学示意，不是任何具体机器人平台的标定数据。</li></ul></section>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var box = document.querySelector("[data-gap-demo]");
+  if (!box) return;
+  var mark = box.querySelector("[data-gap-mark]");
+  var value = box.querySelector("[data-gap-value]");
+  var status = box.querySelector(".demo-status");
+  var buttons = [].slice.call(box.querySelectorAll("[data-k]"));
+  var R = 0.30, D = 20.0, X0 = 60, PX_PER_M = 800;
+  function render(k) {
+    var e = k * D;
+    var x = X0 + e * PX_PER_M;
+    mark.setAttribute("x1", x); mark.setAttribute("x2", x);
+    value.setAttribute("x", x);
+    value.textContent = "e = " + e.toFixed(2) + " m";
+    status.textContent = "k = " + k.toFixed(2) + " /m：e = " + e.toFixed(2) +
+      " m " + (e < R ? "< r = 0.30 m，仍存余量。" : "> r = 0.30 m，进入碰撞区。");
+    buttons.forEach(function (b) {
+      b.setAttribute("aria-pressed", String(Number(b.dataset.k) === Math.round(k * 100)));
+    });
+  }
+  buttons.forEach(function (b) {
+    b.addEventListener("click", function () { render(Number(b.dataset.k) / 100); });
+  });
+  render(0.01);
+});
+</script>
+<footer class="article-footer"><a href="24.html">← 算法性能基准测试</a><a href="26.html">下一章 · 学习型路径规划 →</a></footer>
+</article></main></div></body></html>

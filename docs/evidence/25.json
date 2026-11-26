@@ -1,0 +1,45 @@
+{
+  "article": "25",
+  "claims": [
+    {
+      "id": "reality-gap",
+      "claim": "“reality gap”指仿真中有效、现实中退化的系统性差异，该术语可追溯到 Jakobi, Husbands & Harvey (1995)",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1007/3-540-59496-5_337",
+      "locator": "Jakobi, Husbands & Harvey (1995), Noise and the Reality Gap, ECAL 1995",
+      "status": "verified"
+    },
+    {
+      "id": "domain-randomization",
+      "claim": "域随机化通过在仿真中随机化物理与传感器参数，使模型在真实世界更鲁棒",
+      "kind": "primary-paper",
+      "source_url": "https://arxiv.org/abs/1703.06907",
+      "locator": "Tobin et al. (2017), Domain Randomization for Transferring DNNs from Simulation to the Real World, IROS",
+      "status": "verified"
+    },
+    {
+      "id": "nav2-inflation",
+      "claim": "ROS 2 Nav2 的 costmap 通过 inflation layer 实现障碍膨胀（安全裕度）",
+      "kind": "official-docs",
+      "source_url": "https://docs.nav2.org/",
+      "locator": "ROS 2 Nav2 官方文档，costmap inflation layer",
+      "status": "verified"
+    },
+    {
+      "id": "drift-model",
+      "claim": "横向误差随里程线性累积的简化模型 e = k·D 为教学示意，不是任何具体平台的标定模型",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "25.html 式 25-1 与噪声建模一节",
+      "status": "derived"
+    },
+    {
+      "id": "example",
+      "claim": "页面 Python 示例为确定性教学示意：同样 20 m，k 由 0.01 增至 0.02 时 e 由 0.20 m 增至 0.40 m，跨过 0.30 m 膨胀裕度，断言通过",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "25.html Python 代码块与断言",
+      "status": "derived"
+    }
+  ]
+}
