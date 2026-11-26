@@ -26,6 +26,14 @@
       "status": "verified"
     },
     {
+      "id": "stomp",
+      "claim": "STOMP 不要求代价可微，通过对轨迹施加随机扰动采样并按代价加权平均产生新轨迹",
+      "kind": "primary-paper",
+      "source_url": null,
+      "locator": "Kalakrishnan, Chitta, Theodorou, Pastor & Schaal (2011), STOMP, ICRA 2011, pp. 4569-4574",
+      "status": "verified"
+    },
+    {
       "id": "nonconvex",
       "claim": "避障代价通常非凸，轨迹优化结果可能为局部极小，依赖初值",
       "kind": "derived",
