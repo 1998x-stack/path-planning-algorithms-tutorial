@@ -42,6 +42,14 @@
       "status": "derived"
     },
     {
+      "id": "mpc-figure",
+      "claim": "22-receding-horizon.svg 为教学示意，说明滚动时域“求解-执行首段-窗口右移”的循环，不对应任何具体求解器输出",
+      "kind": "illustrative",
+      "source_url": null,
+      "locator": "22.html 模型预测控制一节插图",
+      "status": "illustrative"
+    },
+    {
       "id": "example",
       "claim": "页面 Python 示例为确定性教学示意：一维中间点梯度下降把 y 从 0.1 推到 0.561，代价 18.01→2.29，断言通过",
       "kind": "derived",

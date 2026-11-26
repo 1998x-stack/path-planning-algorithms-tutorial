@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 320" role="img" aria-labelledby="rh-title rh-desc">
+  <title id="rh-title">MPC 滚动时域：在预测时域内求解、只执行第一步、再把窗口右移</title>
+  <desc id="rh-desc">三行共用同一时间轴。第 t 步：从当前状态起在预测时域 H 内求解一条计划，只执行第一段。第 t+1 步：用测量到的新状态重新求解，窗口整体右移一格。第 t+2 步继续右移。实线青绿表示已经执行的段，虚线灰表示每次预测但被放弃的后续段，紫色圆点为当前状态，陶红框为本次预测时域。</desc>
+  <rect width="760" height="320" fill="#fffdf9"/>
+  <line x1="60" y1="300" x2="700" y2="300" stroke="#cbd9d2" stroke-width="2"/>
+  <g font-size="14" fill="#53676d">
+    <text x="60" y="318">t</text>
+    <text x="188" y="318">t+1</text>
+    <text x="316" y="318">t+2</text>
+    <text x="620" y="318">时间 →</text>
+  </g>
+  <!-- row 1 -->
+  <text x="60" y="40" font-size="14" fill="#203035">第 t 步：求解 [t, t+H]，只执行第一段</text>
+  <rect x="60" y="52" width="320" height="44" rx="6" fill="none" stroke="#d06d4d" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="60" y1="74" x2="380" y2="74" stroke="#8b9a94" stroke-width="3" stroke-dasharray="7 5"/>
+  <line x1="60" y1="74" x2="124" y2="74" stroke="#147f80" stroke-width="5"/>
+  <circle cx="60" cy="74" r="7" fill="#7461ba"/>
+  <!-- row 2 -->
+  <text x="60" y="130" font-size="14" fill="#203035">第 t+1 步：测量新状态，重新求解，窗口右移一格</text>
+  <rect x="124" y="142" width="320" height="44" rx="6" fill="none" stroke="#d06d4d" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="60" y1="164" x2="124" y2="164" stroke="#147f80" stroke-width="5"/>
+  <line x1="124" y1="164" x2="444" y2="164" stroke="#8b9a94" stroke-width="3" stroke-dasharray="7 5"/>
+  <line x1="124" y1="164" x2="188" y2="164" stroke="#147f80" stroke-width="5"/>
+  <circle cx="124" cy="164" r="7" fill="#7461ba"/>
+  <!-- row 3 -->
+  <text x="60" y="220" font-size="14" fill="#203035">第 t+2 步：继续右移；每步只落实第一段控制</text>
+  <rect x="188" y="232" width="320" height="44" rx="6" fill="none" stroke="#d06d4d" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="60" y1="254" x2="188" y2="254" stroke="#147f80" stroke-width="5"/>
+  <line x1="188" y1="254" x2="508" y2="254" stroke="#8b9a94" stroke-width="3" stroke-dasharray="7 5"/>
+  <line x1="188" y1="254" x2="252" y2="254" stroke="#147f80" stroke-width="5"/>
+  <circle cx="188" cy="254" r="7" fill="#7461ba"/>
+  <!-- legend -->
+  <g font-size="13" fill="#203035">
+    <line x1="540" y1="70" x2="580" y2="70" stroke="#147f80" stroke-width="5"/>
+    <text x="588" y="74">已执行段（实线）</text>
+    <line x1="540" y1="100" x2="580" y2="100" stroke="#8b9a94" stroke-width="3" stroke-dasharray="7 5"/>
+    <text x="588" y="104">被放弃的预测（虚线）</text>
+    <rect x="540" y="122" width="40" height="16" fill="none" stroke="#d06d4d" stroke-width="2" stroke-dasharray="6 4"/>
+    <text x="588" y="136">预测时域 H（陶红）</text>
+    <circle cx="552" cy="164" r="7" fill="#7461ba"/>
+    <text x="588" y="169">当前状态（紫色）</text>
+  </g>
+</svg>
