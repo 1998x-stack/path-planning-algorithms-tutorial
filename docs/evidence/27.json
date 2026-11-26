@@ -2,6 +2,14 @@
   "article": "27",
   "claims": [
     {
+      "id": "rt-1",
+      "claim": "RT-1 是把机器人控制建模为大规模 Transformer 策略的早期工作，与 RT-2、PaLM-E 同属基础模型规划路线",
+      "kind": "primary-paper",
+      "source_url": "https://arxiv.org/abs/2212.06817",
+      "locator": "Brohan et al. (2022), RT-1",
+      "status": "verified"
+    },
+    {
       "id": "rt-2",
       "claim": "RT-2 把视觉-语言模型扩展为视觉-语言-动作模型，将动作离散化为 token 与文本一起生成",
       "kind": "primary-paper",
