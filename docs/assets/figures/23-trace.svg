@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="430" viewBox="0 0 900 430" role="img" aria-labelledby="tr-t tr-d"><title id="tr-t">A* 搜索轨迹的最终状态与被标记的路径</title><desc id="tr-d">一个 6x6 栅格。中列 x=2、y=0 到 4 是一堵深灰色墙，下方 y=5 留有缺口。青色格子是被展开过的节点，琥珀色是仍在待扩展集合中的节点，陶红色是从起点到终点找到的路径。起点在左下角，终点在右下角并以紫色标记。下方是图例。</desc>
+<rect width="900" height="430" rx="18" fill="#fffdf9"/>
+<g font-family="Arial,PingFang SC,sans-serif">
+<g stroke="#dce6df" stroke-width="1" fill="none">
+<line x1="60" y1="60" x2="60" y2="300"/><line x1="100" y1="60" x2="100" y2="300"/><line x1="140" y1="60" x2="140" y2="300"/><line x1="180" y1="60" x2="180" y2="300"/><line x1="220" y1="60" x2="220" y2="300"/><line x1="260" y1="60" x2="260" y2="300"/><line x1="300" y1="60" x2="300" y2="300"/>
+<line x1="60" y1="60" x2="300" y2="60"/><line x1="60" y1="100" x2="300" y2="100"/><line x1="60" y1="140" x2="300" y2="140"/><line x1="60" y1="180" x2="300" y2="180"/><line x1="60" y1="220" x2="300" y2="220"/><line x1="60" y1="260" x2="300" y2="260"/><line x1="60" y1="300" x2="300" y2="300"/>
+</g>
+<g fill="#4e6060"><rect x="140" y="260" width="40" height="40"/><rect x="140" y="220" width="40" height="40"/><rect x="140" y="180" width="40" height="40"/><rect x="140" y="140" width="40" height="40"/><rect x="140" y="100" width="40" height="40"/></g>
+<g fill="#a1d5cc"><rect x="100" y="260" width="40" height="40"/><rect x="100" y="220" width="40" height="40"/><rect x="100" y="180" width="40" height="40"/><rect x="100" y="140" width="40" height="40"/><rect x="100" y="100" width="40" height="40"/></g>
+<g fill="#edc98c"><rect x="180" y="100" width="40" height="40"/><rect x="220" y="100" width="40" height="40"/></g>
+<g fill="#d28d79"><rect x="60" y="260" width="40" height="40"/><rect x="60" y="220" width="40" height="40"/><rect x="60" y="180" width="40" height="40"/><rect x="60" y="140" width="40" height="40"/><rect x="60" y="100" width="40" height="40"/><rect x="60" y="60" width="40" height="40"/><rect x="100" y="60" width="40" height="40"/><rect x="140" y="60" width="40" height="40"/><rect x="180" y="60" width="40" height="40"/><rect x="220" y="60" width="40" height="40"/><rect x="260" y="60" width="40" height="40"/></g>
+<circle cx="80" cy="280" r="9" fill="none" stroke="#147f80" stroke-width="3"/>
+<text x="60" y="326" font-size="13" fill="#53676d">起点</text>
+<circle cx="280" cy="80" r="9" fill="#7461ba"/>
+<text x="238" y="56" font-size="13" fill="#7461ba">目标</text>
+<line x1="96" y1="150" x2="104" y2="150" stroke="#53676d" stroke-width="2"/>
+<text x="120" y="150" font-size="13" fill="#53676d">箭头方向：从起点绕到 y=5 的缺口再向右（图中路径已连通）</text>
+<g font-size="14" fill="#53676d">
+<rect x="60" y="360" width="18" height="14" fill="#a1d5cc"/><text x="86" y="372">已展开（closed）</text>
+<rect x="220" y="360" width="18" height="14" fill="#edc98c"/><text x="246" y="372">待扩展（open）</text>
+<rect x="380" y="360" width="18" height="14" fill="#d28d79"/><text x="406" y="372">找到的路径</text>
+<rect x="540" y="360" width="18" height="14" fill="#4e6060"/><text x="566" y="372">障碍</text>
+</g>
+<text x="60" y="404" font-size="13" fill="#203035">这张图对应本节代码的文本渲染：同一份搜索轨迹，可以画成图，也可以打印成字符网格。</text>
+</g></svg>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="300" viewBox="0 0 900 300" role="img" aria-labelledby="pt-t pt-d"><title id="pt-t">三种常见调试问题的可视化特征</title><desc id="pt-d">三个面板。左：路径直接从障碍物上穿过，说明碰撞检测缺失。中：路径绕了远大于必要的距离，提示启发式不可采纳或不一致。右：路径在起点附近绕圈回到原点，说明搜索没有朝目标推进或目标检测时机错误。</desc>
+<rect width="900" height="300" rx="18" fill="#fffdf9"/>
+<g font-family="Arial,PingFang SC,sans-serif">
+<rect x="30" y="30" width="270" height="240" rx="10" fill="#f7faf7" stroke="#dce6df"/>
+<text x="165" y="58" font-size="15" font-weight="bold" fill="#a5482c" text-anchor="middle">路径穿过障碍</text>
+<rect x="140" y="100" width="50" height="120" fill="#4e6060"/>
+<circle cx="70" cy="230" r="7" fill="#147f80"/>
+<circle cx="260" cy="110" r="7" fill="#7461ba"/>
+<line x1="70" y1="230" x2="260" y2="110" stroke="#d06d4d" stroke-width="3"/>
+<text x="165" y="256" font-size="13" fill="#53676d" text-anchor="middle">检查 neighbor 时是否漏了碰撞判定</text>
+<rect x="315" y="30" width="270" height="240" rx="10" fill="#f7faf7" stroke="#dce6df"/>
+<text x="450" y="58" font-size="15" font-weight="bold" fill="#7461ba" text-anchor="middle">绕了过远的弯路</text>
+<rect x="425" y="100" width="50" height="120" fill="#4e6060"/>
+<circle cx="355" cy="230" r="7" fill="#147f80"/>
+<circle cx="545" cy="110" r="7" fill="#7461ba"/>
+<polyline points="355,230 355,70 545,70 545,110" fill="none" stroke="#7461ba" stroke-width="3"/>
+<text x="450" y="256" font-size="13" fill="#53676d" text-anchor="middle">h 不可采纳/不一致会让搜索偏离目标</text>
+<rect x="600" y="30" width="270" height="240" rx="10" fill="#f7faf7" stroke="#dce6df"/>
+<text x="735" y="58" font-size="15" font-weight="bold" fill="#53676d" text-anchor="middle">在起点附近打转</text>
+<rect x="710" y="100" width="50" height="120" fill="#4e6060"/>
+<circle cx="660" cy="230" r="7" fill="#147f80"/>
+<circle cx="830" cy="110" r="7" fill="#7461ba"/>
+<path d="M660 230 C 700 190 700 150 660 140 C 620 130 620 200 660 230" fill="none" stroke="#53676d" stroke-width="3"/>
+<text x="735" y="256" font-size="13" fill="#53676d" text-anchor="middle">树不朝目标生长；或在 push 阶段过早判目标</text>
+<text x="30" y="294" font-size="13" fill="#203035">先看“路径整体形状”对不对，再看具体数值：形状错，往往是坐标系、碰撞检测或启发式的问题。</text>
+</g></svg>

@@ -1,0 +1,53 @@
+{
+  "article": "23",
+  "claims": [
+    {
+      "id": "astar",
+      "claim": "A* 由 Hart, Nilsson & Raphael 于 1968 年提出，启发式的可采纳性决定最优性与搜索效率",
+      "kind": "primary-paper",
+      "source_url": "https://doi.org/10.1016/0004-3702(68)90029-6",
+      "locator": "Hart, Nilsson & Raphael (1968), Artificial Intelligence 4(2)",
+      "status": "verified"
+    },
+    {
+      "id": "lavalle",
+      "claim": "LaValle 的 Planning Algorithms 教材系统覆盖搜索、采样规划与可视化背景",
+      "kind": "textbook",
+      "source_url": "http://planning.cs.uiuc.edu/",
+      "locator": "LaValle (2006), Planning Algorithms, Cambridge University Press",
+      "status": "verified"
+    },
+    {
+      "id": "nav2-rviz",
+      "claim": "ROS 2 Nav2 与 RViz 是默认的导航与可视化工具，costmap 有多层可分别查看",
+      "kind": "official-docs",
+      "source_url": "https://docs.nav2.org/",
+      "locator": "ROS 2 Nav2 官方文档与 RViz 用户指南",
+      "status": "verified"
+    },
+    {
+      "id": "h-consistency",
+      "claim": "取整/截断使启发式不再一致，可能导致需要 reopen；而 Python 中 int/float 混合比较本身不是问题",
+      "kind": "derived",
+      "source_url": "https://doi.org/10.1016/0004-3702(68)90029-6",
+      "locator": "23.html 常见 bug 模式一节",
+      "status": "derived"
+    },
+    {
+      "id": "example",
+      "claim": "页面 Python 示例为确定性教学示意：6x6 栅格 A* 展开 16 个节点、路径 10 步，字符网格与断言通过",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "23.html 两段 Python 代码块与断言",
+      "status": "derived"
+    },
+    {
+      "id": "interaction",
+      "claim": "交互示例在 8x8 栅格上演示：Manhattan 展开 15 个节点，h=0 展开 59 个节点，均得到 14 步路径",
+      "kind": "derived",
+      "source_url": null,
+      "locator": "23.html 交互脚本（浏览器实测）",
+      "status": "derived"
+    }
+  ]
+}
