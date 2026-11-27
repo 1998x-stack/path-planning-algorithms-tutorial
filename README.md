@@ -4,7 +4,7 @@
 
 **[阅读网页版](https://1998x-stack.github.io/path-planning-algorithms-tutorial/)** · [从第一章开始](https://1998x-stack.github.io/path-planning-algorithms-tutorial/chapters/01.html)
 
-> 2026-11 第三批精修：01–15 已深度重构，16–28 为可读原版、仍待逐章技术审校。已改造章节的 CI 状态以 GitHub Actions 最新实际运行记录为准。
+> 2026-11 第五批精修：01–25 已深度重构，26–28 为可读原版、仍待逐章技术审校。已改造章节的 CI 状态以 GitHub Actions 最新实际运行记录为准。
 
 ## 内容结构
 
@@ -26,9 +26,9 @@
 │   ├── assets/css/site.css   # 新设计系统
 │   ├── assets/js/site.js     # 轻量无依赖交互
 │   ├── assets/figures/       # 可单独查看的原创 SVG
-│   ├── evidence/             # 01–15 的主要事实来源登记
+│   ├── evidence/             # 01–25 的主要事实来源登记
 │   └── data/chapters.json    # 章节状态与导航元数据
-├── archive/2026-before-redesign/ # 01–15 原始篇章存档
+├── archive/2026-before-redesign/ # 01–25 原始篇章存档
 ├── tools/build_site.py      # 离线复制构建
 ├── tools/validate_site.py   # 静态结构、链接、SVG 检查
 ├── .github/workflows/pages.yml
@@ -43,7 +43,7 @@ Python 3.10+，不需要 Node、第三方字体、在线数学脚本。
 
 ```bash
 python3 tools/validate_site.py
-python3 tools/validate_examples.py  # 验证前十五篇微型算法示例
+python3 tools/validate_examples.py  # 验证前二十五篇微型算法示例
 python3 tools/build_site.py
 # 可选：实际 Chromium 多视口截图测试
 python3 -m pip install playwright==1.56.0
@@ -73,6 +73,22 @@ python3 -m http.server 8000 -d docs
 - **13 PRM**：预处理路网、两个独立查询、合法局部边、PRM 与 PRM* 的边界。
 - **14 方法比较**：成功率、预算、解成本和预处理分开报告；五组配对种子测试仅比较 RRT 目标偏置。
 - **15 后处理**：Shortcut、Douglas–Peucker 几何偏差与碰撞反例、B-spline/Bézier、曲率约束及解析线段碰撞测试。
+
+## 第四批（16–20）专题审校
+
+- **16 DWA：** 静态速度限制、动态可达窗口、安全制动集合、轨迹评分；教学实现明确使用圆盘近似和保守净空代理。
+- **17 APF：** 吸引/斥力势、负梯度、非目标平衡点反例；明确局部极小、窄通道与振荡边界。
+- **18 运动学约束：** Dubins 前进曲线、Reeds–Shepp 倒车 cusp、曲率界与状态格；代码只积分一条 LSR 基元，不冒充最短路径求解器。
+- **19 动态重规划：** 时空碰撞、Velocity Obstacles、相对速度最近接近、滚动时域；区分 D* Lite 增量搜索与未来障碍预测。
+- **20 多目标：** 区分多站点访问和多目标函数；Pareto 支配、归一化加权和、非凸前沿的边界与偏好交互。
+
+## 第五批（21–25）专题审校
+
+- **21 多机器人协调：** 顶点冲突、边交换冲突、目标持续占据和 SOC / makespan；在 3×2 两机器人例题实现有限时域 CBS，明确示例不是无限时域完备求解器。
+- **22 轨迹优化与 MPC：** 状态动力学、硬约束、代价函数、单次/多重打靶和滚动时域；穷举 81 条离散控制序列并在实测扰动后重规划。
+- **23 可视化与调试：** 地图/OPEN-CLOSED/路径/控制分层观察；结构化 A* 扩展事件及路径与一致启发式的数值断言，增加故障诊断交互。
+- **24 性能基准：** 配对地图、成功与失败完整记录、anytime 进度、计时与碰撞公平性；固定十张构造地图实跑 Dijkstra 和 A*，不宣称真实机器人运行时间。
+- **25 仿真到实车：** ROS 2 Nav2、REP-105 TF、时间戳/footprint/限速、独立安全监测与分阶段上线门禁；离线 preflight 只检查构造配置。
 
 ## 主要参考
 

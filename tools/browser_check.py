@@ -15,7 +15,7 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = ROOT / "docs"
 OUTPUT = ROOT / "reports" / "browser"
-PAGES = ["index.html"] + [f"chapters/{n:02}.html" for n in range(1, 16)]
+PAGES = ["index.html"] + [f"chapters/{n:02}.html" for n in range(1, 26)]
 VIEWS = [("desktop", 1440, 900), ("tablet", 768, 1024),
          ("mobile390", 390, 844), ("mobile360", 360, 800)]
 
@@ -56,7 +56,10 @@ def main():
                             missingAlt: [...document.images].filter(x => !x.getAttribute('alt')).length,
                             figures: document.querySelectorAll('figure').length,
                             emptyCaptions: [...document.querySelectorAll('figure')].filter(x => !x.querySelector('figcaption')?.textContent.trim()).length,
-                            badMath: [...document.querySelectorAll('math')].filter(x => x.getBoundingClientRect().width < 1 || x.getBoundingClientRect().height < 1).length
+                            badMath: [...document.querySelectorAll('math')].filter(x => x.getBoundingClientRect().width < 1 || x.getBoundingClientRect().height < 1).length,
+                            remoteAssets: [...document.querySelectorAll('script[src],link[rel="stylesheet"],img[src]')]
+                              .map(x => x.getAttribute('src') || x.getAttribute('href'))
+                              .filter(x => x && new URL(x, location.href).origin !== location.origin)
                         })""")
                         if not response or response.status != 200:
                             failures.append(f"{path} {key}: HTTP {response.status if response else 'no response'}")
@@ -66,7 +69,16 @@ def main():
                             failures.append(f"{path} {key}: broken images {stats['broken']}")
                         if stats["missingAlt"] or stats["emptyCaptions"] or stats["badMath"]:
                             failures.append(f"{path} {key}: alt/caption/MathML issue {stats}")
+                        if stats["remoteAssets"]:
+                            failures.append(f"{path} {key}: external runtime assets {stats['remoteAssets']}")
                         if errors: failures.append(f"{path} {key}: JS/console errors {errors}")
+                        if key == "desktop" and path.startswith("chapters/"):
+                            page.emulate_media(media="print")
+                            print_visible = page.locator(".article-main figure").first.is_visible()
+                            sidebar_hidden = page.locator(".article-sidebar").evaluate("(x) => getComputedStyle(x).display === 'none'")
+                            if not print_visible or not sidebar_hidden:
+                                failures.append(f"{path}: print stylesheet hides article content or leaves sidebar visible")
+                            page.emulate_media(media="screen")
                         if key == "desktop" and path == "index.html":
                             page.locator("#chapter-search").fill("RRT")
                             count = page.locator(".chapter-card:visible").count()
@@ -87,6 +99,20 @@ def main():
                             after = status.inner_text()
                             if (before == after or "S→B→G" not in after):
                                 failures.append("08: weighted A* epsilon change did not update computed path")
+                        if key == "desktop" and path.endswith("/16.html"):
+                            status = page.locator("[data-dwa-demo] .demo-status")
+                            before = status.inner_text()
+                            page.locator("[data-dwa-mode='progress']").click()
+                            after = status.inner_text()
+                            if before == after or "0.6" not in after:
+                                failures.append("16: DWA scoring preference did not change selected control")
+                        if key == "desktop" and path.endswith("/20.html"):
+                            status = page.locator("[data-pareto-demo] .demo-status")
+                            before = status.inner_text()
+                            page.locator("[data-pareto-mode='risk']").click()
+                            after = status.inner_text()
+                            if before == after or "C-safe" not in after:
+                                failures.append("20: Pareto weight preference did not change selected route")
                         if key == "desktop" and path.endswith("/14.html"):
                             status = page.locator("[data-sampling-choice] .demo-status")
                             original = status.inner_text()
@@ -101,6 +127,36 @@ def main():
                             changed = demo.locator("[data-shortcut-polyline]").get_attribute("points")
                             if original == changed or "捷径" not in demo.locator(".demo-status").inner_text():
                                 failures.append("15: collision-checked shortcut demo did not update")
+                        if key == "desktop" and path.endswith("/21.html"):
+                            status = page.locator("[data-cbs-demo] .demo-status")
+                            original = status.inner_text()
+                            page.locator("[data-cbs-mode='a']").click()
+                            if status.inner_text()==original or "A" not in status.inner_text():
+                                failures.append("21: CBS conflict constraint interaction did not update")
+                        if key == "desktop" and path.endswith("/22.html"):
+                            status = page.locator("[data-mpc-demo] .demo-status")
+                            original = status.inner_text()
+                            page.locator("[data-mpc-mode='replan']").click()
+                            if status.inner_text()==original or "重规划" not in status.inner_text():
+                                failures.append("22: MPC receding-horizon interaction did not update")
+                        if key == "desktop" and path.endswith("/23.html"):
+                            status = page.locator("[data-debug-demo] .demo-status")
+                            original = status.inner_text()
+                            page.locator("[data-debug-mode='pose']").click()
+                            if status.inner_text()==original or "TF" not in status.inner_text():
+                                failures.append("23: planner debug symptom interaction did not update")
+                        if key == "desktop" and path.endswith("/24.html"):
+                            status = page.locator("[data-benchmark-demo] .demo-status")
+                            original = status.inner_text()
+                            page.locator("[data-benchmark-mode='success']").click()
+                            if status.inner_text()==original or "100%" not in status.inner_text():
+                                failures.append("24: failure denominator interaction did not update")
+                        if key == "desktop" and path.endswith("/25.html"):
+                            status = page.locator("[data-deployment-demo] .demo-status")
+                            original = status.inner_text()
+                            page.locator("[data-deploy-mode='robot']").click()
+                            if status.inner_text()==original or "实车" not in status.inner_text():
+                                failures.append("25: deployment safety gates interaction did not update")
                         name=path.replace("/", "-").replace(".html", "")
                         page.screenshot(path=str(OUTPUT / f"{name}-{key}.png"), full_page=True)
                         results.append({"page": path, "viewport": key, "http": response.status if response else None,
