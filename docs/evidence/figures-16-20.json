@@ -1,18 +1,19 @@
 {
   "batch": "16-20",
+  "totalFigures": 16,
   "figures": [
     {
-      "file": "16-velocity-window.svg",
       "chapter": "16",
-      "concept": "静态速度集、动态可达窗口与制动安全集合",
+      "file": "16-velocity-space.svg",
+      "concept": "位置空间圆弧与速度空间采样点一一对应",
       "authorship": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
-      "file": "16-arc-rollouts.svg",
       "chapter": "16",
-      "concept": "候选速度积分成短时弧线并进行碰撞筛选",
+      "file": "16-dwa-cycle.svg",
+      "concept": "预测、评分、执行的滚动周期",
       "authorship": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
@@ -20,7 +21,15 @@
     {
       "file": "16-braking-admissibility.svg",
       "chapter": "16",
-      "concept": "制动距离与可用净空的比较",
+      "concept": "制动距离必须小于到障碍的可用距离",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "17",
+      "file": "17-potential-field.svg",
+      "concept": "吸引势与斥力势叠加成的标量地形",
       "authorship": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
@@ -28,47 +37,31 @@
     {
       "file": "17-field-superposition.svg",
       "chapter": "17",
-      "concept": "目标吸引势与障碍斥力势的叠加",
+      "concept": "吸引势与斥力势叠加形成总势场",
       "authorship": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
-      "file": "17-potential-gradient.svg",
       "chapter": "17",
-      "concept": "吸引与斥力向量合成",
+      "file": "17-local-minima.svg",
+      "concept": "U 形障碍前的局部极小",
       "authorship": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
-      "file": "17-local-minimum.svg",
-      "chapter": "17",
-      "concept": "非目标平衡点的力抵消反例",
-      "authorship": "original",
-      "standalone_svg": true,
-      "license": "originally authored for this repository"
-    },
-    {
-      "file": "18-se2-state.svg",
       "chapter": "18",
-      "concept": "SE(2)位姿中位置与朝向的状态差异",
+      "file": "18-bicycle-model.svg",
+      "concept": "自行车模型的曲率与转向约束",
       "authorship": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
-      "file": "18-curvature-bound.svg",
       "chapter": "18",
-      "concept": "最小转弯半径与曲率上限",
-      "authorship": "original",
-      "standalone_svg": true,
-      "license": "originally authored for this repository"
-    },
-    {
-      "file": "18-dubins-lsr.svg",
-      "chapter": "18",
-      "concept": "Dubins LSR 前进曲线结构",
+      "file": "18-dubins-words.svg",
+      "concept": "Dubins 曲线的基本路径词",
       "authorship": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
@@ -76,55 +69,63 @@
     {
       "file": "18-reeds-shepp-cusp.svg",
       "chapter": "18",
-      "concept": "Reeds-Shepp 倒车和 cusp 换向",
+      "concept": "Reeds-Shepp 允许倒车与 cusp 换向",
       "authorship": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
-      "file": "19-space-time.svg",
+      "chapter": "18",
+      "file": "18-lattice-primitives.svg",
+      "concept": "运动基元构成的晶格规划",
+      "authorship": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
       "chapter": "19",
-      "concept": "移动障碍在空间时间中的占据带",
+      "file": "19-incremental.svg",
+      "concept": "增量搜索复用上一轮结果",
       "authorship": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
-      "file": "19-relative-velocity.svg",
       "chapter": "19",
-      "concept": "恒速相对运动的最近接近几何",
+      "file": "19-receding-horizon.svg",
+      "concept": "滚动时域重规划",
       "authorship": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
-      "file": "19-replanning-loop.svg",
       "chapter": "19",
-      "concept": "感知、预测、规划与短时执行闭环",
+      "file": "19-spacetime.svg",
+      "concept": "动态障碍的时空轨迹与碰撞",
       "authorship": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
-      "file": "20-multigoal-vs-multiobjective.svg",
       "chapter": "20",
-      "concept": "多站点访问与多目标函数的区别",
+      "file": "20-cost-matrix.svg",
+      "concept": "多目标代价矩阵",
       "authorship": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
-      "file": "20-objective-vector.svg",
       "chapter": "20",
-      "concept": "路径长度、风险与能耗成本向量",
+      "file": "20-tsp-order.svg",
+      "concept": "多站点访问的排序问题",
       "authorship": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
-      "file": "20-pareto-front.svg",
       "chapter": "20",
-      "concept": "非支配解与 Pareto 前沿",
+      "file": "20-two-layer.svg",
+      "concept": "多站点与多目标的两层结构",
       "authorship": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"

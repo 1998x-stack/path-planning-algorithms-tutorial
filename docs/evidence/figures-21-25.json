@@ -4,24 +4,8 @@
   "figures": [
     {
       "chapter": "21",
-      "file": "21-cbs-constraint-tree.svg",
-      "concept": "冲突树两分支",
-      "origin": "original",
-      "standalone_svg": true,
-      "license": "originally authored for this repository"
-    },
-    {
-      "chapter": "21",
-      "file": "21-conflict-timeline.svg",
-      "concept": "同步顶点冲突",
-      "origin": "original",
-      "standalone_svg": true,
-      "license": "originally authored for this repository"
-    },
-    {
-      "chapter": "21",
-      "file": "21-continuous-time.svg",
-      "concept": "连续时间边界",
+      "file": "21-conflict-types.svg",
+      "concept": "四种多机器人冲突类型",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
@@ -29,15 +13,31 @@
     {
       "chapter": "21",
       "file": "21-vertex-edge-conflicts.svg",
-      "concept": "顶点与边交换",
+      "concept": "顶点冲突与边交换冲突的不同判据",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "21",
+      "file": "21-continuous-time.svg",
+      "concept": "连续时间与离散同步动作的区别",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "21",
+      "file": "21-velocity-obstacle.svg",
+      "concept": "速度障碍与 ORCA 半平面约束",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
       "chapter": "22",
-      "file": "22-cost-decomposition.svg",
-      "concept": "运行与终端代价",
+      "file": "22-opt-pipeline.svg",
+      "concept": "优化建模的三个输入与输出",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
@@ -45,7 +45,7 @@
     {
       "chapter": "22",
       "file": "22-path-vs-trajectory.svg",
-      "concept": "几何路径与时序轨迹",
+      "concept": "路径只有几何，轨迹还要满足时间与速度",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
@@ -53,7 +53,7 @@
     {
       "chapter": "22",
       "file": "22-receding-horizon.svg",
-      "concept": "执行首项并重规划",
+      "concept": "MPC 滚动时域：预测、执行第一步、窗口右移",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
@@ -61,23 +61,15 @@
     {
       "chapter": "22",
       "file": "22-shooting-methods.svg",
-      "concept": "打靶离散方式",
+      "concept": "单次打靶与多重打靶的变量区别",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
-      "chapter": "23",
-      "file": "23-debug-pipeline.svg",
-      "concept": "导航诊断闭环",
-      "origin": "original",
-      "standalone_svg": true,
-      "license": "originally authored for this repository"
-    },
-    {
-      "chapter": "23",
-      "file": "23-g-h-f-trace.svg",
-      "concept": "A*弹出事件",
+      "chapter": "22",
+      "file": "22-weights.svg",
+      "concept": "权重改变路径形状",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
@@ -85,39 +77,31 @@
     {
       "chapter": "23",
       "file": "23-observability-stack.svg",
-      "concept": "四层可观察性",
+      "concept": "地图、搜索、路径、控制四层可观测性",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
       "chapter": "23",
-      "file": "23-search-overlays.svg",
-      "concept": "搜索栅格叠图",
+      "file": "23-patterns.svg",
+      "concept": "三种常见调试问题的可视化特征",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
-      "chapter": "24",
-      "file": "24-anytime-curves.svg",
-      "concept": "随时算法进度曲线",
+      "chapter": "23",
+      "file": "23-trace.svg",
+      "concept": "A* 搜索轨迹的最终状态与被标记的路径",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
-      "chapter": "24",
-      "file": "24-benchmark-protocol.svg",
-      "concept": "同地图配对输入",
-      "origin": "original",
-      "standalone_svg": true,
-      "license": "originally authored for this repository"
-    },
-    {
-      "chapter": "24",
-      "file": "24-censoring-trap.svg",
-      "concept": "失败分母偏差",
+      "chapter": "23",
+      "file": "23-g-h-f-trace.svg",
+      "concept": "每次有效弹出记录的结构化事件字段",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
@@ -125,15 +109,47 @@
     {
       "chapter": "24",
       "file": "24-metrics-matrix.svg",
-      "concept": "多指标分离",
+      "concept": "可行性、质量、资源三个维度与各自分母",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "24",
+      "file": "24-tradeoff.svg",
+      "concept": "时间—质量曲线与多指标取舍",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "24",
+      "file": "24-variance.svg",
+      "concept": "小样本与大样本的估计波动",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "24",
+      "file": "24-censoring-trap.svg",
+      "concept": "失败样本必须计入成功率分母",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
       "chapter": "25",
-      "file": "25-deployment-gates.svg",
-      "concept": "逐级上线门禁",
+      "file": "25-reality-gap.svg",
+      "concept": "仿真与实车差异的四类来源",
+      "origin": "original",
+      "standalone_svg": true,
+      "license": "originally authored for this repository"
+    },
+    {
+      "chapter": "25",
+      "file": "25-margin.svg",
+      "concept": "膨胀裕度必须覆盖最坏情况横向漂移",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
@@ -141,31 +157,15 @@
     {
       "chapter": "25",
       "file": "25-footprint-inflation.svg",
-      "concept": "足迹与膨胀",
+      "concept": "点模型与足迹加膨胀的区别",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
     },
     {
       "chapter": "25",
-      "file": "25-nav2-architecture.svg",
-      "concept": "导航和安全闭环",
-      "origin": "original",
-      "standalone_svg": true,
-      "license": "originally authored for this repository"
-    },
-    {
-      "chapter": "25",
-      "file": "25-sim-real-gap.svg",
-      "concept": "仿真与实车差异",
-      "origin": "original",
-      "standalone_svg": true,
-      "license": "originally authored for this repository"
-    },
-    {
-      "chapter": "25",
-      "file": "25-tf-frames.svg",
-      "concept": "TF坐标树",
+      "file": "25-deployment-gates.svg",
+      "concept": "从代码单测到现场评审的五级上线门禁",
       "origin": "original",
       "standalone_svg": true,
       "license": "originally authored for this repository"
